@@ -2,7 +2,6 @@
 
 Checker::Checker(QObject *parent) : QObject(parent) {
     connect(&watcher, &QFileSystemWatcher::directoryChanged, this, &Checker::onSourceDirChange);
-    threadPool.setMaxThreadCount(QThread::idealThreadCount());
 }
 
 void Checker::setSourceDir(QString _sourceDir) {
@@ -83,6 +82,10 @@ double Checker::getProcessedFileSize() {
     return processedFilesSizeMB;
 }
 
+int Checker::getQueueSize() {
+    return filesToCheck.size();
+}
+
 void Checker::onSourceDirChange(const QString &path) {
     Q_UNUSED(path)
 
@@ -117,8 +120,6 @@ void Checker::tryCheckFiles() {
             QtConcurrent::run(&threadPool, [=]() {
                 processedFilesNb++;
 
-                // log(sourceDir + "/" + fileName);
-
                 processedFilesSizeMB += QFileInfo(sourceDir + "/" + fileName).size() / (1024. * 1024.);
 
                 int kasperResult = QProcess::execute(kasperFilePath, QStringList() << "scan" << sourceDir + "/" + fileName << "/i0");
@@ -138,18 +139,15 @@ void Checker::tryCheckFiles() {
                 } else {
                     QFile::rename(sourceDir + "/" + fileName, cleanDir + "/" + fileName);
                 }
-
-
-                emit updateUi();
             });
         }
     }
+
+    emit updateUi();
 }
 
 void Checker::startWork() {
     stopWork();
-
-
 
     if(!sourceDir.isEmpty()) {
         if(watcher.addPath(sourceDir)) {

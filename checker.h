@@ -56,6 +56,8 @@ public:
     int getProcessedFilesNb();
     double getProcessedFileSize();
 
+    int getQueueSize();
+
     // -----------------------------------------------------------
     void onSourceDirChange(const QString &path = "");
     void tryCheckFiles();

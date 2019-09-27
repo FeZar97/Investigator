@@ -103,6 +103,8 @@ void Widget::updateUi() {
 
     ui->scanFilesNbLabel->setText(QString::number(distributor.checker.getProcessedFilesNb()));
     ui->summarySizeNbLabel->setText(QString::number(distributor.checker.getProcessedFileSize(), 'f', 4) + " МБ");
+
+    ui->queueSizeLabel->setText(QString::number(distributor.checker.getQueueSize()));
 }
 
 void Widget::on_threadControlSB_valueChanged(int _maxThreadsNb) {
