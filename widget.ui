@@ -102,7 +102,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -151,7 +155,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -200,7 +208,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -249,14 +261,18 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="secondRowLayout" stretch="0,0,0,0,5,0,0,0,5,0,0,0">
+     <layout class="QHBoxLayout" name="secondRowLayout" stretch="0,0,0,0,0,5,0,0,0,0,5,0,0,0">
       <property name="leftMargin">
        <number>4</number>
       </property>
@@ -340,6 +356,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="kasperCB">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLineEdit" name="kasperFileLE"/>
       </item>
       <item>
@@ -357,7 +380,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/kasper.png</normaloff>:/kasper.png</iconset>
         </property>
        </widget>
       </item>
@@ -400,6 +427,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="drwebCB">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLineEdit" name="drwebFileLE"/>
       </item>
       <item>
@@ -417,7 +451,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/drweb.PNG</normaloff>:/drweb.PNG</iconset>
         </property>
        </widget>
       </item>
@@ -449,7 +487,11 @@
          </font>
         </property>
         <property name="text">
-         <string>cl</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
         </property>
        </widget>
       </item>
@@ -586,6 +628,8 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="qrc.qrc"/>
+ </resources>
  <connections/>
 </ui>

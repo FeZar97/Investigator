@@ -96,6 +96,7 @@ void Widget::updateUi() {
     ui->tempDirLE->setText(distributor.mover.getTargetDir());
     ui->cleanDirLE->setText(distributor.checker.getCleanDir());
     ui->dangerousDirLE->setText(distributor.checker.getDangerDir());
+
     ui->kasperFileLE->setText(distributor.checker.getKasperFile());
     ui->drwebFileLE->setText(distributor.checker.getDrwebFile());
 
@@ -109,4 +110,12 @@ void Widget::updateUi() {
 
 void Widget::on_threadControlSB_valueChanged(int _maxThreadsNb) {
     distributor.checker.setThreadsNb(_maxThreadsNb);
+}
+
+void Widget::on_kasperCB_clicked(bool isUsed) {
+    distributor.checker.useKasper(isUsed);
+}
+
+void Widget::on_drwebCB_clicked(bool isUsed) {
+    distributor.checker.useDrweb(isUsed);
 }

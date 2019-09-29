@@ -22,7 +22,10 @@ class Checker : public QObject
     QString dangerDir;
 
     QString kasperFilePath;
+    bool kasperFlag;
+
     QString drwebFilePath;
+    bool drwebFlag;
 
     QStringList filesToCheck;
     QStringList filesInProgress;
@@ -57,6 +60,12 @@ public:
     double getProcessedFileSize();
 
     int getQueueSize();
+
+    void useKasper(bool isUsed);
+    bool isKasperUsed();
+
+    void useDrweb(bool isUsed);
+    bool isDrwebUsed();
 
     // -----------------------------------------------------------
     void onSourceDirChange(const QString &path = "");

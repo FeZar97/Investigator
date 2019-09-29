@@ -86,6 +86,22 @@ int Checker::getQueueSize() {
     return filesToCheck.size();
 }
 
+void Checker::useKasper(bool isUsed) {
+    kasperFlag = isUsed;
+}
+
+bool Checker::isKasperUsed() {
+    return kasperFlag;
+}
+
+void Checker::useDrweb(bool isUsed) {
+    drwebFlag = isUsed;
+}
+
+bool Checker::isDrwebUsed() {
+    return drwebFlag;
+}
+
 void Checker::onSourceDirChange(const QString &path) {
     Q_UNUSED(path)
 
@@ -122,14 +138,16 @@ void Checker::tryCheckFiles() {
 
                 processedFilesSizeMB += QFileInfo(sourceDir + "/" + fileName).size() / (1024. * 1024.);
 
+                QString report = "Результат проверки файла " + fileName + ":";
+
                 int kasperResult = QProcess::execute(kasperFilePath, QStringList() << "scan" << sourceDir + "/" + fileName << "/i0");
                 if(kasperResult) {
-                    log("Касперский :: Результат проверки файла " + fileName + ": " + QString::number(kasperResult));
+                    report += " Касперский :: " + QString::number(kasperResult);
                 }
 
                 int drwebResult = QProcess::execute(drwebFilePath, QStringList() << "/DR" << sourceDir + "/" + fileName);
                 if(drwebResult) {
-                    log("Drweb :: Результат проверки файла " + fileName + ": " + QString::number(drwebResult));
+                    report += " Drweb :: " + QString::number(drwebResult);
                 }
 
                 filesInProgress.removeAll(fileName);
