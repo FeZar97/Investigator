@@ -32,11 +32,15 @@ private slots:
     void on_kasperFileButton_clicked();
     void on_drwebFileButton_clicked();
 
+    void on_kasperCB_clicked(bool isUsed);
+    void on_drwebCB_clicked(bool isUsed);
+
     void on_clearButton_clicked();
     void on_threadControlSB_valueChanged(int _maxThreadsNb);
 
     void log(const QString &s);
     void updateUi();
+
 
 private:
     Ui::Widget *ui;

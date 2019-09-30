@@ -10,8 +10,18 @@
     <height>593</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Courier New</family>
+    <pointsize>10</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
-   <string>GovermentInvestigator</string>
+   <string>Investigator</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>investigator.ico</normaloff>investigator.ico</iconset>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
@@ -102,7 +112,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -151,7 +165,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -200,7 +218,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
@@ -249,14 +271,142 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="secondRowLayout" stretch="0,0,0,0,5,0,0,0,5,0,0,0">
+     <layout class="QHBoxLayout" name="kasperskyLayout">
+      <item>
+       <widget class="QCheckBox" name="kasperCB">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="kasperFileLabel">
+        <property name="minimumSize">
+         <size>
+          <width>56</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>1111</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Использовать  Kaspersky:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="kasperFileLE"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="kasperFileButton">
+        <property name="minimumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/kasper.png</normaloff>:/kasper.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="drwebLayout">
+      <item>
+       <widget class="QCheckBox" name="drwebCB">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="drwebFileLabel">
+        <property name="minimumSize">
+         <size>
+          <width>48</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>1111</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Использовать  DrWeb:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="drwebFileLE"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="drwebFileButton">
+        <property name="minimumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/drweb.jpg</normaloff>:/drweb.jpg</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="secondRowLayout" stretch="0,0,0,0">
       <property name="leftMargin">
        <number>4</number>
       </property>
@@ -302,126 +452,6 @@
        </widget>
       </item>
       <item>
-       <spacer name="spacer1">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QLabel" name="kasperFileLabel">
-        <property name="minimumSize">
-         <size>
-          <width>56</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>56</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>Courier New</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Каспер:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="kasperFileLE"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="kasperFileButton">
-        <property name="minimumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>...</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="spacer2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QLabel" name="drwebFileLabel">
-        <property name="minimumSize">
-         <size>
-          <width>48</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>48</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>Courier New</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>DrWeb:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="drwebFileLE"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="drwebFileButton">
-        <property name="minimumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>...</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <spacer name="spacer3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -449,7 +479,11 @@
          </font>
         </property>
         <property name="text">
-         <string>cl</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="qrc.qrc">
+          <normaloff>:/clear.png</normaloff>:/clear.png</iconset>
         </property>
        </widget>
       </item>
@@ -586,6 +620,8 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="qrc.qrc"/>
+ </resources>
  <connections/>
 </ui>

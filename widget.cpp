@@ -1,28 +1,30 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("UST", "GovermentInvestigator") {
+Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("FeZar97", "Investigator") {
 
     ui->setupUi(this);
     setLayout(ui->mainLayout);
 
     log("Программа запущена");
-    setWindowIcon(QIcon(":/glasses.png"));
+    setWindowIcon(QIcon(":/investigator.ico"));
 
     restoreGeometry(settings.value("geometry").toByteArray());
 
     connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
     connect(&distributor, &Distributor::log, this, &Widget::log);
 
-    // mover
     distributor.mover.setSourceDir(settings.value("watchDir", "C:/").toString());
     distributor.mover.setTargetDir(settings.value("tempDir", "C:/").toString());
 
-    // checker
     distributor.checker.setSourceDir(settings.value("tempDir", "C:/").toString());
     distributor.checker.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.checker.setDangerDir(settings.value("dangerDir", "C:/").toString());
+
+    distributor.checker.useKasper(settings.value("useKasper", true).toBool());
     distributor.checker.setKasperFile(settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
+
+    distributor.checker.useDrweb(settings.value("useDrweb", true).toBool());
     distributor.checker.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
     distributor.checker.setThreadsNb(settings.value("threadsNb", QThread::idealThreadCount()).toInt());
@@ -41,8 +43,12 @@ Widget::~Widget() {
 
     settings.setValue("cleanDir", distributor.checker.getCleanDir());
     settings.setValue("dangerDir", distributor.checker.getDangerDir());
+
     settings.setValue("kasperFilePath", distributor.checker.getKasperFile());
+    settings.setValue("useKasper", distributor.checker.isKasperUsed());
+
     settings.setValue("drwebFilePath", distributor.checker.getDrwebFile());
+    settings.setValue("useDrweb", distributor.checker.isDrwebUsed());
 
     settings.setValue("threadsNb", distributor.checker.getThreadsNb());
 
@@ -96,8 +102,18 @@ void Widget::updateUi() {
     ui->tempDirLE->setText(distributor.mover.getTargetDir());
     ui->cleanDirLE->setText(distributor.checker.getCleanDir());
     ui->dangerousDirLE->setText(distributor.checker.getDangerDir());
+
     ui->kasperFileLE->setText(distributor.checker.getKasperFile());
+    ui->kasperCB->setChecked(distributor.checker.isKasperUsed());
+    ui->kasperFileLabel->setEnabled(distributor.checker.isKasperUsed());
+    ui->kasperFileLE->setEnabled(distributor.checker.isKasperUsed());
+    ui->kasperFileButton->setEnabled(distributor.checker.isKasperUsed());
+
     ui->drwebFileLE->setText(distributor.checker.getDrwebFile());
+    ui->drwebCB->setChecked(distributor.checker.isDrwebUsed());
+    ui->drwebFileLabel->setEnabled(distributor.checker.isDrwebUsed());
+    ui->drwebFileLE->setEnabled(distributor.checker.isDrwebUsed());
+    ui->drwebFileButton->setEnabled(distributor.checker.isDrwebUsed());
 
     ui->threadControlSB->setValue(distributor.checker.getThreadsNb());
 
@@ -109,4 +125,12 @@ void Widget::updateUi() {
 
 void Widget::on_threadControlSB_valueChanged(int _maxThreadsNb) {
     distributor.checker.setThreadsNb(_maxThreadsNb);
+}
+
+void Widget::on_kasperCB_clicked(bool isUsed) {
+    distributor.checker.useKasper(isUsed);
+}
+
+void Widget::on_drwebCB_clicked(bool isUsed) {
+    distributor.checker.useDrweb(isUsed);
 }
