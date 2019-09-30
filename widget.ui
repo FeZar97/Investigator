@@ -311,7 +311,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Использовать  Kaspersky:</string>
+         <string>Использовать Kaspersky:</string>
         </property>
        </widget>
       </item>
@@ -373,7 +373,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Использовать  DrWeb:</string>
+         <string>Использовать DrWeb:</string>
         </property>
        </widget>
       </item>

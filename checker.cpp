@@ -147,24 +147,27 @@ void Checker::tryCheckFiles() {
                 if(kasperFlag) {
                     kasperResult = QProcess::execute(kasperFilePath, QStringList() << "scan" << sourceDir + "/" + fileName << "/i0");
                     if(kasperResult) {
-                        report += " Касперский :: " + QString::number(kasperResult);
+                        report += " Касперский(" + QString::number(kasperResult) + ")";
                     }
                 }
 
                 if(drwebFlag) {
                     drwebResult = QProcess::execute(drwebFilePath, QStringList() << "/DR" << sourceDir + "/" + fileName);
                     if(drwebResult) {
-                        report += " Drweb :: " + QString::number(drwebResult);
+                        report += " Drweb(" + QString::number(drwebResult) + ")";
                     }
                 }
 
                 filesInProgress.removeAll(fileName);
 
                 if(kasperResult || drwebResult) {
+                    emit log(report);
                     QFile::rename(sourceDir + "/" + fileName, dangerDir + "/" + fileName);
                 } else {
                     QFile::rename(sourceDir + "/" + fileName, cleanDir + "/" + fileName);
                 }
+
+                emit updateUi();
             });
         }
     }
