@@ -12,16 +12,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-        checker.cpp \
         distributor.cpp \
         main.cpp \
-        mover.cpp \
         widget.cpp
 
 HEADERS += \
-        checker.h \
         distributor.h \
-        mover.h \
         widget.h
 
 FORMS += \

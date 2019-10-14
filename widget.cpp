@@ -14,22 +14,22 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
     connect(&distributor, &Distributor::log, this, &Widget::log);
 
-    distributor.mover.setSourceDir(settings.value("watchDir", "C:/").toString());
-    distributor.mover.setTargetDir(settings.value("tempDir", "C:/").toString());
+    distributor.setWatchDir(settings.value("watchDir", "C:/").toString());
+    distributor.setTempDir(settings.value("tempDir", "C:/").toString());
+    distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
+    distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
 
-    distributor.checker.setSourceDir(settings.value("tempDir", "C:/").toString());
-    distributor.checker.setCleanDir(settings.value("cleanDir", "C:/").toString());
-    distributor.checker.setDangerDir(settings.value("dangerDir", "C:/").toString());
+    distributor.setUseKasper(settings.value("useKasper", true).toBool());
+    distributor.setKasperFile(settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
 
-    distributor.checker.useKasper(settings.value("useKasper", true).toBool());
-    distributor.checker.setKasperFile(settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
+    distributor.setUseDrweb(settings.value("useDrweb", true).toBool());
+    distributor.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    distributor.checker.useDrweb(settings.value("useDrweb", true).toBool());
-    distributor.checker.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startTempDirEye);
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startReportDirEye);
 
-    distributor.checker.setThreadsNb(settings.value("threadsNb", QThread::idealThreadCount()).toInt());
-
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startWork);
+    updateUi();
 
     distributor.moveToThread(&workThread);
     workThread.start();
@@ -38,19 +38,17 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 Widget::~Widget() {
     settings.setValue("geometry", saveGeometry());
 
-    settings.setValue("watchDir", distributor.mover.getSourceDir());
-    settings.setValue("tempDir", distributor.mover.getTargetDir());
+    settings.setValue("watchDir", distributor.getWatchDir());
+    settings.setValue("tempDir", distributor.getTempDir());
 
-    settings.setValue("cleanDir", distributor.checker.getCleanDir());
-    settings.setValue("dangerDir", distributor.checker.getDangerDir());
+    settings.setValue("cleanDir", distributor.getCleanDir());
+    settings.setValue("dangerDir", distributor.getDangerDir());
 
-    settings.setValue("kasperFilePath", distributor.checker.getKasperFile());
-    settings.setValue("useKasper", distributor.checker.isKasperUsed());
+    settings.setValue("kasperFilePath", distributor.getKasperFile());
+    settings.setValue("useKasper", distributor.isKasperUse());
 
-    settings.setValue("drwebFilePath", distributor.checker.getDrwebFile());
-    settings.setValue("useDrweb", distributor.checker.isDrwebUsed());
-
-    settings.setValue("threadsNb", distributor.checker.getThreadsNb());
+    settings.setValue("drwebFilePath", distributor.getDrwebFile());
+    settings.setValue("useDrweb", distributor.isDrwebUse());
 
     workThread.quit();
     workThread.wait();
@@ -59,33 +57,33 @@ Widget::~Widget() {
 }
 
 void Widget::on_watchDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Директория для слежения"), distributor.mover.getSourceDir());
-    distributor.mover.setSourceDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Директория для слежения"), distributor.getWatchDir());
+    distributor.setWatchDir(dir);
 }
 
 void Widget::on_tempDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для временных файлов"), distributor.mover.getTargetDir());
-    distributor.mover.setTargetDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для временных файлов"), distributor.getTempDir());
+    distributor.setTempDir(dir);
 }
 
 void Widget::on_cleanDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для чистых файлов"), distributor.checker.getCleanDir());
-    distributor.checker.setCleanDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для чистых файлов"), distributor.getCleanDir());
+    distributor.setCleanDir(dir);
 }
 
 void Widget::on_dangerousDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для зараженных файлов"), distributor.checker.getDangerDir());
-    distributor.checker.setDangerDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для зараженных файлов"), distributor.getDangerDir());
+    distributor.setDangerDir(dir);
 }
 
 void Widget::on_kasperFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Kaspersky"), "C:/Program Files (x86)/Kasper/Kaspersky Endpoint Security 10 for Windows SP1/avp.com", tr("*.*"));
-    distributor.checker.setKasperFile(filePath);
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Kaspersky"), distributor.getKasperFile(), tr("*.com"));
+    distributor.setKasperFile(filePath);
 }
 
 void Widget::on_drwebFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Drweb"), "C:/Program Files (x86)", tr("*.*"));
-    distributor.checker.setDrwebFile(filePath);
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Drweb"), distributor.getDrwebFile(), tr("*.exe"));
+    distributor.setDrwebFile(filePath);
 }
 
 void Widget::on_clearButton_clicked() {
@@ -98,39 +96,29 @@ void Widget::log(const QString &s) {
 }
 
 void Widget::updateUi() {
-    ui->watchDirLE->setText(distributor.mover.getSourceDir());
-    ui->tempDirLE->setText(distributor.mover.getTargetDir());
-    ui->cleanDirLE->setText(distributor.checker.getCleanDir());
-    ui->dangerousDirLE->setText(distributor.checker.getDangerDir());
+    ui->watchDirLE->setText(distributor.getWatchDir());
+    ui->tempDirLE->setText(distributor.getTempDir());
+    ui->cleanDirLE->setText(distributor.getCleanDir());
+    ui->dangerousDirLE->setText(distributor.getDangerDir());
 
-    ui->kasperFileLE->setText(distributor.checker.getKasperFile());
-    ui->kasperCB->setChecked(distributor.checker.isKasperUsed());
-    ui->kasperFileLabel->setEnabled(distributor.checker.isKasperUsed());
-    ui->kasperFileLE->setEnabled(distributor.checker.isKasperUsed());
-    ui->kasperFileButton->setEnabled(distributor.checker.isKasperUsed());
+    ui->kasperFileLE->setText(distributor.getKasperFile());
+    ui->kasperCB->setChecked(distributor.isKasperUse());
+    ui->kasperFileLE->setEnabled(distributor.isKasperUse());
+    ui->kasperFileButton->setEnabled(distributor.isKasperUse());
 
-    ui->drwebFileLE->setText(distributor.checker.getDrwebFile());
-    ui->drwebCB->setChecked(distributor.checker.isDrwebUsed());
-    ui->drwebFileLabel->setEnabled(distributor.checker.isDrwebUsed());
-    ui->drwebFileLE->setEnabled(distributor.checker.isDrwebUsed());
-    ui->drwebFileButton->setEnabled(distributor.checker.isDrwebUsed());
+    ui->drwebFileLE->setText(distributor.getDrwebFile());
+    ui->drwebCB->setChecked(distributor.isDrwebUse());
+    ui->drwebFileLE->setEnabled(distributor.isDrwebUse());
+    ui->drwebFileButton->setEnabled(distributor.isDrwebUse());
 
-    ui->threadControlSB->setValue(distributor.checker.getThreadsNb());
-
-    ui->scanFilesNbLabel->setText(QString::number(distributor.checker.getProcessedFilesNb()));
-    ui->summarySizeNbLabel->setText(QString::number(distributor.checker.getProcessedFileSize(), 'f', 4) + " МБ");
-
-    ui->queueSizeLabel->setText(QString::number(distributor.checker.getQueueSize()));
-}
-
-void Widget::on_threadControlSB_valueChanged(int _maxThreadsNb) {
-    distributor.checker.setThreadsNb(_maxThreadsNb);
+    ui->scanFilesNbLabel->setText(QString::number(distributor.getProcessedFilesNb()));
+    ui->queueSizeLabel->setText(QString::number(distributor.getQueueSize()));
 }
 
 void Widget::on_kasperCB_clicked(bool isUsed) {
-    distributor.checker.useKasper(isUsed);
+    distributor.setUseKasper(isUsed);
 }
 
 void Widget::on_drwebCB_clicked(bool isUsed) {
-    distributor.checker.useDrweb(isUsed);
+    distributor.setUseDrweb(isUsed);
 }
