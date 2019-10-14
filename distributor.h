@@ -19,38 +19,20 @@
 
 using namespace QtConcurrent;
 
+#define VERSION tr("#19.10.14.7")
+
 class ProcessObject {
 public:
     ProcessObject();
-    ProcessObject(QString _fileName,
+    ProcessObject(QFileInfo _fileInfo,
                   bool _useKasper, bool _useDrweb,
-                  QString _kasperPath, QString _drwebPath) {
-        fileName = _fileName;
+                  QString _kasperPath, QString _drwebPath,
+                  QString _tempDir, QString _reportDir, QString _cleanDir, QString _dangerDir) {
+        fileInfo = _fileInfo;
         useKasper = _useKasper;
         useDrweb = _useDrweb;
         kasperPath = _kasperPath;
         drwebPath = _drwebPath;
-    }
-
-    QString fileName;
-
-    bool useKasper;
-    bool useDrweb;
-    QString kasperPath;
-    QString drwebPath;
-};
-
-class ResultObject {
-public:
-    ResultObject();
-
-    ResultObject(QFileInfo _fileInfo) {
-        fileInfo = _fileInfo;
-    }
-
-    ResultObject(QFileInfo _fileInfo,
-                 QString _tempDir, QString _reportDir, QString _cleanDir, QString _dangerDir) {
-        fileInfo = _fileInfo;
 
         tempDir = _tempDir;
         reportDir = _reportDir;
@@ -58,10 +40,16 @@ public:
         dangerDir = _dangerDir;
 
         kasperDetect = false;
+        kasperResult = "";
         drwebDetect = false;
     }
 
     QFileInfo fileInfo;
+
+    bool useKasper;
+    bool useDrweb;
+    QString kasperPath;
+    QString drwebPath;
 
     QString tempDir;
     QString reportDir;
@@ -69,11 +57,8 @@ public:
     QString dangerDir;
 
     bool kasperDetect;
+    QString kasperResult;
     bool drwebDetect;
-
-    bool operator==(const ResultObject &otherObj) {
-        return fileInfo.baseName() == otherObj.fileInfo.baseName();
-    }
 };
 
 class Distributor : public QObject
@@ -98,7 +83,6 @@ class Distributor : public QObject
 
     QFileInfoList filesInWatchDir;
     QFileInfoList filesInTempDir;
-    QFileInfoList filesInReportDir;
 
     int processedFilesNb;
 
@@ -106,7 +90,6 @@ public:
     explicit Distributor(QObject *parent = nullptr);
 
     QList<ProcessObject> createWorkObjects();
-    QList<ResultObject> createResultObjects();
 
 // FOLDERS
     void setWatchDir(QString _watchDir);
@@ -141,18 +124,13 @@ public:
     void stopTempDirEye();
     void onTempDirChange(const QString &path);
 
-    void startReportDirEye();
-    void stopReportDirEye();
-    void onReportDirChange(const QString &path);
-
 // RUN INFO
     int getProcessedFilesNb();
     int getQueueSize();
 
 // CORE
     static ProcessObject processFile(ProcessObject obj);
-    static ResultObject processResult(ResultObject resultObject);
-    void processDangerFiles(QList<ResultObject> resultObjects);
+    void processDangerFiles(QList<ProcessObject> resultObjects);
 
 signals:
     void checkFile();

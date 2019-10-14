@@ -5,6 +5,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     ui->setupUi(this);
     setLayout(ui->mainLayout);
+    setWindowTitle("Investigator " + VERSION);
 
     log("Программа запущена");
     setWindowIcon(QIcon(":/investigator.ico"));
@@ -27,7 +28,6 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
     connect(&workThread, &QThread::started, &distributor, &Distributor::startTempDirEye);
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startReportDirEye);
 
     updateUi();
 
