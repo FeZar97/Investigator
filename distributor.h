@@ -19,7 +19,7 @@
 
 using namespace QtConcurrent;
 
-#define VERSION tr("#19.10.14.7")
+#define VERSION tr("#19.10.15/16:51")
 
 class ProcessObject {
 public:
@@ -89,7 +89,7 @@ class Distributor : public QObject
 public:
     explicit Distributor(QObject *parent = nullptr);
 
-    QList<ProcessObject> createWorkObjects();
+    QList<ProcessObject> createWorkObjects(QFileInfoList filesToProcess);
 
 // FOLDERS
     void setWatchDir(QString _watchDir);

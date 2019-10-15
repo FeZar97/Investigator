@@ -5,11 +5,10 @@ Distributor::Distributor(QObject *parent) : QObject(parent){
     connect(&tempDirEye, &QFileSystemWatcher::directoryChanged, this, &Distributor::onTempDirChange);
 }
 
-QList<ProcessObject> Distributor::createWorkObjects() {
-
+QList<ProcessObject> Distributor::createWorkObjects(QFileInfoList filesToProcess) {
     QList<ProcessObject> result;
-    for(int i = 0; i < filesInTempDir.size(); i++) {
-        result.append(ProcessObject(filesInTempDir.at(i).absoluteFilePath(), useKasper, useDrweb, kasperFilePath, drwebFilePath,
+    for(int i = 0; i < filesToProcess.size(); i++) {
+        result.append(ProcessObject(filesToProcess.at(i).absoluteFilePath(), useKasper, useDrweb, kasperFilePath, drwebFilePath,
                                     tempDir, reportDir, cleanDir, dangerDir));
     }
     return result;
@@ -173,30 +172,44 @@ void Distributor::onTempDirChange(const QString &path) {
 
     Q_UNUSED(path)
 
-    filesInTempDir.clear();
+// v1
+    // filesInTempDir.clear();
+    //
+    // QFileInfoList tempList = QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
+    // QFileInfoList tempReportList = QDir(reportDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
+    //
+    // bool containsInReportDir;
+    //
+    // foreach(QFileInfo tempFileInfo, tempList) {
+    //
+    //     containsInReportDir = false;
+    //
+    //     foreach(QFileInfo reportFileInfo, tempReportList) {
+    //         if(reportFileInfo.baseName() == tempFileInfo.baseName()) {
+    //             containsInReportDir = true;
+    //         }
+    //     }
+    //
+    //     if(!containsInReportDir) {
+    //         filesInTempDir.append(tempFileInfo);
+    //     }
+    // }
+    
+// v2
+    // QFileInfoList newFilesInTempDir = QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks),
+    //               filesToProcess;
+    //
+    // foreach(QFileInfo fileInfo, newFilesInTempDir)
+    //     if(!filesInTempDir.contains(fileInfo))
+    //         filesToProcess.append(fileInfo);
+    //
+    // filesInTempDir = newFilesInTempDir;
+    //
+    // if(!filesToProcess.isEmpty())
+    //     processDangerFiles(blockingMapped(createWorkObjects(filesToProcess), processFile));
 
-    QFileInfoList tempList = QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-    QFileInfoList tempReportList = QDir(reportDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-
-    bool containsInReportDir;
-
-    foreach(QFileInfo tempFileInfo, tempList) {
-
-        containsInReportDir = false;
-
-        foreach(QFileInfo reportFileInfo, tempReportList) {
-            if(reportFileInfo.baseName() == tempFileInfo.baseName()) {
-                containsInReportDir = true;
-            }
-        }
-
-        if(!containsInReportDir) {
-            filesInTempDir.append(tempFileInfo);
-        }
-    }
-
-    if(!filesInTempDir.isEmpty())
-        processDangerFiles(blockingMapped(createWorkObjects(), processFile));
+// v3
+    processDangerFiles(blockingMapped(createWorkObjects(QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks)), processFile));
 
     updateUi();
 }
@@ -211,53 +224,94 @@ int Distributor::getQueueSize() {
 
 ProcessObject Distributor::processFile(ProcessObject obj) {
 
-    if(obj.useKasper)
-        QProcess::execute(obj.kasperPath, QStringList() << "scan"
-                                                        << obj.tempDir + "/" + obj.fileInfo.fileName()
-                                                        << "/i0"
-                                                        << QString("/R:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".kres"));
-
-    if(obj.useDrweb)
-        QProcess::execute(obj.drwebPath, QStringList() << "/DR"
-                                                       << QString("/RP:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".dres")
-                                                       << obj.tempDir + "/" + obj.fileInfo.fileName());
-
     QString KReportFileName = obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres",
-            DReportFileName = obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres";
+            DReportFileName = obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres",
+            KReport, DReport;
     QFile KReportFile, DReportFile;
+    bool isReportReady = false;
 
-    if(QFile::exists(KReportFileName) && QFile::exists(DReportFileName)) {
-        KReportFile.setFileName(KReportFileName);
-        DReportFile.setFileName(DReportFileName);
+    KReportFile.setFileName(KReportFileName);
+    DReportFile.setFileName(DReportFileName);
+
+    if(!QFile::exists(KReportFileName) && !QFile::exists(DReportFileName)) {
+        if(obj.useKasper)
+            QProcess::execute(obj.kasperPath, QStringList() << "scan"
+                                                            << obj.tempDir + "/" + obj.fileInfo.fileName()
+                                                            << "/i0"
+                                                            << QString("/R:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".kres"));
+
+        if(obj.useDrweb)
+            QProcess::execute(obj.drwebPath, QStringList() << "/DR"
+                                                           << QString("/RP:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".dres")
+                                                           << obj.tempDir + "/" + obj.fileInfo.fileName());
+    }
+
+    while(!isReportReady) {
 
         if(KReportFile.open(QIODevice::ReadOnly) && DReportFile.open(QIODevice::ReadOnly)) {
-            const QString KReport = QTextStream(&KReportFile).readAll();
-            const QString DReport = QTextStream(&DReportFile).readAll();
-
+            KReport = QTextStream(&KReportFile).readAll();
+            DReport = QTextStream(&DReportFile).readAll();
             KReportFile.close();
             DReportFile.close();
-
-            obj.kasperResult = KReport;//
-
-            obj.kasperDetect = KReport.mid(KReport.indexOf(QString("Total detected:")), 20).contains("1");
-            //obj.kasperResult = KReport.mid(KReport.indexOf(QString("Total detected:")), 20);
-            obj.drwebDetect = DReport.indexOf("file are infected") != -1;
-
-            if(obj.kasperDetect || obj.drwebDetect) {
-                QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
-                              obj.dangerDir + "/" + obj.fileInfo.fileName());
-                QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres",
-                              obj.dangerDir + "/" + obj.fileInfo.baseName() + ".kres");
-                QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres",
-                              obj.dangerDir + "/" + obj.fileInfo.baseName() + ".dres");
-            } else {
-                QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
-                              obj.cleanDir  + "/" + obj.fileInfo.fileName());
-                QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres");
-                QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres");
-            }
         }
+
+
+        obj.kasperResult = QString::number(obj.fileInfo.lastModified().toSecsSinceEpoch());
+
+        if(KReport.indexOf(QString("Total detected:   	")) != -1 && obj.fileInfo.lastModified().toSecsSinceEpoch() > 5)
+            isReportReady = true;
     }
+
+    obj.kasperResult = KReport;
+
+    obj.kasperDetect = KReport.mid(KReport.indexOf(QString("Total detected:")), 20).contains("1");
+    obj.drwebDetect = DReport.indexOf("file are infected") != -1;
+
+    if(obj.kasperDetect || obj.drwebDetect) {
+        QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
+                      obj.dangerDir + "/" + obj.fileInfo.fileName());
+        // QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres",
+        //               obj.dangerDir + "/" + obj.fileInfo.baseName() + ".kres");
+        while(QFile::exists(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres"))
+            QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres",
+                          obj.dangerDir + "/" + obj.fileInfo.baseName() + ".kres");
+        QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres",
+                      obj.dangerDir + "/" + obj.fileInfo.baseName() + ".dres");
+    } else {
+        QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
+                      obj.cleanDir  + "/" + obj.fileInfo.fileName());
+        //QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres");
+        while(QFile::exists(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres"))
+            QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres");
+        QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres");
+    }
+
+        // if(KReportFile.open(QIODevice::ReadOnly) && DReportFile.open(QIODevice::ReadOnly)) {
+        //     const QString KReport = QTextStream(&KReportFile).readAll();
+        //     const QString DReport = QTextStream(&DReportFile).readAll();
+        //
+        //     KReportFile.close();
+        //     DReportFile.close();
+        //
+        //     obj.kasperResult = KReport;
+        //
+        //     obj.kasperDetect = KReport.mid(KReport.indexOf(QString("Total detected:")), 20).contains("1");
+        //     obj.drwebDetect = DReport.indexOf("file are infected") != -1;
+        //
+        //     if(obj.kasperDetect || obj.drwebDetect) {
+        //         QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
+        //                       obj.dangerDir + "/" + obj.fileInfo.fileName());
+        //         QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres",
+        //                       obj.dangerDir + "/" + obj.fileInfo.baseName() + ".kres");
+        //         QFile::rename(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres",
+        //                       obj.dangerDir + "/" + obj.fileInfo.baseName() + ".dres");
+        //     } else {
+        //         QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
+        //                       obj.cleanDir  + "/" + obj.fileInfo.fileName());
+        //         QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".kres");
+        //         QFile::remove(obj.reportDir + "/" + obj.fileInfo.baseName() + ".dres");
+        //     }
+        // }
 
     return obj;
 }
@@ -267,8 +321,9 @@ void Distributor::processDangerFiles(QList<ProcessObject> resultObjects) {
     processedFilesNb += resultObjects.size();
     foreach(ProcessObject ro, resultObjects){
         report = "Результат проверки файла " + ro.fileInfo.fileName() + ": ";
-        log(ro.fileInfo.fileName() + " position of DETECTED: " + QString::number(ro.kasperResult.indexOf(QString("Total detected:"))));
-        if(ro.kasperDetect) report += "Kaspersky: (" + ro.kasperResult + ") ";
+        //log(ro.kasperResult + "\n\n");
+        //if(ro.kasperDetect) report += "Time: (" + ro.kasperResult + ") ";
+        if(ro.kasperDetect) report += "Kaspersky ";
         if(ro.drwebDetect)  report += "DrWeb ";
         if(ro.kasperDetect || ro.drwebDetect) log(report);
     }
