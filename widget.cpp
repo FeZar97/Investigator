@@ -40,7 +40,6 @@ Widget::~Widget() {
 
     settings.setValue("watchDir", distributor.getWatchDir());
     settings.setValue("tempDir", distributor.getTempDir());
-
     settings.setValue("cleanDir", distributor.getCleanDir());
     settings.setValue("dangerDir", distributor.getDangerDir());
 

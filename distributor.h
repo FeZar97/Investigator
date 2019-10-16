@@ -19,7 +19,7 @@
 
 using namespace QtConcurrent;
 
-#define VERSION tr("#19.10.16/10:44")
+#define VERSION tr("#19.10.16/15:31")
 
 class ProcessObject {
 public:

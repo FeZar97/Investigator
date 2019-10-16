@@ -171,44 +171,6 @@ void Distributor::stopTempDirEye() {
 void Distributor::onTempDirChange(const QString &path) {
 
     Q_UNUSED(path)
-
-// v1
-    // filesInTempDir.clear();
-    //
-    // QFileInfoList tempList = QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-    // QFileInfoList tempReportList = QDir(reportDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-    //
-    // bool containsInReportDir;
-    //
-    // foreach(QFileInfo tempFileInfo, tempList) {
-    //
-    //     containsInReportDir = false;
-    //
-    //     foreach(QFileInfo reportFileInfo, tempReportList) {
-    //         if(reportFileInfo.baseName() == tempFileInfo.baseName()) {
-    //             containsInReportDir = true;
-    //         }
-    //     }
-    //
-    //     if(!containsInReportDir) {
-    //         filesInTempDir.append(tempFileInfo);
-    //     }
-    // }
-    
-// v2
-    // QFileInfoList newFilesInTempDir = QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks),
-    //               filesToProcess;
-    //
-    // foreach(QFileInfo fileInfo, newFilesInTempDir)
-    //     if(!filesInTempDir.contains(fileInfo))
-    //         filesToProcess.append(fileInfo);
-    //
-    // filesInTempDir = newFilesInTempDir;
-    //
-    // if(!filesToProcess.isEmpty())
-    //     processDangerFiles(blockingMapped(createWorkObjects(filesToProcess), processFile));
-
-// v3
     processDangerFiles(blockingMapped(createWorkObjects(QDir(tempDir).entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks)), processFile));
 
     updateUi();
@@ -219,7 +181,7 @@ int Distributor::getProcessedFilesNb() {
 }
 
 int Distributor::getQueueSize() {
-    return filesInTempDir.size();
+    return filesInWatchDir.size();
 }
 
 ProcessObject Distributor::processFile(ProcessObject obj) {
@@ -233,17 +195,17 @@ ProcessObject Distributor::processFile(ProcessObject obj) {
     KReportFile.setFileName(KReportFileName);
     DReportFile.setFileName(DReportFileName);
 
-    if(!QFile::exists(KReportFileName) && !QFile::exists(DReportFileName)) {
-        if(obj.useKasper)
-            QProcess::execute(obj.kasperPath, QStringList() << "scan"
-                                                            << obj.tempDir + "/" + obj.fileInfo.fileName()
-                                                            << "/i0"
-                                                            << QString("/R:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".kres"));
+    if(obj.useKasper && !QFile::exists(KReportFileName)) {
+        QProcess::execute(obj.kasperPath, QStringList() << "scan"
+                                                        << obj.tempDir + "/" + obj.fileInfo.fileName()
+                                                        << "/i0"
+                                                        << QString("/R:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".kres"));
+    }
 
-        if(obj.useDrweb)
-            QProcess::execute(obj.drwebPath, QStringList() << "/DR"
-                                                           << QString("/RP:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".dres")
-                                                           << obj.tempDir + "/" + obj.fileInfo.fileName());
+    if(obj.useDrweb && !QFile::exists(DReportFileName)) {
+        QProcess::execute(obj.drwebPath, QStringList() << "/DR"
+                                                       << QString("/RP:" + obj.tempDir + "/reports/" + obj.fileInfo.baseName() + ".dres")
+                                                       << obj.tempDir + "/" + obj.fileInfo.fileName());
     }
 
     while(!isReportReady) {
@@ -256,8 +218,10 @@ ProcessObject Distributor::processFile(ProcessObject obj) {
 
             obj.kasperResult = QString::number(obj.fileInfo.lastModified().toSecsSinceEpoch());
 
-            if(KReport.indexOf(QString("Total detected:   	")) != -1 && obj.fileInfo.lastModified().toSecsSinceEpoch() > 5)
+            if(KReport.indexOf(QString("Total detected:   	")) != -1)
                 isReportReady = true;
+        } else {
+            isReportReady = true;
         }
 
         if(obj.useDrweb) {
@@ -308,7 +272,6 @@ void Distributor::processDangerFiles(QList<ProcessObject> resultObjects) {
     processedFilesNb += resultObjects.size();
     foreach(ProcessObject ro, resultObjects){
         report = "Результат проверки файла " + ro.fileInfo.fileName() + ": ";
-        // log(ro.kasperResult + "\n\n");
         if(ro.kasperDetect) report += "Kaspersky ";
         if(ro.drwebDetect)  report += "DrWeb ";
         if(ro.kasperDetect || ro.drwebDetect) log(report);
