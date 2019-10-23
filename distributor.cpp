@@ -147,7 +147,6 @@ void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
 
     if(readyFlag) {
-        readyFlag = false;
 
         filesInWatchDir = QDir(watchDir + "/").entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
 
@@ -157,6 +156,8 @@ void Distributor::onWatchDirChange(const QString &path) {
             filesInWatchDir.removeAll(fileInfo);
         }
     }
+
+    readyFlag = false;
 }
 
 void Distributor::startTempDirEye() {
@@ -281,8 +282,10 @@ ProcessObject Distributor::processByKasper(ProcessObject obj) {
     }
 
     // перемещение файла в папку каспера для дальнейшего сканирования доктором вебом
-    QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
-                  obj.kasperDir + "/" + obj.fileInfo.fileName());
+    // только если есть отчет
+    if((obj.useKasper && QFile::exists(KReportFileName)) || !obj.useKasper)
+        QFile::rename(obj.tempDir   + "/" + obj.fileInfo.fileName(),
+                      obj.kasperDir + "/" + obj.fileInfo.fileName());
     return obj;
 }
 
@@ -309,8 +312,11 @@ ProcessObject Distributor::processByDrweb(ProcessObject obj) {
     }
 
     // перемещение файла в папку drweb для дальнейшей проверки отчетов
-    QFile::rename(obj.kasperDir + "/" + obj.fileInfo.fileName(),
-                  obj.drwebDir  + "/" + obj.fileInfo.fileName());
+    // только если есть отчет
+    if((obj.useDrweb && QFile::exists(DReportFileName)) || !obj.useDrweb)
+        QFile::rename(obj.kasperDir + "/" + obj.fileInfo.fileName(),
+                      obj.drwebDir  + "/" + obj.fileInfo.fileName());
+
     return obj;
 }
 

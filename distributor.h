@@ -19,7 +19,7 @@
 
 using namespace QtConcurrent;
 
-#define VERSION tr("#19.10.23/09:27#1")
+#define VERSION tr("#19.10.23/10:07#2")
 
 #define REPORT_DIR_NAME  "reports"
 #define KASPER_DIR_NAME  "kasper"
