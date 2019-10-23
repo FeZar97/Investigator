@@ -26,8 +26,10 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setUseDrweb(settings.value("useDrweb", true).toBool());
     distributor.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startDrwebDirEye);
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startKasperDirEye);
     connect(&workThread, &QThread::started, &distributor, &Distributor::startTempDirEye);
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
 
     updateUi();
 
@@ -110,7 +112,11 @@ void Widget::updateUi() {
     ui->drwebFileLE->setEnabled(distributor.isDrwebUse());
     ui->drwebFileButton->setEnabled(distributor.isDrwebUse());
 
-    ui->scanFilesNbLabel->setText(QString::number(distributor.getProcessedFilesNb()));
+    ui->scanFilesNbLabel->setText(QString::number(distributor.getProcessedFilesNb())
+                                  + " ("
+                                  + ((distributor.getProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
+                                                                                     QString(QString::number(distributor.getProcessedFilesSize(), 'f', 4) + " Мб"))
+                                  + ")");
     ui->queueSizeLabel->setText(QString::number(distributor.getQueueSize()));
 }
 
