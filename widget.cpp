@@ -7,7 +7,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     setLayout(ui->mainLayout);
     setWindowTitle("Investigator " + VERSION);
 
-    log("Программа запущена");
+    log(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") + "\tПрограмма запущена");
     setWindowIcon(QIcon(":/investigator.ico"));
 
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -16,7 +16,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     connect(&distributor, &Distributor::log, this, &Widget::log);
 
     distributor.setWatchDir(settings.value("watchDir", "C:/").toString());
-    distributor.setTempDir(settings.value("tempDir", "C:/").toString());
+    distributor.setInvestigatorDir(settings.value("investigatorDir", "C:/").toString());
     distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
 
@@ -26,8 +26,6 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setUseDrweb(settings.value("useDrweb", true).toBool());
     distributor.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startDrwebDirEye);
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startKasperDirEye);
     connect(&workThread, &QThread::started, &distributor, &Distributor::startTempDirEye);
     connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
 
@@ -41,7 +39,7 @@ Widget::~Widget() {
     settings.setValue("geometry", saveGeometry());
 
     settings.setValue("watchDir", distributor.getWatchDir());
-    settings.setValue("tempDir", distributor.getTempDir());
+    settings.setValue("investigatorDir", distributor.getInvestigatorDir());
     settings.setValue("cleanDir", distributor.getCleanDir());
     settings.setValue("dangerDir", distributor.getDangerDir());
 
@@ -63,8 +61,8 @@ void Widget::on_watchDirButton_clicked() {
 }
 
 void Widget::on_tempDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для временных файлов"), distributor.getTempDir());
-    distributor.setTempDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для временных файлов программы"), distributor.getInvestigatorDir());
+    distributor.setInvestigatorDir(dir);
 }
 
 void Widget::on_cleanDirButton_clicked() {
@@ -92,13 +90,13 @@ void Widget::on_clearButton_clicked() {
 }
 
 void Widget::log(const QString &s) {
-    QString out = QTime::currentTime().toString() + QString(4, ' ') + s;
-    ui->logPTE->appendPlainText(out);
+    //QString out = QTime::currentTime().toString() + QString(4, ' ') + s;
+    ui->logPTE->appendPlainText(s);
 }
 
 void Widget::updateUi() {
     ui->watchDirLE->setText(distributor.getWatchDir());
-    ui->tempDirLE->setText(distributor.getTempDir());
+    ui->investigatorDirLE->setText(distributor.getInvestigatorDir());
     ui->cleanDirLE->setText(distributor.getCleanDir());
     ui->dangerousDirLE->setText(distributor.getDangerDir());
 
@@ -112,11 +110,16 @@ void Widget::updateUi() {
     ui->drwebFileLE->setEnabled(distributor.isDrwebUse());
     ui->drwebFileButton->setEnabled(distributor.isDrwebUse());
 
-    ui->scanFilesNbLabel->setText(QString::number(distributor.getProcessedFilesNb())
-                                  + " ("
-                                  + ((distributor.getProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
-                                                                                     QString(QString::number(distributor.getProcessedFilesSize(), 'f', 4) + " Мб"))
-                                  + ")");
+    ui->scanFilesNbLabel->setText("Kasper: " + QString::number(distributor.getKasperProcessedFilesNb()) +
+                                  " (" +
+                                  ((distributor.getKasperProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getKasperProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
+                                                                                         QString(QString::number(distributor.getKasperProcessedFilesSize(), 'f', 4) + " Мб")) +
+                                  "),   " +
+                                  "DrWeb: " + QString::number(distributor.getDrwebProcessedFilesNb()) +
+                                              " (" +
+                                              ((distributor.getDrwebProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getDrwebProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
+                                                                                                    QString(QString::number(distributor.getDrwebProcessedFilesSize(), 'f', 4) + " Мб")) +
+                                              ")");
     ui->queueSizeLabel->setText(QString::number(distributor.getQueueSize()));
 }
 

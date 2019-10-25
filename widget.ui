@@ -141,7 +141,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="tempDirLE">
+       <widget class="QLineEdit" name="investigatorDirLE">
         <property name="font">
          <font>
           <family>Courier New</family>

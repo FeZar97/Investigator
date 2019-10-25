@@ -2,6 +2,7 @@
 #define DISTRIBUTOR_H
 
 #include <QObject>
+#include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
@@ -19,11 +20,12 @@
 
 using namespace QtConcurrent;
 
-#define VERSION tr("#19.10.23/10:07#2")
+#define     VERSION             tr("#19.10.24/17:16#5")
 
-#define REPORT_DIR_NAME  "reports"
-#define KASPER_DIR_NAME  "kasper"
-#define DRWEB_DIR_NAME   "drweb"
+#define     TEMP_DIR_NAME       "temp"
+#define     REPORT_DIR_NAME     "reports"
+#define     KASPER_DIR_NAME     "kasper"
+#define     DRWEB_DIR_NAME      "drweb"
 
 class ProcessObject {
 
@@ -32,7 +34,7 @@ public:
     ProcessObject(QFileInfo _fileInfo,
                   bool _useKasper, bool _useDrweb,
                   QString _kasperPath, QString _drwebPath,
-                  QString _tempDir, QString _cleanDir, QString _dangerDir) {
+                  QString _investigatorDir, QString _cleanDir, QString _dangerDir) {
         fileInfo = _fileInfo;
         fileSize = QFileInfo(_fileInfo.absoluteFilePath()).size() / (1024. * 1024.);
 
@@ -41,11 +43,12 @@ public:
         useDrweb = _useDrweb;
         drwebPath = _drwebPath;
 
-        tempDir = _tempDir;
+        investigatorDir = _investigatorDir;
 
-        reportDir = tempDir + "/" + REPORT_DIR_NAME;
-        kasperDir = tempDir + "/" + KASPER_DIR_NAME;
-        drwebDir =  tempDir + "/" + DRWEB_DIR_NAME;
+        tempDir   = investigatorDir + "/" + TEMP_DIR_NAME;
+        reportDir = investigatorDir + "/" + REPORT_DIR_NAME;
+        kasperDir = investigatorDir + "/" + KASPER_DIR_NAME;
+        drwebDir  = investigatorDir + "/" + DRWEB_DIR_NAME;
 
         cleanDir = _cleanDir;
         dangerDir = _dangerDir;
@@ -62,8 +65,9 @@ public:
     bool useDrweb;
     QString drwebPath;
 
-    QString tempDir;
+    QString investigatorDir;
 
+    QString tempDir;
     QString reportDir;
     QString kasperDir;
     QString drwebDir;
@@ -81,30 +85,34 @@ class Distributor : public QObject
 
     bool readyFlag = true;
 
-    QString watchDir;
-    QString tempDir;
-    QString reportDir;
-    QString cleanDir;
-    QString dangerDir;
+    QString investigatorDir;
 
+    QString watchDir;
+    QFileSystemWatcher watchDirEye;
+    QFileInfoList filesInWatchDir;
+
+    QString tempDir;
+    QFileSystemWatcher tempDirEye;
+    QFileInfoList filesInTempDir;
+
+    QString reportDir;
+
+    QString kasperDir;
+    int kasperReportIdx{0};
+    int kasperProcessedFilesNb{0};
+    double kasperProcessedFilesSizeMb{0};
     QString kasperFilePath;
     bool useKasper;
 
+    QString drwebDir;
+    int drwebReportIdx{0};
+    int drwebProcessedFilesNb{0};
+    double drwebProcessedFilesSizeMb{0};
     QString drwebFilePath;
     bool useDrweb;
 
-    QFileSystemWatcher watchDirEye;
-    QFileSystemWatcher tempDirEye;
-    QFileSystemWatcher kasperDirEye;
-    QFileSystemWatcher drwebDirEye;
-
-    QFileInfoList filesInWatchDir;
-    QFileInfoList filesInTempDir;
-    QFileInfoList filesInKasperDir;
-    QFileInfoList filesInDrwebDir;
-
-    int processedFilesNb;
-    double processedFilesSizeMb;
+    QString cleanDir;
+    QString dangerDir;
 
 public:
     explicit Distributor(QObject *parent = nullptr);
@@ -115,8 +123,8 @@ public:
     void setWatchDir(QString _watchDir);
     QString getWatchDir();
 
-    void setTempDir(QString _tempDir);
-    QString getTempDir();
+    void setInvestigatorDir(QString _investigatorDir);
+    QString getInvestigatorDir();
 
     void setCleanDir(QString _cleanDir);
     QString getCleanDir();
@@ -144,27 +152,21 @@ public:
     void stopTempDirEye();
     void onTempDirChange(const QString &path);
 
-    void startKasperDirEye();
-    void stopKasperDirEye();
-    void onKasperDirChange(const QString &path);
-
-    void startDrwebDirEye();
-    void stopDrwebDirEye();
-    void onDrwebDirChange(const QString &path);
-
 // RUN INFO
-    int getProcessedFilesNb();
-    double getProcessedFilesSize();
+    int getKasperProcessedFilesNb();
+    double getKasperProcessedFilesSize();
+    int getDrwebProcessedFilesNb();
+    double getDrwebProcessedFilesSize();
     int getQueueSize();
 
 // CORE
-    static ProcessObject processByKasper(ProcessObject obj);
-    static ProcessObject processByDrweb(ProcessObject obj);
-    static ProcessObject processResults(ProcessObject obj);
-    void processDangerFiles(QList<ProcessObject> resultObjects);
+    void processDirByKasper(QString dirToProcess);
+    void processDirByDrweb(QString dirToProcess);
+
+// oth
+    void setReadyFlag(bool state);
 
 signals:
-    void checkFile();
     void updateUi();
     void log(QString _message);
 };
