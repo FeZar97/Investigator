@@ -12,11 +12,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        avwrapper.cpp \
         distributor.cpp \
         main.cpp \
         widget.cpp
 
 HEADERS += \
+        avwrapper.h \
         distributor.h \
         widget.h
 

@@ -7,9 +7,8 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     setLayout(ui->mainLayout);
     setWindowTitle("Investigator " + VERSION);
 
-    log(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") + "\tПрограмма запущена");
+    log(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss") + " " + "Программа запущена");
     setWindowIcon(QIcon(":/investigator.ico"));
-
     restoreGeometry(settings.value("geometry").toByteArray());
 
     connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
@@ -20,13 +19,12 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
 
-    distributor.setUseKasper(settings.value("useKasper", true).toBool());
-    distributor.setKasperFile(settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
+    distributor.setAVUse(AV::KASPER, settings.value("useKasper", true).toBool());
+    distributor.setAVFile(AV::KASPER, settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
 
-    distributor.setUseDrweb(settings.value("useDrweb", true).toBool());
-    distributor.setDrwebFile(settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
+    distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
+    distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startTempDirEye);
     connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
 
     updateUi();
@@ -43,11 +41,11 @@ Widget::~Widget() {
     settings.setValue("cleanDir", distributor.getCleanDir());
     settings.setValue("dangerDir", distributor.getDangerDir());
 
-    settings.setValue("kasperFilePath", distributor.getKasperFile());
-    settings.setValue("useKasper", distributor.isKasperUse());
+    settings.setValue("kasperFilePath", distributor.getAVFile(AV::KASPER));
+    settings.setValue("useKasper", distributor.getAVUse(AV::KASPER));
 
-    settings.setValue("drwebFilePath", distributor.getDrwebFile());
-    settings.setValue("useDrweb", distributor.isDrwebUse());
+    settings.setValue("drwebFilePath", distributor.getAVFile(AV::DRWEB));
+    settings.setValue("useDrweb", distributor.getAVUse(AV::DRWEB));
 
     workThread.quit();
     workThread.wait();
@@ -76,13 +74,13 @@ void Widget::on_dangerousDirButton_clicked() {
 }
 
 void Widget::on_kasperFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Kaspersky"), distributor.getKasperFile(), tr("*.com"));
-    distributor.setKasperFile(filePath);
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор исполняемого файла Kaspersky"), distributor.getAVFile(AV::KASPER), tr("*.com"));
+    distributor.setAVFile(AV::KASPER, filePath);
 }
 
 void Widget::on_drwebFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор файла Drweb"), distributor.getDrwebFile(), tr("*.exe"));
-    distributor.setDrwebFile(filePath);
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор исполняемого файла Drweb"), distributor.getAVFile(AV::DRWEB), tr("*.exe"));
+    distributor.setAVFile(AV::DRWEB, filePath);
 }
 
 void Widget::on_clearButton_clicked() {
@@ -100,33 +98,36 @@ void Widget::updateUi() {
     ui->cleanDirLE->setText(distributor.getCleanDir());
     ui->dangerousDirLE->setText(distributor.getDangerDir());
 
-    ui->kasperFileLE->setText(distributor.getKasperFile());
-    ui->kasperCB->setChecked(distributor.isKasperUse());
-    ui->kasperFileLE->setEnabled(distributor.isKasperUse());
-    ui->kasperFileButton->setEnabled(distributor.isKasperUse());
+    ui->kasperFileLE->setText(distributor.getAVFile(AV::KASPER));
+    ui->kasperCB->setChecked(distributor.getAVUse(AV::KASPER));
+    ui->kasperFileLE->setEnabled(distributor.getAVUse(AV::KASPER));
+    ui->kasperFileButton->setEnabled(distributor.getAVUse(AV::KASPER));
 
-    ui->drwebFileLE->setText(distributor.getDrwebFile());
-    ui->drwebCB->setChecked(distributor.isDrwebUse());
-    ui->drwebFileLE->setEnabled(distributor.isDrwebUse());
-    ui->drwebFileButton->setEnabled(distributor.isDrwebUse());
+    ui->drwebFileLE->setText(distributor.getAVFile(AV::DRWEB));
+    ui->drwebCB->setChecked(distributor.getAVUse(AV::DRWEB));
+    ui->drwebFileLE->setEnabled(distributor.getAVUse(AV::DRWEB));
+    ui->drwebFileButton->setEnabled(distributor.getAVUse(AV::DRWEB));
 
-    ui->scanFilesNbLabel->setText("Kasper: " + QString::number(distributor.getKasperProcessedFilesNb()) +
+    ui->scanFilesNbLabel->setText("Kasper: " + QString::number(distributor.getAVProcessedFilesNb(AV::KASPER)) +
                                   " (" +
-                                  ((distributor.getKasperProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getKasperProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
-                                                                                         QString(QString::number(distributor.getKasperProcessedFilesSize(), 'f', 4) + " Мб")) +
+                                  ((distributor.getAVProcessedFilesSize(AV::KASPER) > 1023.) ? QString(QString::number(distributor.getAVProcessedFilesSize(AV::KASPER) / 1024., 'f', 4) + " Гб") :
+                                                                                         QString(QString::number(distributor.getAVProcessedFilesSize(AV::KASPER), 'f', 4) + " Мб")) +
                                   "),   " +
-                                  "DrWeb: " + QString::number(distributor.getDrwebProcessedFilesNb()) +
-                                              " (" +
-                                              ((distributor.getDrwebProcessedFilesSize() > 1023.) ? QString(QString::number(distributor.getDrwebProcessedFilesSize() / 1024., 'f', 4) + " Гб") :
-                                                                                                    QString(QString::number(distributor.getDrwebProcessedFilesSize(), 'f', 4) + " Мб")) +
-                                              ")");
-    ui->queueSizeLabel->setText(QString::number(distributor.getQueueSize()));
+
+                                  "DrWeb: " + QString::number(distributor.getAVProcessedFilesNb(AV::DRWEB)) +
+                                  " (" +
+                                  ((distributor.getAVProcessedFilesSize(AV::DRWEB) > 1023.) ? QString(QString::number(distributor.getAVProcessedFilesSize(AV::DRWEB) / 1024., 'f', 4) + " Гб") :
+                                                                                        QString(QString::number(distributor.getAVProcessedFilesSize(AV::DRWEB), 'f', 4) + " Мб")) +
+                                  ")");
+
+    ui->queueSizeLabel->setText("Kasper: " + QString::number(distributor.getAVInprogressFilesNb(AV::KASPER)) + ", " +
+                                "DrWeb: " + QString::number(distributor.getAVInprogressFilesNb(AV::DRWEB)));
 }
 
 void Widget::on_kasperCB_clicked(bool isUsed) {
-    distributor.setUseKasper(isUsed);
+    distributor.setAVUse(AV::KASPER, isUsed);
 }
 
 void Widget::on_drwebCB_clicked(bool isUsed) {
-    distributor.setUseDrweb(isUsed);
+    distributor.setAVUse(AV::DRWEB, isUsed);
 }
