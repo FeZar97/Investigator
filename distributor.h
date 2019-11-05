@@ -1,12 +1,11 @@
 #ifndef DISTRIBUTOR_H
 #define DISTRIBUTOR_H
 
-#include <QObject>
 #include "avwrapper.h"
 
 Q_DECLARE_METATYPE(QList<AVRecord>)
 
-#define     VERSION             tr("#19.10.29/#1")
+#define     VERSION              "#19.11.05/#2"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -36,7 +35,7 @@ class Distributor : public QObject
     QString cleanDir;
     QString dangerDir;
 
-    QList<AVRecord> recordBase;
+    AVBase recordBase;
 
 public:
     explicit Distributor(QObject *parent = nullptr);
@@ -71,7 +70,6 @@ public:
     void onWatchDirChange(const QString &path);
 
 // CORE
-    void tryProcessing();
     void sortingProcessedFiles();
     void updateBase(QList<AVRecord> list);
 

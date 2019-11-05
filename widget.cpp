@@ -5,17 +5,14 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     ui->setupUi(this);
     setLayout(ui->mainLayout);
-    setWindowTitle("Investigator " + VERSION);
+    setWindowTitle(QString("Investigator ") + VERSION);
 
-    log(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss") + " " + "Программа запущена");
+    log(currentDateTime() + " Программа запущена.");
     setWindowIcon(QIcon(":/investigator.ico"));
     restoreGeometry(settings.value("geometry").toByteArray());
 
-    connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
-    connect(&distributor, &Distributor::log, this, &Widget::log);
-
     distributor.setWatchDir(settings.value("watchDir", "C:/").toString());
-    distributor.setInvestigatorDir(settings.value("investigatorDir", "C:/").toString());
+    distributor.setInvestigatorDir(settings.value("investigatorDir", QDir::tempPath()).toString());
     distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
 
@@ -25,27 +22,30 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
     distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
+    connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
+    connect(&distributor, &Distributor::log, this, &Widget::log);
 
-    updateUi();
+    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
 
     distributor.moveToThread(&workThread);
     workThread.start();
+
+    updateUi();
 }
 
 Widget::~Widget() {
-    settings.setValue("geometry", saveGeometry());
+    settings.setValue("geometry",        saveGeometry());
 
-    settings.setValue("watchDir", distributor.getWatchDir());
+    settings.setValue("watchDir",        distributor.getWatchDir());
     settings.setValue("investigatorDir", distributor.getInvestigatorDir());
-    settings.setValue("cleanDir", distributor.getCleanDir());
-    settings.setValue("dangerDir", distributor.getDangerDir());
+    settings.setValue("cleanDir",        distributor.getCleanDir());
+    settings.setValue("dangerDir",       distributor.getDangerDir());
 
-    settings.setValue("kasperFilePath", distributor.getAVFile(AV::KASPER));
-    settings.setValue("useKasper", distributor.getAVUse(AV::KASPER));
+    settings.setValue("kasperFilePath",  distributor.getAVFile(AV::KASPER));
+    settings.setValue("useKasper",       distributor.getAVUse(AV::KASPER));
 
-    settings.setValue("drwebFilePath", distributor.getAVFile(AV::DRWEB));
-    settings.setValue("useDrweb", distributor.getAVUse(AV::DRWEB));
+    settings.setValue("drwebFilePath",   distributor.getAVFile(AV::DRWEB));
+    settings.setValue("useDrweb",        distributor.getAVUse(AV::DRWEB));
 
     workThread.quit();
     workThread.wait();
@@ -54,32 +54,32 @@ Widget::~Widget() {
 }
 
 void Widget::on_watchDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Директория для слежения"), distributor.getWatchDir());
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для мониторинга"), distributor.getWatchDir());
     distributor.setWatchDir(dir);
 }
 
 void Widget::on_tempDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для временных файлов программы"), distributor.getInvestigatorDir());
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для временных файлов программы"), distributor.getInvestigatorDir());
     distributor.setInvestigatorDir(dir);
 }
 
 void Widget::on_cleanDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для чистых файлов"), distributor.getCleanDir());
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для чистых файлов"), distributor.getCleanDir());
     distributor.setCleanDir(dir);
 }
 
 void Widget::on_dangerousDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Выбор директории для зараженных файлов"), distributor.getDangerDir());
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для зараженных файлов"), distributor.getDangerDir());
     distributor.setDangerDir(dir);
 }
 
 void Widget::on_kasperFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор исполняемого файла Kaspersky"), distributor.getAVFile(AV::KASPER), tr("*.com"));
+    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::KASPER)), distributor.getAVFile(AV::KASPER), tr("*.com"));
     distributor.setAVFile(AV::KASPER, filePath);
 }
 
 void Widget::on_drwebFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Выбор исполняемого файла Drweb"), distributor.getAVFile(AV::DRWEB), tr("*.exe"));
+    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::DRWEB)), distributor.getAVFile(AV::DRWEB), tr("*.exe"));
     distributor.setAVFile(AV::DRWEB, filePath);
 }
 
@@ -88,7 +88,6 @@ void Widget::on_clearButton_clicked() {
 }
 
 void Widget::log(const QString &s) {
-    //QString out = QTime::currentTime().toString() + QString(4, ' ') + s;
     ui->logPTE->appendPlainText(s);
 }
 

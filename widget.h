@@ -3,14 +3,20 @@
 
 #include <QWidget>
 #include <QFileDialog>
-#include <QTime>
 #include <QIcon>
 #include <QMenu>
-#include <QDebug>
 #include <QSettings>
 
 #include "distributor.h"
 
+/*
+ * TODO
+ * 0. default temp path
+ * 1. start/stop buttons
+ * 2. settings window
+ * 3. auto-creating temp subdirs on every iterations
+ * 4. behavior with old report, that exists when program started
+ */
 
 namespace Ui {
     class Widget;

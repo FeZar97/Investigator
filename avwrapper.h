@@ -11,13 +11,16 @@
 #include <QList>
 #include <QFile>
 #include <QFileInfo>
-#include <QProcess>
 #include <QTextStream>
 
 enum class AV {
+    NONE,
     KASPER,
     DRWEB
 };
+
+static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
+static QDir::Filters usingFilters = QDir::Files | QDir::Hidden | QDir::NoSymLinks;
 
 struct AVRecord {
     QDateTime m_timeMark;
@@ -26,21 +29,29 @@ struct AVRecord {
     QString m_description;
     QString m_reportName;
 
+    AVRecord();
     AVRecord(QDateTime dt, AV av, QString fileName, QString description, QString reportName);
-    AVRecord(AVRecord &record);
+    AVRecord(const AVRecord &record);
 
     QString toString();
 
-    AVRecord& operator=(AVRecord &record);
+    AVRecord& operator=(const AVRecord &record);
 };
 
 class AVBase {
     QList<QPair<AVRecord, AVRecord>> base;
-public:
 
+public:
     int findFileName(QString fileName);
-    void add(AVRecord record);
-    void add(QPair<AVRecord, AVRecord> record);
+
+    void add(AVRecord& record);
+    void add(QList<AVRecord>& recordList);
+    void add(QPair<AVRecord, AVRecord>& record);
+
+    void remove(QString fileName);
+    void remove(int idx);
+
+    int size();
 };
 
 void moveFiles(QString sourceDir, QString destinationDir);
@@ -90,7 +101,6 @@ public:
     explicit AVWrapper(QObject *parent = nullptr);
 
     void setType(AV type);
-    static QString getName(AV type);
 
     void setUsage(bool newState);
     bool getUsage();
@@ -141,5 +151,8 @@ signals:
     void finalProcessing();
     void updateUi();
 };
+
+QString getName(AV type);
+QString currentDateTime();
 
 #endif // AVWRAPPER_H

@@ -1,6 +1,6 @@
 #include "distributor.h"
 
-Distributor::Distributor(QObject *parent) : QObject(parent){
+Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     qRegisterMetaType<QList<AVRecord>>("QList<AVRecord>");
 
@@ -18,12 +18,12 @@ Distributor::Distributor(QObject *parent) : QObject(parent){
     kasperWrapper.setIndicators("; Completion:       	100%",
                                 "; ------------------",
                                 ";  --- Statistics ---",
-                                QStringList() << "running" << "completed");
+                                QStringList() << "running" << "completed" << "password protected");
 
     drwebWrapper.setIndicators("Scan session completed",
                                "The mask was translated to \"\" filter",
                                "WARNING! Restore points directories have not been scanned",
-                               QStringList());
+                               QStringList() << "password protected");
 
     configureAV();
 
@@ -36,6 +36,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent){
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
 
     connect(&kasperWrapper, &AVWrapper::finalProcessing,            &drwebWrapper,  &AVWrapper::process);
+    connect(&drwebWrapper,  &AVWrapper::finalProcessing,            this,           &Distributor::sortingProcessedFiles);
 
     connect(&kasperWrapper, &AVWrapper::updateList,                 this,           &Distributor::updateBase);
     connect(&drwebWrapper,  &AVWrapper::updateList,                 this,           &Distributor::updateBase);
@@ -52,7 +53,7 @@ Distributor::~Distributor() {
 void Distributor::setWatchDir(QString _watchDir) {
 
     if(_watchDir.isEmpty()) {
-        log("watchDir не выбрана! Изменения не произведены.");
+        log(currentDateTime() + " " + "Не найдена директория для мониторинга.");
     } else {
         watchDir = _watchDir;
 
@@ -68,26 +69,23 @@ QString Distributor::getWatchDir() {
 void Distributor::setInvestigatorDir(QString _investigatorDir) {
 
     if(_investigatorDir.isEmpty()) {
-        log("investigatorDir не выбрана! Изменения не произведены.");
+        log(currentDateTime() + " " + "Не найдена директория для временных файлов.");
     } else {
         investigatorDir = _investigatorDir;
 
-        // start folder, it`s equal to temp dir, secon dir after watch dir
         inputDir  = investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME;
+        QDir().mkpath(inputDir);
+        QDir().mkpath(investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
-        QDir(investigatorDir).mkdir(KASPER_DIR_NAME);
-        QDir(investigatorDir + "/" + KASPER_DIR_NAME).mkdir(INPUT_DIR_NAME);
-        QDir(investigatorDir + "/" + KASPER_DIR_NAME).mkdir(OUTPUT_DIR_NAME);
+        QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
+        QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
-        QDir(investigatorDir).mkdir(DRWEB_DIR_NAME);
-        QDir(investigatorDir + "/" + DRWEB_DIR_NAME).mkdir(INPUT_DIR_NAME);
-        QDir(investigatorDir + "/" + DRWEB_DIR_NAME).mkdir(OUTPUT_DIR_NAME);
-
-        QDir(investigatorDir).mkdir(REPORT_DIR_NAME);
-        QDir(investigatorDir).mkdir(PROCESSED_DIR_NAME);
 
         outputDir = investigatorDir + "/" + PROCESSED_DIR_NAME;
+        QDir().mkpath(outputDir);
+
         reportDir = investigatorDir + "/" + REPORT_DIR_NAME;
+        QDir().mkpath(reportDir);
 
         configureAV();
     }
@@ -100,7 +98,7 @@ QString Distributor::getInvestigatorDir() {
 
 void Distributor::setCleanDir(QString _cleanDir) {
     if(_cleanDir.isEmpty()) {
-        log("cleanDir не выбрана! Изменения не произведены.");
+        log(currentDateTime() + " " + "Не найдена директория для чистых файлов.");
     } else {
         cleanDir = _cleanDir;
     }
@@ -113,7 +111,7 @@ QString Distributor::getCleanDir() {
 
 void Distributor::setDangerDir(QString _dangerDir) {
     if(_dangerDir.isEmpty()) {
-        log("dangerDir не выбрана! Изменения не произведены.");
+        log(currentDateTime() + " " + "Не найдена директория для зараженных файлов.");
     } else {
         dangerDir = _dangerDir;
     }
@@ -127,7 +125,7 @@ QString Distributor::getDangerDir() {
 void Distributor::setAVFile(AV AVName, QString AVFilePath) {
 
     if(AVFilePath.isEmpty()) {
-        log("AVFilePath не выбран! Изменения не произведены.");
+        log(currentDateTime() + " " + QString("Не найдена исполняемый файл антивируса %1.").arg(getName(AVName)));
         return;
     }
 
@@ -138,6 +136,9 @@ void Distributor::setAVFile(AV AVName, QString AVFilePath) {
 
         case AV::DRWEB:
             drwebWrapper.setAVPath(AVFilePath);
+            break;
+
+        default:
             break;
     }
 
@@ -151,8 +152,10 @@ QString Distributor::getAVFile(AV AVName) {
 
         case AV::DRWEB:
             return drwebWrapper.getAVPath();
+
+        default:
+            return "";
     }
-    return "";
 }
 
 void Distributor::setAVUse(AV AVName, bool use) {
@@ -163,6 +166,9 @@ void Distributor::setAVUse(AV AVName, bool use) {
 
         case AV::DRWEB:
             drwebWrapper.setUsage(use);
+            break;
+
+        default:
             break;
     }
     updateUi();
@@ -175,8 +181,10 @@ bool Distributor::getAVUse(AV AVName) {
 
         case AV::DRWEB:
             return drwebWrapper.getUsage();
+
+        default:
+            return true;
     }
-    return true;
 }
 
 int Distributor::getAVProcessedFilesNb(AV AVName) {
@@ -186,8 +194,10 @@ int Distributor::getAVProcessedFilesNb(AV AVName) {
 
         case AV::DRWEB:
             return drwebWrapper.getProcessedFilesNb();
+
+        default:
+            return 0;
     }
-    return 0;
 }
 
 int Distributor::getAVInprogressFilesNb(AV AVName) {
@@ -197,8 +207,10 @@ int Distributor::getAVInprogressFilesNb(AV AVName) {
 
         case AV::DRWEB:
             return drwebWrapper.getInprogressFilesNb();
+
+        default:
+            return 0;
     }
-    return 0;
 }
 
 double Distributor::getAVProcessedFilesSize(AV AVName) {
@@ -208,19 +220,21 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
 
         case AV::DRWEB:
             return drwebWrapper.getProcessedFilesSize();
+
+        default:
+            return 0;
     }
-    return 0;
 }
 
 void Distributor::configureAV() {
-    kasperWrapper.setInputFolder(investigatorDir    + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-    kasperWrapper.setProcessFolder(investigatorDir  + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    kasperWrapper.setOutputFolder(investigatorDir   + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME);
+    kasperWrapper.setInputFolder(investigatorDir   + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
+    kasperWrapper.setProcessFolder(investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+    kasperWrapper.setOutputFolder(investigatorDir  + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME);
     kasperWrapper.setReportFolder(reportDir);
 
     drwebWrapper.setInputFolder(investigatorDir   + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
     drwebWrapper.setProcessFolder(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    drwebWrapper.setOutputFolder(investigatorDir  + "/" + PROCESSED_DIR_NAME);
+    drwebWrapper.setOutputFolder(outputDir);
     drwebWrapper.setReportFolder(reportDir);
 }
 
@@ -232,7 +246,7 @@ void Distributor::startWatchDirEye() {
         if(watchDirEye.addPath(watchDir)) {
             onWatchDirChange("");
         } else {
-            log("Ошибка в пути " + watchDir);
+            log(currentDateTime() + " " + QString("Не выбрана директория для мониторинга."));
         }
     }
 }
@@ -242,19 +256,30 @@ void Distributor::onWatchDirChange(const QString &path) {
 
     moveFiles(watchDir, inputDir);
 
-    tryProcessing();
-}
-
-void Distributor::tryProcessing() {
-
     kasperWrapper.process();
 }
 
 void Distributor::sortingProcessedFiles() {
 
+    int idx;
+
+    if(!QDir(dangerDir).exists()) QDir().mkpath(dangerDir);
+    if(!QDir(cleanDir).exists())  QDir().mkpath(cleanDir);
+
+    foreach(QFileInfo avRecord, QDir(outputDir).entryInfoList(usingFilters)) {
+        idx = recordBase.findFileName(avRecord.fileName());
+        if(idx != -1) {
+            QFile::rename(avRecord.absoluteFilePath(), dangerDir + "/" + avRecord.fileName());
+            recordBase.remove(idx);
+        } else {
+            QFile::rename(avRecord.absoluteFilePath(), cleanDir + "/" + avRecord.fileName());
+        }
+    }
 }
 
 void Distributor::updateBase(QList<AVRecord> list){
+    recordBase.add(list);
+
     foreach(AVRecord avrec, list) {
         log(avrec.toString());
     }
