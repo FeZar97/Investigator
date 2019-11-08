@@ -15,14 +15,20 @@ SOURCES += \
         avwrapper.cpp \
         distributor.cpp \
         main.cpp \
+        settings.cpp \
+        statistics.cpp \
         widget.cpp
 
 HEADERS += \
         avwrapper.h \
         distributor.h \
+        settings.h \
+        statistics.h \
         widget.h
 
 FORMS += \
+        settings.ui \
+        statistics.ui \
         widget.ui
 
 # Default rules for deployment.
@@ -33,4 +39,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES +=
 
 RESOURCES += \
-    qrc.qrc
+    img.qrc

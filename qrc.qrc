@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>clear.png</file>
-        <file>folder.png</file>
-        <file>kasper.png</file>
-        <file>investigator.ico</file>
-        <file>drweb.jpg</file>
-    </qresource>
-</RCC>

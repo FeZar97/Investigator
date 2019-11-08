@@ -39,17 +39,20 @@ struct AVRecord {
 };
 
 class AVBase {
-    QList<QPair<AVRecord, AVRecord>> base;
+    QList<QPair<AVRecord, AVRecord>> m_base;
 
 public:
     int findFileName(QString fileName);
 
-    void add(AVRecord& record);
-    void add(QList<AVRecord>& recordList);
-    void add(QPair<AVRecord, AVRecord>& record);
+    void add(AVRecord* record);
+    void add(QPair<AVRecord, AVRecord>* record);
+    void add(AVBase& base);
 
     void remove(QString fileName);
     void remove(int idx);
+    void clear();
+
+    QPair<AVRecord, AVRecord>& operator[](int idx);
 
     int size();
 };
@@ -83,10 +86,15 @@ class AVWrapper : public QObject
     QString m_reportFolder;
 
     // statistics
+    AVBase m_avBase;
+    int m_dangerFileNb{0};
     int m_reportIdx{0};
     int m_processedFilesNb{0};
     int m_inprogressFilesNb{0};
     double m_processedFilesSizeMb{0.};
+
+    double m_processedLastFilesSizeMb{0.};
+    double m_currentProcessSpeed{0.};
 
     // execution arguments
     QStringList m_execArgs;
@@ -123,9 +131,13 @@ public:
     void setOutputFolder(QString outputFolder);
     QString getOutputFolder();
 
+    int getDangerFilesNb();
+    int getCurrentReportIdx();
     int getProcessedFilesNb();
     int getInprogressFilesNb();
     double getProcessedFilesSize();
+    double getAverageSpeed(qint64 workTime);
+    double getCurrentSpeed();
 
     void setExecArgs(QStringList execArgs);
     void addExecArgs(QStringList additionExecArgs);
@@ -147,7 +159,7 @@ public:
 
 signals:
     void log(QString message);
-    void updateList(QList<AVRecord> list);
+    void updateBase(AVBase& singleAVBase);
     void finalProcessing();
     void updateUi();
 };

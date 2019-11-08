@@ -2,7 +2,7 @@
 
 Distributor::Distributor(QObject *parent) : QObject(parent) {
 
-    qRegisterMetaType<QList<AVRecord>>("QList<AVRecord>");
+    qRegisterMetaType<AVBase>("AVBase");
 
     kasperWrapper.moveToThread(&kasperThread);
     drwebWrapper.moveToThread(&drwebThread);
@@ -38,8 +38,8 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     connect(&kasperWrapper, &AVWrapper::finalProcessing,            &drwebWrapper,  &AVWrapper::process);
     connect(&drwebWrapper,  &AVWrapper::finalProcessing,            this,           &Distributor::sortingProcessedFiles);
 
-    connect(&kasperWrapper, &AVWrapper::updateList,                 this,           &Distributor::updateBase);
-    connect(&drwebWrapper,  &AVWrapper::updateList,                 this,           &Distributor::updateBase);
+    connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
+    connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
 }
 
 Distributor::~Distributor() {
@@ -53,13 +53,10 @@ Distributor::~Distributor() {
 void Distributor::setWatchDir(QString _watchDir) {
 
     if(_watchDir.isEmpty()) {
-        log(currentDateTime() + " " + "Не найдена директория для мониторинга.");
+        log(currentDateTime() + " " + "Не найдена директория для слежения.");
     } else {
         watchDir = _watchDir;
-
-        startWatchDirEye();
     }
-    updateUi();
 }
 
 QString Distributor::getWatchDir() {
@@ -80,7 +77,6 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
         QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
         QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
-
         outputDir = investigatorDir + "/" + PROCESSED_DIR_NAME;
         QDir().mkpath(outputDir);
 
@@ -89,7 +85,6 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
 
         configureAV();
     }
-    updateUi();
 }
 
 QString Distributor::getInvestigatorDir() {
@@ -102,7 +97,6 @@ void Distributor::setCleanDir(QString _cleanDir) {
     } else {
         cleanDir = _cleanDir;
     }
-    updateUi();
 }
 
 QString Distributor::getCleanDir() {
@@ -115,7 +109,6 @@ void Distributor::setDangerDir(QString _dangerDir) {
     } else {
         dangerDir = _dangerDir;
     }
-    updateUi();
 }
 
 QString Distributor::getDangerDir() {
@@ -141,8 +134,6 @@ void Distributor::setAVFile(AV AVName, QString AVFilePath) {
         default:
             break;
     }
-
-    updateUi();
 }
 
 QString Distributor::getAVFile(AV AVName) {
@@ -171,7 +162,6 @@ void Distributor::setAVUse(AV AVName, bool use) {
         default:
             break;
     }
-    updateUi();
 }
 
 bool Distributor::getAVUse(AV AVName) {
@@ -184,6 +174,45 @@ bool Distributor::getAVUse(AV AVName) {
 
         default:
             return true;
+    }
+}
+
+int Distributor::getAVDangerFilesNb(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getDangerFilesNb();
+
+        case AV::DRWEB:
+            return drwebWrapper.getDangerFilesNb();
+
+        default:
+            return 0;
+    }
+}
+
+int Distributor::getAVCurrentReportIdx(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getCurrentReportIdx();
+
+        case AV::DRWEB:
+            return drwebWrapper.getCurrentReportIdx();
+
+        default:
+            return 0;
+    }
+}
+
+int Distributor::getAVQueueFilesNb(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return QDir(investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
+
+        case AV::DRWEB:
+            return QDir(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
+
+        default:
+            return 0;
     }
 }
 
@@ -239,48 +268,89 @@ void Distributor::configureAV() {
 }
 
 void Distributor::startWatchDirEye() {
-    if(!watchDirEye.directories().isEmpty())
-        watchDirEye.removePaths(watchDirEye.directories());
 
     if(!watchDir.isEmpty()) {
         if(watchDirEye.addPath(watchDir)) {
+            startTime = QDateTime::currentDateTime();
+            m_isProcessing = true;
+            log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(watchDir));
             onWatchDirChange("");
         } else {
-            log(currentDateTime() + " " + QString("Не выбрана директория для мониторинга."));
+            log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(watchDir));
         }
     }
+    updateUi();
+}
+
+void Distributor::stopWatchDirEye() {
+    if(!watchDirEye.directories().isEmpty()) {
+        m_isProcessing = false;
+        endTime = QDateTime::currentDateTime();
+        log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(watchDir));
+        watchDirEye.removePaths(watchDirEye.directories());
+    }
+    updateUi();
 }
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
-
     moveFiles(watchDir, inputDir);
-
     kasperWrapper.process();
 }
 
 void Distributor::sortingProcessedFiles() {
-
     int idx;
 
     if(!QDir(dangerDir).exists()) QDir().mkpath(dangerDir);
     if(!QDir(cleanDir).exists())  QDir().mkpath(cleanDir);
 
     foreach(QFileInfo avRecord, QDir(outputDir).entryInfoList(usingFilters)) {
-        idx = recordBase.findFileName(avRecord.fileName());
+        idx = mainBase.findFileName(avRecord.fileName());
         if(idx != -1) {
             QFile::rename(avRecord.absoluteFilePath(), dangerDir + "/" + avRecord.fileName());
-            recordBase.remove(idx);
+            mainBase.remove(idx);
         } else {
             QFile::rename(avRecord.absoluteFilePath(), cleanDir + "/" + avRecord.fileName());
         }
     }
 }
 
-void Distributor::updateBase(QList<AVRecord> list){
-    recordBase.add(list);
+void Distributor::updateBase(AVBase& singleAVBase){
+    mainBase.add(singleAVBase);
+}
 
-    foreach(AVRecord avrec, list) {
-        log(avrec.toString());
+qint64 Distributor::getWorkTimeInSecs() {
+    if(m_isProcessing)
+        endTime = QDateTime::currentDateTime();
+    return startTime.secsTo(endTime);
+}
+
+bool Distributor::isInProcessing(){
+    return m_isProcessing;
+}
+
+double Distributor::getAVAverageSpeed(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getAverageSpeed(getWorkTimeInSecs());
+
+        case AV::DRWEB:
+            return drwebWrapper.getAverageSpeed(getWorkTimeInSecs());
+
+        default:
+            return 0;
+    }
+}
+
+double Distributor::getAVCurrentSpeed(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getCurrentSpeed();
+
+        case AV::DRWEB:
+            return drwebWrapper.getCurrentSpeed();
+
+        default:
+            return 0;
     }
 }

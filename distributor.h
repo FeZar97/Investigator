@@ -5,7 +5,7 @@
 
 Q_DECLARE_METATYPE(QList<AVRecord>)
 
-#define     VERSION              "#19.11.05/#3"
+#define     VERSION               "#7.11/1740"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -18,11 +18,16 @@ class Distributor : public QObject
 {
     Q_OBJECT
 
+    bool m_isProcessing;
+
     AVWrapper kasperWrapper;
     QThread kasperThread;
 
     AVWrapper drwebWrapper;
     QThread drwebThread;
+
+    QDateTime startTime;
+    QDateTime endTime;
 
     QFileSystemWatcher watchDirEye;
 
@@ -35,13 +40,13 @@ class Distributor : public QObject
     QString cleanDir;
     QString dangerDir;
 
-    AVBase recordBase;
+    AVBase mainBase;
 
 public:
     explicit Distributor(QObject *parent = nullptr);
     ~Distributor();
 
-// settings
+// SETTINGS
     void setWatchDir(QString _watchDir);
     QString getWatchDir();
 
@@ -59,19 +64,31 @@ public:
     QString getAVFile(AV AVName);
     void setAVUse(AV AVName, bool use);
     bool getAVUse(AV AVName);
+    int getAVDangerFilesNb(AV AVName);
+    int getAVCurrentReportIdx(AV AVName);
+    int getAVQueueFilesNb(AV AVName);
     int getAVProcessedFilesNb(AV AVName);
     int getAVInprogressFilesNb(AV AVName);
     double getAVProcessedFilesSize(AV AVName);
+    double getAVAverageSpeed(AV AVName);
+    double getAVCurrentSpeed(AV AVName);
 
     void configureAV();
 
-// EVENTS
+// CONTROL
     void startWatchDirEye();
+    void stopWatchDirEye();
+
+// EVENTS
     void onWatchDirChange(const QString &path);
 
 // CORE
     void sortingProcessedFiles();
-    void updateBase(QList<AVRecord> list);
+    void updateBase(AVBase& singleAVBase);
+
+// OTHER
+    qint64 getWorkTimeInSecs();
+    bool isInProcessing();
 
 signals:
     void updateUi();

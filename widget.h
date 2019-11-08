@@ -2,12 +2,12 @@
 #define WIDGET_H
 
 #include <QWidget>
-#include <QFileDialog>
 #include <QIcon>
 #include <QMenu>
 #include <QSettings>
 
-#include "distributor.h"
+#include "settings.h"
+#include "statistics.h"
 
 /*
  * TODO
@@ -16,6 +16,7 @@
  * 2. settings window
  * 3. auto-creating temp subdirs on every iterations
  * 4. behavior with old report, that exists when program started
+ * 5. individual window to setting and statistics
  */
 
 namespace Ui {
@@ -28,31 +29,27 @@ class Widget : public QWidget {
 
 public:
     explicit Widget(QWidget *parent = nullptr);
-    ~Widget();
-
-private slots:
-    void on_watchDirButton_clicked();
-    void on_tempDirButton_clicked();
-    void on_cleanDirButton_clicked();
-    void on_dangerousDirButton_clicked();
-
-    void on_kasperFileButton_clicked();
-    void on_drwebFileButton_clicked();
-
-    void on_kasperCB_clicked(bool isUsed);
-    void on_drwebCB_clicked(bool isUsed);
-
-    void on_clearButton_clicked();
+    ~Widget() override;
 
     void log(const QString &s);
     void updateUi();
 
+private slots:
+    void on_startButton_clicked();
+    void on_stopButton_clicked();
+    void on_settingsButton_clicked();
+    void on_statisticButton_clicked();
+    void on_clearButton_clicked();
+
 private:
     Ui::Widget *ui;
 
-    QSettings settings;
     Distributor distributor;
+    QSettings settings;
     QThread workThread;
+
+    Settings *settingsWindow;
+    Statistics *statisticWindow;
 };
 
 #endif // WIDGET_H

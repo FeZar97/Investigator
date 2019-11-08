@@ -7,126 +7,86 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     setLayout(ui->mainLayout);
     setWindowTitle(QString("Investigator ") + VERSION);
 
-    log(currentDateTime() + " Программа запущена.");
-    setWindowIcon(QIcon(":/investigator.ico"));
     restoreGeometry(settings.value("geometry").toByteArray());
-
     distributor.setWatchDir(settings.value("watchDir", "C:/").toString());
     distributor.setInvestigatorDir(settings.value("investigatorDir", QDir::tempPath()).toString());
     distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
-
     distributor.setAVUse(AV::KASPER, settings.value("useKasper", true).toBool());
     distributor.setAVFile(AV::KASPER, settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
-
     distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
     distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
 
-    connect(&distributor, &Distributor::updateUi, this, &Widget::updateUi);
-    connect(&distributor, &Distributor::log, this, &Widget::log);
+    settingsWindow = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
+    statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
 
-    connect(&workThread, &QThread::started, &distributor, &Distributor::startWatchDirEye);
+    connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
+    connect(&distributor,   &Distributor::log,        this,             &Widget::log);
+    connect(&workThread,    &QThread::started,        &distributor,     &Distributor::startWatchDirEye);
 
     distributor.moveToThread(&workThread);
     workThread.start();
+
+    log(currentDateTime() + " Программа запущена.");
 
     updateUi();
 }
 
 Widget::~Widget() {
-    settings.setValue("geometry",        saveGeometry());
+    settings.setValue("geometry",               saveGeometry());
 
-    settings.setValue("watchDir",        distributor.getWatchDir());
-    settings.setValue("investigatorDir", distributor.getInvestigatorDir());
-    settings.setValue("cleanDir",        distributor.getCleanDir());
-    settings.setValue("dangerDir",       distributor.getDangerDir());
+    settings.setValue("settingsWinGeometry",    settingsWindow->saveGeometry());
+    settings.setValue("settingsWinVisible",     settingsWindow->isVisible());
+    settings.setValue("statisticWinGeometry",   statisticWindow->saveGeometry());
+    settings.setValue("statisticWinVisible",    statisticWindow->isVisible());
 
-    settings.setValue("kasperFilePath",  distributor.getAVFile(AV::KASPER));
-    settings.setValue("useKasper",       distributor.getAVUse(AV::KASPER));
+    settings.setValue("watchDir",               distributor.getWatchDir());
+    settings.setValue("investigatorDir",        distributor.getInvestigatorDir());
+    settings.setValue("cleanDir",               distributor.getCleanDir());
+    settings.setValue("dangerDir",              distributor.getDangerDir());
 
-    settings.setValue("drwebFilePath",   distributor.getAVFile(AV::DRWEB));
-    settings.setValue("useDrweb",        distributor.getAVUse(AV::DRWEB));
+    settings.setValue("kasperFilePath",         distributor.getAVFile(AV::KASPER));
+    settings.setValue("useKasper",              distributor.getAVUse(AV::KASPER));
+
+    settings.setValue("drwebFilePath",          distributor.getAVFile(AV::DRWEB));
+    settings.setValue("useDrweb",               distributor.getAVUse(AV::DRWEB));
 
     workThread.quit();
     workThread.wait();
 
+    delete settingsWindow;
+    delete statisticWindow;
+
     delete ui;
 }
-
-void Widget::on_watchDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для мониторинга"), distributor.getWatchDir());
-    distributor.setWatchDir(dir);
-}
-
-void Widget::on_tempDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для временных файлов программы"), distributor.getInvestigatorDir());
-    distributor.setInvestigatorDir(dir);
-}
-
-void Widget::on_cleanDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для чистых файлов"), distributor.getCleanDir());
-    distributor.setCleanDir(dir);
-}
-
-void Widget::on_dangerousDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для зараженных файлов"), distributor.getDangerDir());
-    distributor.setDangerDir(dir);
-}
-
-void Widget::on_kasperFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::KASPER)), distributor.getAVFile(AV::KASPER), tr("*.com"));
-    distributor.setAVFile(AV::KASPER, filePath);
-}
-
-void Widget::on_drwebFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::DRWEB)), distributor.getAVFile(AV::DRWEB), tr("*.exe"));
-    distributor.setAVFile(AV::DRWEB, filePath);
-}
-
-void Widget::on_clearButton_clicked() {
-    ui->logPTE->clear();
-}
-
 void Widget::log(const QString &s) {
     ui->logPTE->appendPlainText(s);
 }
 
 void Widget::updateUi() {
-    ui->watchDirLE->setText(distributor.getWatchDir());
-    ui->investigatorDirLE->setText(distributor.getInvestigatorDir());
-    ui->cleanDirLE->setText(distributor.getCleanDir());
-    ui->dangerousDirLE->setText(distributor.getDangerDir());
+    ui->startButton->setEnabled(!distributor.isInProcessing());
+    ui->stopButton->setEnabled(distributor.isInProcessing());
 
-    ui->kasperFileLE->setText(distributor.getAVFile(AV::KASPER));
-    ui->kasperCB->setChecked(distributor.getAVUse(AV::KASPER));
-    ui->kasperFileLE->setEnabled(distributor.getAVUse(AV::KASPER));
-    ui->kasperFileButton->setEnabled(distributor.getAVUse(AV::KASPER));
-
-    ui->drwebFileLE->setText(distributor.getAVFile(AV::DRWEB));
-    ui->drwebCB->setChecked(distributor.getAVUse(AV::DRWEB));
-    ui->drwebFileLE->setEnabled(distributor.getAVUse(AV::DRWEB));
-    ui->drwebFileButton->setEnabled(distributor.getAVUse(AV::DRWEB));
-
-    ui->scanFilesNbLabel->setText("Kasper: " + QString::number(distributor.getAVProcessedFilesNb(AV::KASPER)) +
-                                  " (" +
-                                  ((distributor.getAVProcessedFilesSize(AV::KASPER) > 1023.) ? QString(QString::number(distributor.getAVProcessedFilesSize(AV::KASPER) / 1024., 'f', 4) + " Гб") :
-                                                                                         QString(QString::number(distributor.getAVProcessedFilesSize(AV::KASPER), 'f', 4) + " Мб")) +
-                                  "),   " +
-
-                                  "DrWeb: " + QString::number(distributor.getAVProcessedFilesNb(AV::DRWEB)) +
-                                  " (" +
-                                  ((distributor.getAVProcessedFilesSize(AV::DRWEB) > 1023.) ? QString(QString::number(distributor.getAVProcessedFilesSize(AV::DRWEB) / 1024., 'f', 4) + " Гб") :
-                                                                                        QString(QString::number(distributor.getAVProcessedFilesSize(AV::DRWEB), 'f', 4) + " Мб")) +
-                                  ")");
-
-    ui->queueSizeLabel->setText("Kasper: " + QString::number(distributor.getAVInprogressFilesNb(AV::KASPER)) + ", " +
-                                "DrWeb: " + QString::number(distributor.getAVInprogressFilesNb(AV::DRWEB)));
+    settingsWindow->updateUi();
+    //statisticWindow->updateUi();
 }
 
-void Widget::on_kasperCB_clicked(bool isUsed) {
-    distributor.setAVUse(AV::KASPER, isUsed);
+void Widget::on_startButton_clicked() {
+    distributor.startWatchDirEye();
 }
 
-void Widget::on_drwebCB_clicked(bool isUsed) {
-    distributor.setAVUse(AV::DRWEB, isUsed);
+void Widget::on_stopButton_clicked() {
+    distributor.stopWatchDirEye();
+}
+
+void Widget::on_settingsButton_clicked() {
+    settingsWindow->setVisible(!settingsWindow->isVisible());
+}
+
+void Widget::on_statisticButton_clicked() {
+    statisticWindow->setVisible(!statisticWindow->isVisible());
+}
+
+void Widget::on_clearButton_clicked() {
+    ui->logPTE->clear();
 }
