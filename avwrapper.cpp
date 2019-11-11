@@ -1,4 +1,4 @@
-#include "avwrapper.h"
+ #include "avwrapper.h"
 
 AVRecord::AVRecord() {
     m_timeMark = QDateTime::currentDateTime();
@@ -49,6 +49,22 @@ AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {
 
 void AVWrapper::setType(AV type) {
     m_type = type;
+}
+
+void AVWrapper::setMaxQueueSize(int size) {
+    m_maxQueueSize = size;
+}
+
+int AVWrapper::getMaxQueueSize() {
+    return m_maxQueueSize;
+}
+
+void AVWrapper::setMaxQueueVol(double vol) {
+    m_maxQueueVol = vol;
+}
+
+double AVWrapper::getMaxQueueVol() {
+    return m_maxQueueVol;
 }
 
 void AVWrapper::setUsage(bool newState) {
@@ -105,6 +121,14 @@ void AVWrapper::setOutputFolder(QString outputFolder) {
 
 QString AVWrapper::getOutputFolder() {
     return m_outputFolder;
+}
+
+void AVWrapper::setDangerFolder(QString dangerFolder) {
+    m_dangerFolder = dangerFolder;
+}
+
+QString AVWrapper::getDangerFolder() {
+    return m_dangerFolder;
 }
 
 int AVWrapper::getDangerFilesNb() {
@@ -315,11 +339,15 @@ void AVWrapper::process() {
                                         QString fileName = extractFileName(m_reportLine);
                                         if(!fileName.isEmpty() && m_avBase.findFileName(fileName) == -1) {
                                             m_dangerFileNb++;
+
+                                            QFile::rename(m_processFolder + "/" + fileName, m_dangerFolder + "/" + fileName);
+
                                             m_avBase.add(new AVRecord(QDateTime::currentDateTime(),
                                                                       m_type,
                                                                       fileName,
                                                                       extractDescription(m_reportLine, extractFileName(m_reportLine)),
                                                                       QFileInfo(m_reportName).fileName()));
+
                                             log(AVRecord(QDateTime::currentDateTime(),
                                                          m_type,
                                                          fileName,

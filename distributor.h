@@ -5,7 +5,7 @@
 
 Q_DECLARE_METATYPE(QList<AVRecord>)
 
-#define     VERSION               "#7.11/1740"
+#define     VERSION               "#11.11/1235"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -31,14 +31,14 @@ class Distributor : public QObject
 
     QFileSystemWatcher watchDirEye;
 
-    QString watchDir;
-    QString investigatorDir;
-    QString inputDir;
-    QString outputDir;
-    QString reportDir;
+    QString m_watchDir;
+    QString m_investigatorDir;
+    QString m_inputDir;
+    QString m_outputDir;
+    QString m_reportDir;
 
-    QString cleanDir;
-    QString dangerDir;
+    QString m_cleanDir;
+    QString m_dangerDir;
 
     AVBase mainBase;
 
@@ -64,9 +64,14 @@ public:
     QString getAVFile(AV AVName);
     void setAVUse(AV AVName, bool use);
     bool getAVUse(AV AVName);
+    void setMaxQueueSize(AV AVName, int size);
+    int getMaxQueueSize(AV AVName);
+    void setMaxQueueVol(AV AVName, double vol);
+    double getMaxQueueVolMb(AV AVName);
     int getAVDangerFilesNb(AV AVName);
     int getAVCurrentReportIdx(AV AVName);
     int getAVQueueFilesNb(AV AVName);
+    double getAVQueueFilesVolMb(AV AVName);
     int getAVProcessedFilesNb(AV AVName);
     int getAVInprogressFilesNb(AV AVName);
     double getAVProcessedFilesSize(AV AVName);
@@ -89,6 +94,9 @@ public:
 // OTHER
     qint64 getWorkTimeInSecs();
     bool isInProcessing();
+    void clearDir(QString dirName);
+    double dirSizeMb(QString dirName);
+    void moveFilesToInputDir();
 
 signals:
     void updateUi();

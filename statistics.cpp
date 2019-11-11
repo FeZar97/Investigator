@@ -17,13 +17,15 @@ Statistics::Statistics(QWidget *parent, Distributor* distributor, QByteArray geo
     m_workTimer.start();
 
     m_model.setHorizontalHeaderLabels(QStringList() << "Kaspersky" << "DrWeb");
-    m_model.setVerticalHeaderLabels(QStringList() << "Найдено вирусов" << "Просканировано файлов" << "Общий размер\nпросканированных файлов (Мб)"
+    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов" << "Просканировано файлов" << "Объем\nпросканированных файлов (Мб)"
                                                   << "Средняя скорость\nсканирования (Мб/с)" << "Текущая скорость\nсканирования (Мб/с)" << "Файлов в очереди"
                                                   << "Количество сформированных\nотчетов");
 
     ui->tableView->setModel(&m_model);
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView->setSelectionMode(QAbstractItemView::NoSelection);
 }
 
 Statistics::~Statistics() {
@@ -31,9 +33,6 @@ Statistics::~Statistics() {
 }
 
 void Statistics::updateUi() {
-    // qDebug() << "QTime: " << QTime(0, 0, 0, 0).addSecs(int(m_distributor->getWorkTimeInSecs()).toString("hh:mm:ss");
-    // qDebug() << "getWorkTimeInSecs: " << m_distributor->getWorkTimeInSecs();
-
     ui->workTimeInfoLabel->setText(QTime(0, 0, 0, 0).addSecs(int(m_distributor->getWorkTimeInSecs())).toString("hh:mm:ss"));
 
     m_model.setData(m_model.index(0,0), m_distributor->getAVDangerFilesNb(AV::KASPER), Qt::DisplayRole);
@@ -56,4 +55,14 @@ void Statistics::updateUi() {
 
     m_model.setData(m_model.index(6,0), m_distributor->getAVCurrentReportIdx(AV::KASPER), Qt::DisplayRole);
     m_model.setData(m_model.index(6,1), m_distributor->getAVCurrentReportIdx(AV::DRWEB), Qt::DisplayRole);
+
+    m_model.item(5,0)->setBackground(
+                ( m_distributor->getAVQueueFilesNb(AV::KASPER) >= m_distributor->getMaxQueueSize(AV::KASPER) ||
+                  m_distributor->getAVQueueFilesVolMb(AV::KASPER) >= m_distributor->getMaxQueueVolMb(AV::KASPER)) ?
+                                         QBrush(Qt::red) : QBrush(Qt::transparent));
+
+    m_model.item(5,1)->setBackground(
+                ( m_distributor->getAVQueueFilesNb(AV::DRWEB) >= m_distributor->getMaxQueueSize(AV::DRWEB) ||
+                  m_distributor->getAVQueueFilesVolMb(AV::DRWEB) >= m_distributor->getMaxQueueVolMb(AV::DRWEB)) ?
+                                         QBrush(Qt::red) : QBrush(Qt::transparent));
 }

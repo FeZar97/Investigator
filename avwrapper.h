@@ -72,6 +72,8 @@ class AVWrapper : public QObject
     QString m_reportExtension{"unknown"};
     QString m_reportName;
     QFile m_reportFile;
+    int m_maxQueueSize{0};
+    double m_maxQueueVol{0.};
 
     // indicators
     QString m_reportReadyIndicator;
@@ -84,6 +86,7 @@ class AVWrapper : public QObject
     QString m_processFolder;
     QString m_outputFolder;
     QString m_reportFolder;
+    QString m_dangerFolder;
 
     // statistics
     AVBase m_avBase;
@@ -130,6 +133,15 @@ public:
 
     void setOutputFolder(QString outputFolder);
     QString getOutputFolder();
+
+    void setDangerFolder(QString dangerFolder);
+    QString getDangerFolder();
+
+    void setMaxQueueSize(int size);
+    int getMaxQueueSize();
+
+    void setMaxQueueVol(double vol);
+    double getMaxQueueVol();
 
     int getDangerFilesNb();
     int getCurrentReportIdx();

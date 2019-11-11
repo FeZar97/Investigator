@@ -12,10 +12,16 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setInvestigatorDir(settings.value("investigatorDir", QDir::tempPath()).toString());
     distributor.setCleanDir(settings.value("cleanDir", "C:/").toString());
     distributor.setDangerDir(settings.value("dangerDir", "C:/").toString());
+
     distributor.setAVUse(AV::KASPER, settings.value("useKasper", true).toBool());
     distributor.setAVFile(AV::KASPER, settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
+    distributor.setMaxQueueSize(AV::KASPER, settings.value("kasperMaxQueueSize", 0).toInt());
+    distributor.setMaxQueueVol(AV::KASPER, settings.value("kasperMaxQueueVol", 0.).toDouble());
+
     distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
     distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
+    distributor.setMaxQueueSize(AV::DRWEB, settings.value("drwebMaxQueueSize", 0).toInt());
+    distributor.setMaxQueueVol(AV::DRWEB, settings.value("drwebMaxQueueVol", 0.).toDouble());
 
     settingsWindow = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
     statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
@@ -47,9 +53,15 @@ Widget::~Widget() {
 
     settings.setValue("kasperFilePath",         distributor.getAVFile(AV::KASPER));
     settings.setValue("useKasper",              distributor.getAVUse(AV::KASPER));
+    settings.setValue("kasperMaxQueueSize",     distributor.getMaxQueueSize(AV::KASPER));
+    settings.setValue("kasperMaxQueueVol",      distributor.getMaxQueueVolMb(AV::KASPER));
+    settings.setValue("kasperVolUnit",          settingsWindow->m_kasperVolUnit);
 
     settings.setValue("drwebFilePath",          distributor.getAVFile(AV::DRWEB));
     settings.setValue("useDrweb",               distributor.getAVUse(AV::DRWEB));
+    settings.setValue("drwebMaxQueueSize",      distributor.getMaxQueueSize(AV::DRWEB));
+    settings.setValue("drwebMaxQueueVol",       distributor.getMaxQueueVolMb(AV::DRWEB));
+    settings.setValue("drwebVolUnit",           settingsWindow->m_drwebVolUnit);
 
     workThread.quit();
     workThread.wait();

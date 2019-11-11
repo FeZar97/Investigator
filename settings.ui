@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>495</width>
-    <height>205</height>
+    <width>719</width>
+    <height>427</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,8 +22,8 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>473</width>
-     <height>184</height>
+     <width>630</width>
+     <height>254</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="mainLayout">
@@ -40,7 +40,7 @@
      <number>2</number>
     </property>
     <item>
-     <layout class="QHBoxLayout" name="firstRowLayout" stretch="0,0,0">
+     <layout class="QHBoxLayout" name="firstRowLayout" stretch="0,0,0,0">
       <property name="spacing">
        <number>5</number>
       </property>
@@ -111,6 +111,23 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="clearWatchDirButton">
+        <property name="maximumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="img.qrc">
+          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -161,6 +178,23 @@
         <property name="icon">
          <iconset resource="img.qrc">
           <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="clearTempDirButton">
+        <property name="maximumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="img.qrc">
+          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
         </property>
        </widget>
       </item>
@@ -217,6 +251,23 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="clearCleanDirButton">
+        <property name="maximumSize">
+         <size>
+          <width>23</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="img.qrc">
+          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -270,60 +321,8 @@
         </property>
        </widget>
       </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="kasperskyLayout">
       <item>
-       <widget class="QCheckBox" name="kasperCB">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="kasperFileLabel">
-        <property name="minimumSize">
-         <size>
-          <width>56</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>1111</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>Courier New</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Использовать Kaspersky:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="kasperFileLE">
-        <property name="font">
-         <font>
-          <family>Courier New</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="kasperFileButton">
-        <property name="minimumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
+       <widget class="QPushButton" name="clearDangerDirButton">
         <property name="maximumSize">
          <size>
           <width>23</width>
@@ -335,35 +334,16 @@
         </property>
         <property name="icon">
          <iconset resource="img.qrc">
-          <normaloff>:/img/KASPERSKY.png</normaloff>:/img/KASPERSKY.png</iconset>
+          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
         </property>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="drwebLayout">
-      <item>
-       <widget class="QCheckBox" name="drwebCB">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="drwebFileLabel">
-        <property name="minimumSize">
-         <size>
-          <width>48</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>1111</width>
-          <height>23</height>
-         </size>
-        </property>
+     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0">
+      <item row="3" column="0">
+       <widget class="QLabel" name="maxQueueSizeLabel">
         <property name="font">
          <font>
           <family>Courier New</family>
@@ -371,48 +351,334 @@
          </font>
         </property>
         <property name="text">
-         <string>Использовать DrWeb:</string>
+         <string>Пороговое значение
+размера очереди:</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLineEdit" name="drwebFileLE">
+      <item row="2" column="3">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QLineEdit" name="drwebFileLE">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="drwebFileButton">
+          <property name="minimumSize">
+           <size>
+            <width>23</width>
+            <height>23</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>23</width>
+            <height>23</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="img.qrc">
+            <normaloff>:/img/DRWEB.jpg</normaloff>:/img/DRWEB.jpg</iconset>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="kasperskyLabel1">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Kaspersky</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="kasperCB">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label">
         <property name="font">
          <font>
           <family>Courier New</family>
           <pointsize>10</pointsize>
          </font>
         </property>
+        <property name="text">
+         <string>Путь к исполняемому
+файлу:</string>
+        </property>
        </widget>
       </item>
-      <item>
-       <widget class="QPushButton" name="drwebFileButton">
-        <property name="minimumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/DRWEB.jpg</normaloff>:/img/DRWEB.jpg</iconset>
-        </property>
-       </widget>
+      <item row="0" column="3">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLabel" name="drwebLabel1">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>DrWeb</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="drwebCB">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QLineEdit" name="kasperFileLE">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="kasperFileButton">
+          <property name="minimumSize">
+           <size>
+            <width>23</width>
+            <height>23</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>23</width>
+            <height>23</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="img.qrc">
+            <normaloff>:/img/KASPERSKY.png</normaloff>:/img/KASPERSKY.png</iconset>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="3">
+       <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <item>
+         <widget class="QSpinBox" name="drwebMaxQueueSizeSB">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="drwebMaxQueueVolSB">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="maximum">
+           <double>999999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="drwebMaxQueueVolCB">
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <item>
+           <property name="text">
+            <string>Мб</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Гб</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="QSpinBox" name="kasperMaxQueueSizeSB">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="kasperMaxQueueVolSB">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="maximum">
+           <double>999999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="kasperMaxQueueVolCB">
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <item>
+           <property name="text">
+            <string>Мб</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Гб</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>watchDirLE</tabstop>
+  <tabstop>watchDirButton</tabstop>
+  <tabstop>clearWatchDirButton</tabstop>
+  <tabstop>investigatorDirLE</tabstop>
+  <tabstop>tempDirButton</tabstop>
+  <tabstop>clearTempDirButton</tabstop>
+  <tabstop>cleanDirLE</tabstop>
+  <tabstop>cleanDirButton</tabstop>
+  <tabstop>clearCleanDirButton</tabstop>
+  <tabstop>dangerousDirLE</tabstop>
+  <tabstop>dangerousDirButton</tabstop>
+  <tabstop>clearDangerDirButton</tabstop>
+  <tabstop>kasperCB</tabstop>
+  <tabstop>drwebCB</tabstop>
+  <tabstop>kasperFileLE</tabstop>
+  <tabstop>kasperFileButton</tabstop>
+  <tabstop>drwebFileLE</tabstop>
+  <tabstop>drwebFileButton</tabstop>
+  <tabstop>kasperMaxQueueSizeSB</tabstop>
+  <tabstop>kasperMaxQueueVolSB</tabstop>
+  <tabstop>kasperMaxQueueVolCB</tabstop>
+  <tabstop>drwebMaxQueueSizeSB</tabstop>
+  <tabstop>drwebMaxQueueVolSB</tabstop>
+  <tabstop>drwebMaxQueueVolCB</tabstop>
+ </tabstops>
  <resources>
   <include location="img.qrc"/>
  </resources>

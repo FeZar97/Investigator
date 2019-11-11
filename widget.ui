@@ -53,29 +53,21 @@
       <item>
        <widget class="QPushButton" name="startButton">
         <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/START.png</normaloff>:/img/START.png</iconset>
+         <string>Начать слежение</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="stopButton">
         <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/STOP.png</normaloff>:/img/STOP.png</iconset>
+         <string>Остановить слежение</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="settingsButton">
         <property name="text">
-         <string/>
+         <string>Настройки</string>
         </property>
         <property name="icon">
          <iconset resource="img.qrc">
@@ -86,7 +78,7 @@
       <item>
        <widget class="QPushButton" name="statisticButton">
         <property name="text">
-         <string/>
+         <string>Статистика</string>
         </property>
         <property name="icon">
          <iconset resource="img.qrc">

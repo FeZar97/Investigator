@@ -9,14 +9,19 @@
 #include "settings.h"
 #include "statistics.h"
 
-/*
- * TODO
- * 0. default temp path
- * 1. start/stop buttons
- * 2. settings window
- * 3. auto-creating temp subdirs on every iterations
- * 4. behavior with old report, that exists when program started
- * 5. individual window to setting and statistics
+/* TODO
+ *      default temp path (04.11)
+ *      start/stop buttons (07.11)
+ *      settings window (07.11)
+ *      auto-creating temp subdirs on every iterations (03.11)
+ *      behavior with old report, that exists when program started (-)
+ *      individual window to setting and statistics (07.11)
+ *      fix multiple accounting same danger files (08.11)
+ *      add colorisation table when queue size exceed some threshold (08.11 )
+ *      ability to clear temp dirs, report dir, and clean\danger dir (11.11)
+ *      add ability to set queue threshold with max volume of dirs (11.11)
+ *      deny editing statistic table (11.11)
+ *      add warning window, when user clicked on dir clean buttons (11.11)
  */
 
 namespace Ui {

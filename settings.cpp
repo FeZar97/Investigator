@@ -10,6 +10,7 @@ Settings::Settings(QWidget *parent, Distributor* distributor, QByteArray geometr
     setVisible(visible);
 
     m_distributor = distributor;
+    updateUi();
 }
 
 Settings::~Settings() {
@@ -17,7 +18,7 @@ Settings::~Settings() {
 }
 
 void Settings::on_watchDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для мониторинга"), m_distributor->getWatchDir());
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для слежения"), m_distributor->getWatchDir());
     m_distributor->setWatchDir(dir);
 }
 
@@ -64,11 +65,109 @@ void Settings::updateUi() {
 
     ui->kasperFileLE->setText(m_distributor->getAVFile(AV::KASPER));
     ui->kasperCB->setChecked(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperFileLE->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperFileButton->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::KASPER));
+    ui->kasperMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::KASPER));
+    ui->kasperMaxQueueVolCB->setCurrentIndex(m_kasperVolUnit);
 
     ui->drwebFileLE->setText(m_distributor->getAVFile(AV::DRWEB));
     ui->drwebCB->setChecked(m_distributor->getAVUse(AV::DRWEB));
+    ui->drwebMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::DRWEB));
+    ui->drwebMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::DRWEB));
+    ui->drwebMaxQueueVolCB->setCurrentIndex(m_drwebVolUnit);
+
+    ui->kasperFileLE->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperFileButton->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperMaxQueueVolCB->setEnabled(m_distributor->getAVUse(AV::KASPER));
+
     ui->drwebFileLE->setEnabled(m_distributor->getAVUse(AV::DRWEB));
     ui->drwebFileButton->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+    ui->drwebMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+    ui->drwebMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+    ui->drwebMaxQueueVolCB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+}
+
+int Settings::getVolUnits(AV av) {
+    switch(av) {
+        case AV::KASPER:
+            return ui->kasperMaxQueueVolCB->currentIndex();
+        case AV::DRWEB:
+            return ui->drwebMaxQueueVolCB->currentIndex();
+        default:
+            return 0;
+    }
+}
+
+void Settings::on_kasperMaxQueueSizeSB_valueChanged(int size) {
+    m_distributor->setMaxQueueSize(AV::KASPER, size);
+}
+
+void Settings::on_drwebMaxQueueSizeSB_valueChanged(int size) {
+    m_distributor->setMaxQueueSize(AV::DRWEB, size);
+}
+
+void Settings::on_kasperMaxQueueVolSB_valueChanged(double kasperMaxQueueVol) {
+    m_distributor->setMaxQueueVol(AV::KASPER, kasperMaxQueueVol * (ui->drwebMaxQueueVolCB->currentIndex() ? 1024 : 1) );
+}
+
+void Settings::on_drwebMaxQueueVolSB_valueChanged(double drwebMaxQueueVol) {
+    m_distributor->setMaxQueueVol(AV::DRWEB, drwebMaxQueueVol * (ui->drwebMaxQueueVolCB->currentIndex() ? 1024 : 1) );
+}
+
+void Settings::on_kasperMaxQueueVolCB_currentIndexChanged(int index) {
+    m_kasperVolUnit = index;
+    m_distributor->setMaxQueueVol(AV::KASPER, ui->kasperMaxQueueVolSB->value() * (m_kasperVolUnit ? 1024 : 1) );
+}
+
+void Settings::on_drwebMaxQueueVolCB_currentIndexChanged(int index) {
+    m_drwebVolUnit = index;
+    m_distributor->setMaxQueueVol(AV::DRWEB, ui->drwebMaxQueueVolSB->value() * (m_drwebVolUnit ? 1024 : 1) );
+}
+
+void Settings::on_clearWatchDirButton_clicked() {
+    if( QMessageBox::warning(this,
+                             tr("Подтвердите действие"),
+                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getWatchDir()),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::Yes) == QMessageBox::Yes) {
+        m_distributor->clearDir(m_distributor->getWatchDir());
+    }
+}
+
+void Settings::on_clearTempDirButton_clicked() {
+    if( QMessageBox::warning(this,
+                             tr("Подтвердите действие"),
+                             QString("Вы действительно хотите очистить все временные директории?"),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::Yes) == QMessageBox::Yes) {
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + PROCESSED_DIR_NAME);
+        m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + REPORT_DIR_NAME);
+    }
+}
+
+void Settings::on_clearCleanDirButton_clicked() {
+    if( QMessageBox::warning(this,
+                             tr("Подтвердите действие"),
+                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getCleanDir()),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::Yes) == QMessageBox::Yes) {
+        m_distributor->clearDir(m_distributor->getCleanDir());
+    }
+}
+
+void Settings::on_clearDangerDirButton_clicked() {
+    if( QMessageBox::warning(this,
+                             tr("Подтвердите действие"),
+                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getDangerDir()),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::Yes) == QMessageBox::Yes) {
+        m_distributor->clearDir(m_distributor->getDangerDir());
+    }
 }

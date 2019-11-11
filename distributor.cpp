@@ -55,12 +55,12 @@ void Distributor::setWatchDir(QString _watchDir) {
     if(_watchDir.isEmpty()) {
         log(currentDateTime() + " " + "Не найдена директория для слежения.");
     } else {
-        watchDir = _watchDir;
+        m_watchDir = _watchDir;
     }
 }
 
 QString Distributor::getWatchDir() {
-    return watchDir;
+    return m_watchDir;
 }
 
 void Distributor::setInvestigatorDir(QString _investigatorDir) {
@@ -68,51 +68,53 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
     if(_investigatorDir.isEmpty()) {
         log(currentDateTime() + " " + "Не найдена директория для временных файлов.");
     } else {
-        investigatorDir = _investigatorDir;
+        m_investigatorDir = _investigatorDir;
 
-        inputDir  = investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME;
-        QDir().mkpath(inputDir);
-        QDir().mkpath(investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+        m_inputDir  = m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME;
+        QDir().mkpath(m_inputDir);
+        QDir().mkpath(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
-        QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-        QDir().mkpath(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+        QDir().mkpath(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
+        QDir().mkpath(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
-        outputDir = investigatorDir + "/" + PROCESSED_DIR_NAME;
-        QDir().mkpath(outputDir);
+        m_outputDir = m_investigatorDir + "/" + PROCESSED_DIR_NAME;
+        QDir().mkpath(m_outputDir);
 
-        reportDir = investigatorDir + "/" + REPORT_DIR_NAME;
-        QDir().mkpath(reportDir);
+        m_reportDir = m_investigatorDir + "/" + REPORT_DIR_NAME;
+        QDir().mkpath(m_reportDir);
 
         configureAV();
     }
 }
 
 QString Distributor::getInvestigatorDir() {
-    return investigatorDir;
+    return m_investigatorDir;
 }
 
 void Distributor::setCleanDir(QString _cleanDir) {
     if(_cleanDir.isEmpty()) {
         log(currentDateTime() + " " + "Не найдена директория для чистых файлов.");
     } else {
-        cleanDir = _cleanDir;
+        m_cleanDir = _cleanDir;
     }
 }
 
 QString Distributor::getCleanDir() {
-    return cleanDir;
+    return m_cleanDir;
 }
 
 void Distributor::setDangerDir(QString _dangerDir) {
     if(_dangerDir.isEmpty()) {
         log(currentDateTime() + " " + "Не найдена директория для зараженных файлов.");
     } else {
-        dangerDir = _dangerDir;
+        m_dangerDir = _dangerDir;
+        kasperWrapper.setDangerFolder(m_dangerDir);
+        drwebWrapper.setDangerFolder(m_dangerDir);
     }
 }
 
 QString Distributor::getDangerDir() {
-    return dangerDir;
+    return m_dangerDir;
 }
 
 void Distributor::setAVFile(AV AVName, QString AVFilePath) {
@@ -177,6 +179,62 @@ bool Distributor::getAVUse(AV AVName) {
     }
 }
 
+void Distributor::setMaxQueueSize(AV AVName, int size) {
+    switch(AVName) {
+        case AV::KASPER:
+            kasperWrapper.setMaxQueueSize(size);
+            break;
+
+        case AV::DRWEB:
+            drwebWrapper.setMaxQueueSize(size);
+            break;
+
+        default:
+            break;
+    }
+}
+
+int Distributor::getMaxQueueSize(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getMaxQueueSize();
+
+        case AV::DRWEB:
+            return drwebWrapper.getMaxQueueSize();
+
+        default:
+            return 0;
+    }
+}
+
+void Distributor::setMaxQueueVol(AV AVName, double vol) {
+    switch(AVName) {
+        case AV::KASPER:
+            kasperWrapper.setMaxQueueVol(vol);
+            break;
+
+        case AV::DRWEB:
+            drwebWrapper.setMaxQueueVol(vol);
+            break;
+
+        default:
+            break;
+    }
+}
+
+double Distributor::getMaxQueueVolMb(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getMaxQueueVol();
+
+        case AV::DRWEB:
+            return drwebWrapper.getMaxQueueVol();
+
+        default:
+            return 0;
+    }
+}
+
 int Distributor::getAVDangerFilesNb(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
@@ -206,10 +264,23 @@ int Distributor::getAVCurrentReportIdx(AV AVName) {
 int Distributor::getAVQueueFilesNb(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return QDir(investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
+            return QDir(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
 
         case AV::DRWEB:
-            return QDir(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
+            return QDir(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME).entryList(usingFilters).size();
+
+        default:
+            return 0;
+    }
+}
+
+double Distributor::getAVQueueFilesVolMb(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return dirSizeMb(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
+
+        case AV::DRWEB:
+            return dirSizeMb(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
 
         default:
             return 0;
@@ -256,27 +327,28 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
 }
 
 void Distributor::configureAV() {
-    kasperWrapper.setInputFolder(investigatorDir   + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-    kasperWrapper.setProcessFolder(investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    kasperWrapper.setOutputFolder(investigatorDir  + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME);
-    kasperWrapper.setReportFolder(reportDir);
+    kasperWrapper.setInputFolder(m_investigatorDir   + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
+    kasperWrapper.setProcessFolder(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+    kasperWrapper.setOutputFolder(m_investigatorDir  + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME);
+    kasperWrapper.setReportFolder(m_reportDir);
 
-    drwebWrapper.setInputFolder(investigatorDir   + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-    drwebWrapper.setProcessFolder(investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    drwebWrapper.setOutputFolder(outputDir);
-    drwebWrapper.setReportFolder(reportDir);
+    drwebWrapper.setInputFolder(m_investigatorDir   + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
+    drwebWrapper.setProcessFolder(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
+    drwebWrapper.setOutputFolder(m_outputDir);
+    drwebWrapper.setReportFolder(m_reportDir);
 }
 
 void Distributor::startWatchDirEye() {
 
-    if(!watchDir.isEmpty()) {
-        if(watchDirEye.addPath(watchDir)) {
+    if(!m_watchDir.isEmpty()) {
+        if(watchDirEye.addPath(m_watchDir)) {
             startTime = QDateTime::currentDateTime();
             m_isProcessing = true;
-            log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(watchDir));
+            log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(m_watchDir));
+            moveFilesToInputDir();
             onWatchDirChange("");
         } else {
-            log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(watchDir));
+            log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir));
         }
     }
     updateUi();
@@ -286,7 +358,7 @@ void Distributor::stopWatchDirEye() {
     if(!watchDirEye.directories().isEmpty()) {
         m_isProcessing = false;
         endTime = QDateTime::currentDateTime();
-        log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(watchDir));
+        log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
     updateUi();
@@ -294,23 +366,23 @@ void Distributor::stopWatchDirEye() {
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
-    moveFiles(watchDir, inputDir);
+    moveFiles(m_watchDir, m_inputDir);
     kasperWrapper.process();
 }
 
 void Distributor::sortingProcessedFiles() {
     int idx;
 
-    if(!QDir(dangerDir).exists()) QDir().mkpath(dangerDir);
-    if(!QDir(cleanDir).exists())  QDir().mkpath(cleanDir);
+    if(!QDir(m_dangerDir).exists()) QDir().mkpath(m_dangerDir);
+    if(!QDir(m_cleanDir).exists())  QDir().mkpath(m_cleanDir);
 
-    foreach(QFileInfo avRecord, QDir(outputDir).entryInfoList(usingFilters)) {
+    foreach(QFileInfo avRecord, QDir(m_outputDir).entryInfoList(usingFilters)) {
         idx = mainBase.findFileName(avRecord.fileName());
         if(idx != -1) {
-            QFile::rename(avRecord.absoluteFilePath(), dangerDir + "/" + avRecord.fileName());
+            QFile::rename(avRecord.absoluteFilePath(), m_dangerDir + "/" + avRecord.fileName());
             mainBase.remove(idx);
         } else {
-            QFile::rename(avRecord.absoluteFilePath(), cleanDir + "/" + avRecord.fileName());
+            QFile::rename(avRecord.absoluteFilePath(), m_cleanDir + "/" + avRecord.fileName());
         }
     }
 }
@@ -327,6 +399,27 @@ qint64 Distributor::getWorkTimeInSecs() {
 
 bool Distributor::isInProcessing(){
     return m_isProcessing;
+}
+
+void Distributor::clearDir(QString dirName) {
+    foreach(QFileInfo fileInfo, QDir(dirName).entryInfoList(usingFilters)) {
+        QFile::remove(fileInfo.absoluteFilePath());
+    }
+}
+
+double Distributor::dirSizeMb(QString dirName) {
+    double volMb{0};
+    foreach(QFileInfo fileInfo, QDir(dirName).entryInfoList(usingFilters)) {
+        volMb += fileInfo.size() * 128;
+    }
+    return volMb;
+}
+
+void Distributor::moveFilesToInputDir() {
+    moveFiles(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME, m_inputDir);
+    moveFiles(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME, m_inputDir);
+    moveFiles(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME, m_inputDir);
+    moveFiles(m_outputDir, m_inputDir);
 }
 
 double Distributor::getAVAverageSpeed(AV AVName) {

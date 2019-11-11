@@ -9,5 +9,6 @@
         <file>img/START.png</file>
         <file>img/STOP.png</file>
         <file>img/STATISTIC.png</file>
+        <file>img/CLEARDIR.png</file>
     </qresource>
 </RCC>
