@@ -266,6 +266,7 @@ void moveFiles(QString sourceDir, QString destinationDir) {
     QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
 
     while(!QDir(sourceDir + "/").isEmpty()) {
+
         filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
 
         foreach(QFileInfo fileInfo, filesInSourceDir)
@@ -275,8 +276,9 @@ void moveFiles(QString sourceDir, QString destinationDir) {
 
 void AVWrapper::process() {
 
+    m_processedLastFilesSizeMb = 0.;
+
     if(!QDir(m_inputFolder).isEmpty() && m_readyToProcess) {
-        m_processedLastFilesSizeMb = 0.;
 
         moveFiles(m_inputFolder, m_processFolder);
 
@@ -303,12 +305,13 @@ void AVWrapper::process() {
                 m_processedFilesNb += m_inprogressFilesNb;
                 emit updateUi();
 
+
                 switch(m_type) {
                     case AV::KASPER:
                         QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
                         break;
                     case AV::DRWEB:
-                        QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder + "/");
+                        QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
                         break;
                     default:
                         break;
@@ -319,6 +322,7 @@ void AVWrapper::process() {
 
                 while(!m_isReportReady) {
                     if(QFile::exists(m_reportName) && m_reportFile.open(QIODevice::ReadOnly)) {
+
                         m_stream.setDevice(&m_reportFile);
                         m_report = m_stream.readAll();
 
@@ -360,10 +364,14 @@ void AVWrapper::process() {
                             }
                         }
                         m_reportFile.close();
+                    } else {
+
+                        // log("report " + m_reportName + " not exist");
                     }
                 }
 
                 moveFiles(m_processFolder, m_outputFolder);
+
                 m_readyToProcess = true;
                 emit updateBase(m_avBase);
                 emit finalProcessing();

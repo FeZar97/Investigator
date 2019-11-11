@@ -340,12 +340,13 @@ void Distributor::configureAV() {
 
 void Distributor::startWatchDirEye() {
 
+    stopWatchDirEye();
+
     if(!m_watchDir.isEmpty()) {
         if(watchDirEye.addPath(m_watchDir)) {
             startTime = QDateTime::currentDateTime();
             m_isProcessing = true;
             log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(m_watchDir));
-            moveFilesToInputDir();
             onWatchDirChange("");
         } else {
             log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir));

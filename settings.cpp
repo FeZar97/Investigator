@@ -20,31 +20,37 @@ Settings::~Settings() {
 void Settings::on_watchDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для слежения"), m_distributor->getWatchDir());
     m_distributor->setWatchDir(dir);
+    updateUi();
 }
 
 void Settings::on_tempDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для временных файлов программы"), m_distributor->getInvestigatorDir());
     m_distributor->setInvestigatorDir(dir);
+    updateUi();
 }
 
 void Settings::on_cleanDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для чистых файлов"), m_distributor->getCleanDir());
     m_distributor->setCleanDir(dir);
+    updateUi();
 }
 
 void Settings::on_dangerousDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для зараженных файлов"), m_distributor->getDangerDir());
     m_distributor->setDangerDir(dir);
+    updateUi();
 }
 
 void Settings::on_kasperFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::KASPER)), m_distributor->getAVFile(AV::KASPER), tr("*.com"));
     m_distributor->setAVFile(AV::KASPER, filePath);
+    updateUi();
 }
 
 void Settings::on_drwebFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::DRWEB)), m_distributor->getAVFile(AV::DRWEB), tr("*.exe"));
     m_distributor->setAVFile(AV::DRWEB, filePath);
+    updateUi();
 }
 
 void Settings::on_kasperCB_clicked(bool isUsed) {
