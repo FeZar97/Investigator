@@ -5,7 +5,7 @@
 
 Q_DECLARE_METATYPE(QList<AVRecord>)
 
-#define     VERSION               "#11.11/1730"
+#define     VERSION               "#11.11/1738"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
