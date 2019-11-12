@@ -364,9 +364,6 @@ void AVWrapper::process() {
                             }
                         }
                         m_reportFile.close();
-                    } else {
-
-                        // log("report " + m_reportName + " not exist");
                     }
                 }
 

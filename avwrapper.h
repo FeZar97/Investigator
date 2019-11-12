@@ -19,8 +19,8 @@ enum class AV {
     DRWEB
 };
 
-static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
-static QDir::Filters usingFilters = QDir::Files | QDir::Hidden | QDir::NoSymLinks;
+const static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
+const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden | QDir::NoSymLinks;
 
 struct AVRecord {
     QDateTime m_timeMark;
