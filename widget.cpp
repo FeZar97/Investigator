@@ -28,7 +28,6 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
     connect(&distributor,   &Distributor::log,        this,             &Widget::log);
-    connect(&workThread,    &QThread::started,        &distributor,     &Distributor::startWatchDirEye);
 
     distributor.moveToThread(&workThread);
     workThread.start();
@@ -80,7 +79,6 @@ void Widget::updateUi() {
     ui->stopButton->setEnabled(distributor.isInProcessing());
 
     settingsWindow->updateUi();
-    //statisticWindow->updateUi();
 }
 
 void Widget::on_startButton_clicked() {
@@ -88,7 +86,12 @@ void Widget::on_startButton_clicked() {
 }
 
 void Widget::on_stopButton_clicked() {
-    distributor.stopWatchDirEye();
+    if( QMessageBox::warning(this,
+                             tr("Подтвердите действие"),
+                             QString("Вы действительно хотите остановить слежение за папкой?"),
+                             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
+        distributor.stopWatchDirEye();
+    }
 }
 
 void Widget::on_settingsButton_clicked() {

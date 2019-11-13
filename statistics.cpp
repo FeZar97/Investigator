@@ -33,7 +33,9 @@ Statistics::~Statistics() {
 }
 
 void Statistics::updateUi() {
-    ui->workTimeInfoLabel->setText(QTime(0, 0, 0, 0).addSecs(int(m_distributor->getWorkTimeInSecs())).toString("hh:mm:ss"));
+
+    ui->workTimeInfoLabel->setText(QDateTime(QDate(1970,1,1), QTime(0,0,0,0), QTimeZone::systemTimeZone()).
+                                   addSecs(int(m_distributor->getWorkTimeInSecs())).toString("dd 'дней' hh 'ч.' mm 'мин.' ss 'сек.'"));
 
     m_model.setData(m_model.index(0,0), m_distributor->getAVDangerFilesNb(AV::KASPER), Qt::DisplayRole);
     m_model.setData(m_model.index(0,1), m_distributor->getAVDangerFilesNb(AV::DRWEB), Qt::DisplayRole);
@@ -57,12 +59,12 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(6,1), m_distributor->getAVCurrentReportIdx(AV::DRWEB), Qt::DisplayRole);
 
     m_model.item(5,0)->setBackground(
-                ( m_distributor->getAVQueueFilesNb(AV::KASPER) >= m_distributor->getMaxQueueSize(AV::KASPER) ||
-                  m_distributor->getAVQueueFilesVolMb(AV::KASPER) >= m_distributor->getMaxQueueVolMb(AV::KASPER)) ?
-                                         QBrush(Qt::red) : QBrush(Qt::transparent));
+                ( (m_distributor->getAVQueueFilesNb(AV::KASPER) >= m_distributor->getMaxQueueSize(AV::KASPER) ||
+                  m_distributor->getAVQueueFilesVolMb(AV::KASPER) >= m_distributor->getMaxQueueVolMb(AV::KASPER)) &&
+                  m_distributor->getAVUse(AV::KASPER)) ? QBrush(Qt::red) : QBrush(Qt::transparent));
 
     m_model.item(5,1)->setBackground(
-                ( m_distributor->getAVQueueFilesNb(AV::DRWEB) >= m_distributor->getMaxQueueSize(AV::DRWEB) ||
-                  m_distributor->getAVQueueFilesVolMb(AV::DRWEB) >= m_distributor->getMaxQueueVolMb(AV::DRWEB)) ?
-                                         QBrush(Qt::red) : QBrush(Qt::transparent));
+                ( (m_distributor->getAVQueueFilesNb(AV::DRWEB) >= m_distributor->getMaxQueueSize(AV::DRWEB) ||
+                  m_distributor->getAVQueueFilesVolMb(AV::DRWEB) >= m_distributor->getMaxQueueVolMb(AV::DRWEB)) &&
+                  m_distributor->getAVUse(AV::DRWEB)) ? QBrush(Qt::red) : QBrush(Qt::transparent));
 }

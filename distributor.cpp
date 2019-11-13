@@ -4,11 +4,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     qRegisterMetaType<AVBase>("AVBase");
 
-    kasperWrapper.moveToThread(&kasperThread);
-    drwebWrapper.moveToThread(&drwebThread);
-    kasperThread.start();
-    drwebThread.start();
-
+// initial settings
     kasperWrapper.setType(AV::KASPER);
     drwebWrapper.setType(AV::DRWEB);
 
@@ -25,8 +21,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
                                "WARNING! Restore points directories have not been scanned",
                                QStringList() << "password protected");
 
-    configureAV();
-
+// SSC
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
 
@@ -40,6 +35,13 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
     connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
+
+    kasperWrapper.moveToThread(&kasperThread);
+    drwebWrapper.moveToThread(&drwebThread);
+    kasperThread.start();
+    drwebThread.start();
+
+    configureAV();
 }
 
 Distributor::~Distributor() {

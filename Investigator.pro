@@ -1,11 +1,16 @@
 # Project created by QtCreator 2019-09-17T09:15:03
 
-QT       += core gui concurrent
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui concurrent widgets
 
 TARGET = QASf
 TEMPLATE = app
+
+VERSION = 1.1
+
+QMAKE_TARGET_COMPANY     = FeZar97
+QMAKE_TARGET_PRODUCT     = Investigator
+QMAKE_TARGET_DESCRIPTION = Investigator
+QMAKE_TARGET_COPYRIGHT   = FeZar97
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
@@ -40,3 +45,6 @@ DISTFILES +=
 
 RESOURCES += \
     img.qrc
+
+win32: RC_ICONS = $$PWD/img/INVESTIGATOR.ico
+

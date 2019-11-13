@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <QTimeZone>
 #include <QFileSystemWatcher>
 #include <QDebug>
 #include <QDir>

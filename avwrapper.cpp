@@ -44,8 +44,7 @@ AVRecord &AVRecord::operator=(const AVRecord &record) {
     return *this;
 }
 
-AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {
-}
+AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {}
 
 void AVWrapper::setType(AV type) {
     m_type = type;

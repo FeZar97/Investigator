@@ -5,7 +5,7 @@
 
 Q_DECLARE_METATYPE(QList<AVRecord>)
 
-#define     VERSION               "#13.11/0127"
+#define     VERSION               "v1.1"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -18,7 +18,7 @@ class Distributor : public QObject
 {
     Q_OBJECT
 
-    bool m_isProcessing;
+    bool m_isProcessing{false};
 
     AVWrapper kasperWrapper;
     QThread kasperThread;
