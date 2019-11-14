@@ -2,7 +2,7 @@
 
 QT       += core gui concurrent widgets
 
-TARGET = QASf
+TARGET = Investigator
 TEMPLATE = app
 
 VERSION = 1.1
