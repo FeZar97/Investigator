@@ -26,8 +26,8 @@ class Distributor : public QObject
     AVWrapper drwebWrapper;
     QThread drwebThread;
 
-    QDateTime startTime;
-    QDateTime endTime;
+    QDateTime m_startTime;
+    QDateTime m_endTime;
 
     QFileSystemWatcher watchDirEye;
 
@@ -93,6 +93,8 @@ public:
 
 // OTHER
     qint64 getWorkTimeInSecs();
+    QDateTime getStartTime() const;
+    QDateTime getEndTime() const;
     bool isInProcessing();
     void clearDir(QString dirName);
     double dirSizeMb(QString dirName);

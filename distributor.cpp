@@ -1,7 +1,7 @@
 #include "distributor.h"
 
 Distributor::Distributor(QObject *parent) : QObject(parent) {
-
+    
     qRegisterMetaType<AVBase>("AVBase");
 
 // initial settings
@@ -346,7 +346,7 @@ void Distributor::startWatchDirEye() {
 
     if(!m_watchDir.isEmpty()) {
         if(watchDirEye.addPath(m_watchDir)) {
-            startTime = QDateTime::currentDateTime();
+            m_startTime = QDateTime::currentDateTime();
             m_isProcessing = true;
             log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(m_watchDir));
             onWatchDirChange("");
@@ -360,7 +360,7 @@ void Distributor::startWatchDirEye() {
 void Distributor::stopWatchDirEye() {
     if(!watchDirEye.directories().isEmpty()) {
         m_isProcessing = false;
-        endTime = QDateTime::currentDateTime();
+        m_endTime = QDateTime::currentDateTime();
         log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
@@ -396,8 +396,16 @@ void Distributor::updateBase(AVBase& singleAVBase){
 
 qint64 Distributor::getWorkTimeInSecs() {
     if(m_isProcessing)
-        endTime = QDateTime::currentDateTime();
-    return startTime.secsTo(endTime);
+        m_endTime = QDateTime::currentDateTime();
+    return m_startTime.secsTo(m_endTime);
+}
+
+QDateTime Distributor::getStartTime() const {
+    return m_startTime;
+}
+
+QDateTime Distributor::getEndTime() const {
+    return m_endTime;
 }
 
 bool Distributor::isInProcessing(){
