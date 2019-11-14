@@ -259,7 +259,7 @@ QString AVWrapper::extractDescription(QString reportLine, QString fileName) {
 
 void moveFiles(QString sourceDir, QString destinationDir) {
 
-    if(sourceDir.isEmpty() || destinationDir.isEmpty())
+    if(!QDir(sourceDir).exists() || !QDir(destinationDir).exists())
         return;
 
     QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
@@ -292,7 +292,6 @@ void AVWrapper::process() {
             if(checkParams()) {
                 log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
                 m_readyToProcess = true;
-                process();
             } else {
                 m_reportFile.setFileName(m_reportName);
 

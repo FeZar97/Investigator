@@ -5,7 +5,6 @@
 #include <QDateTime>
 #include <QTimeZone>
 #include <QFileSystemWatcher>
-#include <QDebug>
 #include <QDir>
 #include <QProcess>
 #include <QThread>
@@ -13,6 +12,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
+
+#include <QDebug>
 
 enum class AV {
     NONE,

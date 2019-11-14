@@ -370,7 +370,7 @@ void Distributor::stopWatchDirEye() {
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
     moveFiles(m_watchDir, m_inputDir);
-    kasperWrapper.process();
+    // kasperWrapper.process();
 }
 
 void Distributor::sortingProcessedFiles() {
