@@ -96,6 +96,17 @@
         </property>
        </spacer>
       </item>
+      <item>
+       <widget class="QPushButton" name="clearButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="img.qrc">
+          <normaloff>:/img/CLEAR.png</normaloff>:/img/CLEAR.png</iconset>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>

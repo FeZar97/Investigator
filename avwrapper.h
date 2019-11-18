@@ -27,7 +27,7 @@ const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden | QDir::NoS
 struct AVRecord {
     QDateTime m_timeMark;
     AV m_av;
-    QString m_fileName;
+    QString m_fileName{""};
     QString m_description;
     QString m_reportName;
 
@@ -46,9 +46,8 @@ class AVBase {
 public:
     int findFileName(QString fileName);
 
-    void add(AVRecord* record);
-    void add(QPair<AVRecord, AVRecord>* record);
-    void add(AVBase& base);
+    void add(AVRecord record);
+    void add(QPair<AVRecord, AVRecord>& record);
 
     void remove(QString fileName);
     void remove(int idx);
@@ -60,12 +59,15 @@ public:
 };
 
 void moveFiles(QString sourceDir, QString destinationDir);
+QString getName(AV type);
+QString currentDateTime();
 
 class AVWrapper : public QObject
 {
     Q_OBJECT
 
     bool m_readyToProcess{true};
+    QFileSystemWatcher m_watcher;
 
     // AV params
     AV m_type;
@@ -75,7 +77,8 @@ class AVWrapper : public QObject
     QString m_reportName;
     QFile m_reportFile;
     int m_maxQueueSize{0};
-    double m_maxQueueVol{0.};
+    double m_maxQueueVolMb{0.};
+    int m_maxQueueVolUnit{0};
 
     // indicators
     QString m_reportReadyIndicator;
@@ -92,12 +95,14 @@ class AVWrapper : public QObject
 
     // statistics
     AVBase m_avBase;
+    QDateTime m_startProcessTime;
+    QDateTime m_endProcessTime;
+    qint64 m_totalWorkTime{0};
     int m_dangerFileNb{0};
     int m_reportIdx{0};
+    int m_inProgressFilesNb{0};
     int m_processedFilesNb{0};
-    int m_inprogressFilesNb{0};
     double m_processedFilesSizeMb{0.};
-
     double m_processedLastFilesSizeMb{0.};
     double m_currentProcessSpeed{0.};
 
@@ -105,7 +110,6 @@ class AVWrapper : public QObject
     QStringList m_execArgs;
 
     // temp
-    bool m_isReportReady;
     QTextStream m_stream;
     QString m_report;
     QString m_reportLine;
@@ -142,16 +146,20 @@ public:
     void setMaxQueueSize(int size);
     int getMaxQueueSize();
 
-    void setMaxQueueVol(double vol);
-    double getMaxQueueVol();
+    void setMaxQueueVolMb(double volMb);
+    double getMaxQueueVolMb();
+
+    void setMaxQueueVolUnit(int maxQueueVolUnit);
+    int getMaxQueueVolUnit();
 
     int getDangerFilesNb();
     int getCurrentReportIdx();
     int getProcessedFilesNb();
-    int getInprogressFilesNb();
+    int getInProgressFilesNb();
     double getProcessedFilesSize();
-    double getAverageSpeed(qint64 workTime);
+    double getAverageSpeed();
     double getCurrentSpeed();
+    void clearStatistic();
 
     void setExecArgs(QStringList execArgs);
     void addExecArgs(QStringList additionExecArgs);
@@ -165,7 +173,7 @@ public:
     void setIndicators(QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList permitStrings);
 
     bool isPayload(QString line);
-    QString extractFileName(QString reportLine);
+    QString extractInfectedFileName(QString reportLine);
     QString extractDescription(QString reportLine, QString fileName);
 
 // CORE
@@ -174,11 +182,6 @@ public:
 signals:
     void log(QString message);
     void updateBase(AVBase& singleAVBase);
-    void finalProcessing();
-    void updateUi();
 };
-
-QString getName(AV type);
-QString currentDateTime();
 
 #endif // AVWRAPPER_H

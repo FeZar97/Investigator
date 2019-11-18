@@ -546,7 +546,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="drwebMaxQueueVolCB">
+         <widget class="QComboBox" name="drwebMaxQueueVolUnitCB">
           <property name="maximumSize">
            <size>
             <width>40</width>
@@ -621,7 +621,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="kasperMaxQueueVolCB">
+         <widget class="QComboBox" name="kasperMaxQueueVolUnitCB">
           <property name="maximumSize">
            <size>
             <width>40</width>
@@ -674,10 +674,10 @@
   <tabstop>drwebFileButton</tabstop>
   <tabstop>kasperMaxQueueSizeSB</tabstop>
   <tabstop>kasperMaxQueueVolSB</tabstop>
-  <tabstop>kasperMaxQueueVolCB</tabstop>
+  <tabstop>kasperMaxQueueVolUnitCB</tabstop>
   <tabstop>drwebMaxQueueSizeSB</tabstop>
   <tabstop>drwebMaxQueueVolSB</tabstop>
-  <tabstop>drwebMaxQueueVolCB</tabstop>
+  <tabstop>drwebMaxQueueVolUnitCB</tabstop>
  </tabstops>
  <resources>
   <include location="img.qrc"/>

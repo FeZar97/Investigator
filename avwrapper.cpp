@@ -1,5 +1,7 @@
  #include "avwrapper.h"
 
+// ----------------------------------------- AVRecord -----------------------------------------
+
 AVRecord::AVRecord() {
     m_timeMark = QDateTime::currentDateTime();
     m_av = AV::NONE;
@@ -44,7 +46,68 @@ AVRecord &AVRecord::operator=(const AVRecord &record) {
     return *this;
 }
 
-AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {}
+// ----------------------------------------- AVBase -----------------------------------------
+
+int AVBase::findFileName(QString fileName) {
+    for(int  i = 0; i < m_base.size(); i++) {
+        if(m_base.at(i).first.m_fileName == fileName || m_base.at(i).second.m_fileName == fileName) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void AVBase::add(AVRecord record) {
+    int idx = findFileName(record.m_fileName);
+    if(idx != -1) {
+        if(record.m_av == AV::KASPER)
+            m_base[idx] = QPair<AVRecord, AVRecord>(record, m_base[idx].second);
+        if(record.m_av == AV::DRWEB)
+            m_base[idx] = QPair<AVRecord, AVRecord>(m_base[idx].first, record);
+    } else {
+        if(record.m_av == AV::KASPER)
+            m_base.push_back(QPair<AVRecord, AVRecord>(record, AVRecord()));
+        if(record.m_av == AV::DRWEB)
+            m_base.push_back(QPair<AVRecord, AVRecord>(AVRecord(), record));
+    }
+}
+
+void AVBase::add(QPair<AVRecord, AVRecord>& record) {
+    if(findFileName(record.first.m_fileName)  == -1 &&
+       findFileName(record.second.m_fileName) == -1) {
+        m_base.push_back(record);
+    }
+}
+
+void AVBase::remove(QString fileName) {
+    int idx = findFileName(fileName);
+    if(idx != -1) {
+        m_base.removeAt(idx);
+    }
+}
+
+void AVBase::remove(int idx) {
+    if(!m_base.isEmpty() && idx >= 0 && idx < m_base.size())
+        m_base.removeAt(idx);
+}
+
+void AVBase::clear() {
+    m_base.clear();
+}
+
+QPair<AVRecord, AVRecord>& AVBase::operator[](int idx) {
+    return m_base[idx];
+}
+
+int AVBase::size() {
+    return m_base.size();
+}
+
+// ----------------------------------------- AVWrapper -----------------------------------------
+
+AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {
+    connect(&m_watcher, &QFileSystemWatcher::directoryChanged, this, &AVWrapper::process);
+}
 
 void AVWrapper::setType(AV type) {
     m_type = type;
@@ -58,12 +121,20 @@ int AVWrapper::getMaxQueueSize() {
     return m_maxQueueSize;
 }
 
-void AVWrapper::setMaxQueueVol(double vol) {
-    m_maxQueueVol = vol;
+void AVWrapper::setMaxQueueVolMb(double volMb) {
+    m_maxQueueVolMb = volMb;
 }
 
-double AVWrapper::getMaxQueueVol() {
-    return m_maxQueueVol;
+double AVWrapper::getMaxQueueVolMb() {
+    return m_maxQueueVolMb;
+}
+
+void AVWrapper::setMaxQueueVolUnit(int maxQueueVolUnit) {
+    m_maxQueueVolUnit = maxQueueVolUnit;
+}
+
+int AVWrapper::getMaxQueueVolUnit() {
+    return m_maxQueueVolUnit;
 }
 
 void AVWrapper::setUsage(bool newState) {
@@ -100,6 +171,14 @@ QString AVWrapper::getReportFolder() {
 
 void AVWrapper::setInputFolder(QString inputFolder) {
     m_inputFolder = inputFolder;
+    if(!m_watcher.directories().isEmpty()) {
+        m_watcher.removePaths(m_watcher.directories());
+    }
+    if(!m_inputFolder.isEmpty()) {
+        if(m_watcher.addPath(m_inputFolder)) {
+            process();
+        }
+    }
 }
 
 QString AVWrapper::getInputFolder() {
@@ -142,24 +221,36 @@ int AVWrapper::getProcessedFilesNb() {
     return m_processedFilesNb;
 }
 
-int AVWrapper::getInprogressFilesNb() {
-    return m_inprogressFilesNb;
+int AVWrapper::getInProgressFilesNb() {
+    return m_inProgressFilesNb;
 }
 
 double AVWrapper::getProcessedFilesSize() {
     return m_processedFilesSizeMb;
 }
 
-double AVWrapper::getAverageSpeed(qint64 workTime) {
-   if(!workTime) {
+double AVWrapper::getAverageSpeed() {
+   if(!m_totalWorkTime) {
        return 0;
    } else {
-       return m_processedFilesSizeMb * 8 / workTime;
+       return m_processedFilesSizeMb * 8 / m_totalWorkTime;
    }
 }
 
 double AVWrapper::getCurrentSpeed() {
     return m_currentProcessSpeed;
+}
+
+void AVWrapper::clearStatistic() {
+    m_avBase.clear();
+    m_totalWorkTime = 0;
+    m_dangerFileNb = 0;
+    m_reportIdx = 0;
+    m_inProgressFilesNb = 0;
+    m_processedFilesNb = 0;
+    m_processedFilesSizeMb = 0;
+    m_processedLastFilesSizeMb = 0;
+    m_currentProcessSpeed = 0;
 }
 
 void AVWrapper::setExecArgs(QStringList execArgs) {
@@ -213,7 +304,7 @@ bool AVWrapper::isPayload(QString line) {
     return true;
 }
 
-QString AVWrapper::extractFileName(QString reportLine) {
+QString AVWrapper::extractInfectedFileName(QString reportLine) {
 
     switch(m_type) {
         case AV::KASPER: {
@@ -233,11 +324,12 @@ QString AVWrapper::extractFileName(QString reportLine) {
             QString fileName = reportLine.mid(QDir::toNativeSeparators(m_processFolder).length() + 1,
                                               reportLine.indexOf(QString("\\"), QDir::toNativeSeparators(m_processFolder).length() + 1) - (QDir::toNativeSeparators(m_processFolder).length() + 1));
 
-            if(QDir(m_processFolder + "/").exists(fileName)) {
-                return fileName;
-            } else {
-                return "";
+            if(!fileName.isEmpty()) {
+                if(QDir(m_processFolder + "/").exists(fileName)) {
+                    return fileName;
+                }
             }
+            return "";
         }
 
         default:
@@ -273,179 +365,6 @@ void moveFiles(QString sourceDir, QString destinationDir) {
     }
 }
 
-void AVWrapper::process() {
-
-    m_processedLastFilesSizeMb = 0.;
-
-    if(!QDir(m_inputFolder).isEmpty() && m_readyToProcess) {
-
-        moveFiles(m_inputFolder, m_processFolder);
-
-        m_readyToProcess = false;
-        m_avBase.clear();
-
-        if(m_isUsed) {
-
-            QDateTime startTime = QDateTime::currentDateTime();
-            m_reportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
-
-            if(checkParams()) {
-                log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
-                m_readyToProcess = true;
-            } else {
-                m_reportFile.setFileName(m_reportName);
-
-                foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters)) {
-                    m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
-                }
-                m_processedFilesSizeMb += m_processedLastFilesSizeMb;
-                m_inprogressFilesNb = QDir(m_processFolder).entryInfoList(usingFilters).size();
-                m_processedFilesNb += m_inprogressFilesNb;
-                emit updateUi();
-
-
-                switch(m_type) {
-                    case AV::KASPER:
-                        QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
-                        break;
-                    case AV::DRWEB:
-                        QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
-                        break;
-                    default:
-                        break;
-                }
-                m_reportIdx++;
-
-                m_isReportReady = false;
-
-                while(!m_isReportReady) {
-                    if(QFile::exists(m_reportName) && m_reportFile.open(QIODevice::ReadOnly)) {
-
-                        m_stream.setDevice(&m_reportFile);
-                        m_report = m_stream.readAll();
-
-                        if(m_report.contains(m_reportReadyIndicator)) {
-
-                            m_isReportReady = true;
-
-                            m_stream.seek(m_report.indexOf(m_startRecordsIndicator) + m_startRecordsIndicator.length());
-                            m_reportLine = m_stream.readLine();
-
-                            while(true) {
-                                m_reportLine = m_stream.readLine();
-                                if(m_reportLine.contains(m_endRecordsIndicator)) {
-                                    m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / startTime.msecsTo(QDateTime::currentDateTime());
-                                    break;
-                                } else {
-                                    if(isPayload(m_reportLine)) {
-                                        QString fileName = extractFileName(m_reportLine);
-                                        if(!fileName.isEmpty() && m_avBase.findFileName(fileName) == -1) {
-                                            m_dangerFileNb++;
-
-                                            QFile::rename(m_processFolder + "/" + fileName, m_dangerFolder + "/" + fileName);
-
-                                            m_avBase.add(new AVRecord(QDateTime::currentDateTime(),
-                                                                      m_type,
-                                                                      fileName,
-                                                                      extractDescription(m_reportLine, extractFileName(m_reportLine)),
-                                                                      QFileInfo(m_reportName).fileName()));
-
-                                            log(AVRecord(QDateTime::currentDateTime(),
-                                                         m_type,
-                                                         fileName,
-                                                         extractDescription(m_reportLine, extractFileName(m_reportLine)),
-                                                         QFileInfo(m_reportName).fileName()).toString());
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                        m_reportFile.close();
-                    }
-                }
-
-                moveFiles(m_processFolder, m_outputFolder);
-
-                m_readyToProcess = true;
-                emit updateBase(m_avBase);
-                emit finalProcessing();
-                process();
-            }
-        } else {
-            moveFiles(m_processFolder, m_outputFolder);
-            m_readyToProcess = true;
-            emit finalProcessing();
-            process();
-        }
-    } else {
-        if(QDir(m_inputFolder).isEmpty())
-            m_inprogressFilesNb = 0;
-    }
-    emit updateUi();
-}
-
-int AVBase::findFileName(QString fileName) {
-    for(int  i = 0; i < m_base.size(); i++) {
-        if(m_base.at(i).first.m_fileName == fileName || m_base.at(i).second.m_fileName == fileName) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-void AVBase::add(AVRecord* record) {
-    int idx = findFileName(record->m_fileName);
-    if(idx != -1) {
-        if(record->m_av == AV::KASPER)
-            m_base[idx] = QPair<AVRecord, AVRecord>(*record, m_base[idx].second);
-        if(record->m_av == AV::DRWEB)
-            m_base[idx] = QPair<AVRecord, AVRecord>(m_base[idx].first, *record);
-    } else {
-        if(record->m_av == AV::KASPER)
-            m_base.push_back(QPair<AVRecord, AVRecord>(*record, AVRecord()));
-        if(record->m_av == AV::DRWEB)
-            m_base.push_back(QPair<AVRecord, AVRecord>(AVRecord(), *record));
-    }
-}
-
-void AVBase::add(QPair<AVRecord, AVRecord>* record) {
-    m_base.append(*record);
-}
-
-void AVBase::add(AVBase& base) {
-
-    for(int i = 0; i < base.size(); i++) {
-        if(findFileName(base[i].first.m_fileName) == -1 && findFileName(base[i].second.m_fileName) == -1) {
-            add(&base[i]);
-        }
-    }
-}
-
-void AVBase::remove(QString fileName) {
-    int idx = findFileName(fileName);
-    if(idx != -1) {
-        m_base.removeAt(idx);
-    }
-}
-
-void AVBase::remove(int idx) {
-    if(!m_base.isEmpty() && idx >= 0 && idx < m_base.size())
-        m_base.removeAt(idx);
-}
-
-void AVBase::clear() {
-    m_base.clear();
-}
-
-QPair<AVRecord, AVRecord>& AVBase::operator[](int idx) {
-    return m_base[idx];
-}
-
-int AVBase::size() {
-    return m_base.size();
-}
-
 QString getName(AV type) {
     switch(type) {
         case AV::KASPER:
@@ -459,4 +378,106 @@ QString getName(AV type) {
 
 QString currentDateTime() {
     return QDateTime::currentDateTime().toString(dateTimePattern);
+}
+
+// block wrapper (m_readyToProcess = false) and clear temp variables
+// move files from input dir to process dir
+// if av is used, then create report name
+// if execution params is correct, then execute av
+// calculate statistics
+// parse report file
+void AVWrapper::process() {
+
+    if(m_readyToProcess) {
+
+        // 0
+        m_readyToProcess = false;
+        m_inProgressFilesNb = 0;
+        m_processedLastFilesSizeMb = 0.;
+        m_startProcessTime = QDateTime::currentDateTime();
+        m_avBase.clear();
+
+        // 1
+        moveFiles(m_inputFolder, m_processFolder);
+
+        if(m_isUsed && !QDir(m_processFolder).isEmpty()) {
+
+            // 2
+            m_reportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
+
+            if(checkParams()) {
+                log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
+                return;
+            }
+
+            m_inProgressFilesNb = QDir(m_processFolder).entryInfoList(usingFilters).size();
+
+            // 3
+            switch(m_type) {
+                case AV::KASPER:
+                    QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
+                    break;
+                case AV::DRWEB:
+                    QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
+                    break;
+                default:
+                    break;
+            }
+
+            // 4
+            m_reportIdx++;
+            foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters))
+                m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
+            m_processedFilesSizeMb += m_processedLastFilesSizeMb;
+            m_processedFilesNb += m_inProgressFilesNb;
+            m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
+            m_totalWorkTime += m_startProcessTime.secsTo(QDateTime::currentDateTime());
+
+            // 5
+            m_reportFile.setFileName(m_reportName);
+
+            // wait from report ready
+            do {
+                if(m_reportFile.open(QIODevice::ReadOnly)) {
+                    m_stream.setDevice(&m_reportFile);
+                    m_report = m_stream.readAll();
+                    m_reportFile.close();
+                }
+            } while(!m_report.contains(m_reportReadyIndicator));
+
+            if(m_reportFile.open(QIODevice::ReadOnly)) {
+                m_stream.setDevice(&m_reportFile);
+
+                // seek to position with infected files information
+                m_stream.seek(m_report.indexOf(m_startRecordsIndicator) + m_startRecordsIndicator.length());
+
+                // extract info from report file
+                do {
+                    m_reportLine = m_stream.readLine();
+
+                    if(isPayload(m_reportLine)) {
+                        QString infectedFileName = extractInfectedFileName(m_reportLine);
+                        if(!infectedFileName.isEmpty() && m_avBase.findFileName(infectedFileName) == -1) {
+                            m_dangerFileNb++;
+
+                            QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName);
+
+                            m_avBase.add(AVRecord(QDateTime::currentDateTime(),
+                                                  m_type,
+                                                  infectedFileName,
+                                                  extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
+                                                  QFileInfo(m_reportName).fileName()));
+                        }
+                    }
+                } while(!m_reportLine.contains(m_endRecordsIndicator));
+
+                m_reportFile.close();
+            }
+        }
+        emit updateBase(m_avBase);
+        process();
+
+        moveFiles(m_processFolder, m_outputFolder);
+        m_readyToProcess = true;
+    }
 }

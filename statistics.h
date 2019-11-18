@@ -21,6 +21,9 @@ public:
 
     void updateUi();
 
+private slots:
+    void on_clearButton_clicked();
+
 private:
     Ui::Statistics *ui;
     QStandardItemModel m_model;

@@ -2,7 +2,7 @@
 
 Distributor::Distributor(QObject *parent) : QObject(parent) {
     
-    qRegisterMetaType<AVBase>("AVBase");
+    qRegisterMetaType<AVBase>("AVBase&");
 
 // initial settings
     kasperWrapper.setType(AV::KASPER);
@@ -25,23 +25,17 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
 
-    connect(&kasperWrapper, &AVWrapper::updateUi,                   this,           &Distributor::updateUi);
-    connect(&drwebWrapper,  &AVWrapper::updateUi,                   this,           &Distributor::updateUi);
-
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
-
-    connect(&kasperWrapper, &AVWrapper::finalProcessing,            &drwebWrapper,  &AVWrapper::process);
-    connect(&drwebWrapper,  &AVWrapper::finalProcessing,            this,           &Distributor::sortingProcessedFiles);
 
     connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
     connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
+
+    configureAV();
 
     kasperWrapper.moveToThread(&kasperThread);
     drwebWrapper.moveToThread(&drwebThread);
     kasperThread.start();
     drwebThread.start();
-
-    configureAV();
 }
 
 Distributor::~Distributor() {
@@ -212,11 +206,11 @@ int Distributor::getMaxQueueSize(AV AVName) {
 void Distributor::setMaxQueueVol(AV AVName, double vol) {
     switch(AVName) {
         case AV::KASPER:
-            kasperWrapper.setMaxQueueVol(vol);
+            kasperWrapper.setMaxQueueVolMb(vol);
             break;
 
         case AV::DRWEB:
-            drwebWrapper.setMaxQueueVol(vol);
+            drwebWrapper.setMaxQueueVolMb(vol);
             break;
 
         default:
@@ -227,10 +221,51 @@ void Distributor::setMaxQueueVol(AV AVName, double vol) {
 double Distributor::getMaxQueueVolMb(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return kasperWrapper.getMaxQueueVol();
+            return kasperWrapper.getMaxQueueVolMb();
 
         case AV::DRWEB:
-            return drwebWrapper.getMaxQueueVol();
+            return drwebWrapper.getMaxQueueVolMb();
+
+        default:
+            return 0;
+    }
+}
+
+void Distributor::setMaxQueueVolUnit(AV AVName, int unitIdx) {
+    switch(AVName) {
+        case AV::KASPER:
+            kasperWrapper.setMaxQueueVolUnit(unitIdx);
+            break;
+
+        case AV::DRWEB:
+            drwebWrapper.setMaxQueueVolUnit(unitIdx);
+            break;
+
+        default:
+            break;
+    }
+}
+
+int Distributor::getMaxQueueVolUnit(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getMaxQueueVolUnit();
+
+        case AV::DRWEB:
+            return drwebWrapper.getMaxQueueVolUnit();
+
+        default:
+            return 0;
+    }
+}
+
+double Distributor::calcMaxQueueVol(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getMaxQueueVolMb() * (kasperWrapper.getMaxQueueVolUnit() ? 1 : 1024);
+
+        case AV::DRWEB:
+            return drwebWrapper.getMaxQueueVolMb() * (drwebWrapper.getMaxQueueVolUnit() ? 1 : 1024);
 
         default:
             return 0;
@@ -302,13 +337,13 @@ int Distributor::getAVProcessedFilesNb(AV AVName) {
     }
 }
 
-int Distributor::getAVInprogressFilesNb(AV AVName) {
+int Distributor::getAVInProgressFilesNb(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return kasperWrapper.getInprogressFilesNb();
+            return kasperWrapper.getInProgressFilesNb();
 
         case AV::DRWEB:
-            return drwebWrapper.getInprogressFilesNb();
+            return drwebWrapper.getInProgressFilesNb();
 
         default:
             return 0;
@@ -341,7 +376,6 @@ void Distributor::configureAV() {
 }
 
 void Distributor::startWatchDirEye() {
-
     stopWatchDirEye();
 
     if(!m_watchDir.isEmpty()) {
@@ -354,7 +388,6 @@ void Distributor::startWatchDirEye() {
             log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir));
         }
     }
-    updateUi();
 }
 
 void Distributor::stopWatchDirEye() {
@@ -364,13 +397,12 @@ void Distributor::stopWatchDirEye() {
         log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
-    updateUi();
 }
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
     moveFiles(m_watchDir, m_inputDir);
-    // kasperWrapper.process();
+    kasperWrapper.process();
 }
 
 void Distributor::sortingProcessedFiles() {
@@ -391,20 +423,29 @@ void Distributor::sortingProcessedFiles() {
 }
 
 void Distributor::updateBase(AVBase& singleAVBase){
-    mainBase.add(singleAVBase);
-}
 
-qint64 Distributor::getWorkTimeInSecs() {
-    if(m_isProcessing)
-        m_endTime = QDateTime::currentDateTime();
-    return m_startTime.secsTo(m_endTime);
+    for(int i = 0; i < singleAVBase.size(); i++) {
+
+        if(!singleAVBase[i].first.m_fileName.isEmpty())
+            log(singleAVBase[i].first.toString());
+        else
+            log(singleAVBase[i].second.toString());
+
+        if(mainBase.findFileName(singleAVBase[i].first.m_fileName)  == -1 &&
+           mainBase.findFileName(singleAVBase[i].second.m_fileName) == -1) {
+
+            mainBase.add(singleAVBase[i]);
+        }
+    }
 }
 
 QDateTime Distributor::getStartTime() const {
     return m_startTime;
 }
 
-QDateTime Distributor::getEndTime() const {
+QDateTime Distributor::getEndTime() {
+    if(m_isProcessing)
+        m_endTime = QDateTime::currentDateTime();
     return m_endTime;
 }
 
@@ -433,13 +474,21 @@ void Distributor::moveFilesToInputDir() {
     moveFiles(m_outputDir, m_inputDir);
 }
 
+void Distributor::clearStatistic() {
+    m_startTime = QDateTime::currentDateTime();
+    m_endTime = QDateTime::currentDateTime();
+    mainBase.clear();
+    kasperWrapper.clearStatistic();
+    drwebWrapper.clearStatistic();
+}
+
 double Distributor::getAVAverageSpeed(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return kasperWrapper.getAverageSpeed(getWorkTimeInSecs());
+            return kasperWrapper.getAverageSpeed();
 
         case AV::DRWEB:
-            return drwebWrapper.getAverageSpeed(getWorkTimeInSecs());
+            return drwebWrapper.getAverageSpeed();
 
         default:
             return 0;

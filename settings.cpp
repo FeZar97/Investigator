@@ -73,33 +73,34 @@ void Settings::updateUi() {
     ui->kasperCB->setChecked(m_distributor->getAVUse(AV::KASPER));
     ui->kasperMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::KASPER));
     ui->kasperMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::KASPER));
-    ui->kasperMaxQueueVolCB->setCurrentIndex(m_kasperVolUnit);
+    ui->kasperMaxQueueVolUnitCB->setCurrentIndex(m_distributor->getMaxQueueVolUnit(AV::KASPER));
 
     ui->drwebFileLE->setText(m_distributor->getAVFile(AV::DRWEB));
     ui->drwebCB->setChecked(m_distributor->getAVUse(AV::DRWEB));
     ui->drwebMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::DRWEB));
     ui->drwebMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::DRWEB));
-    ui->drwebMaxQueueVolCB->setCurrentIndex(m_drwebVolUnit);
+    ui->drwebMaxQueueVolUnitCB->setCurrentIndex(m_distributor->getMaxQueueVolUnit(AV::DRWEB));
 
+// enabled
     ui->kasperFileLE->setEnabled(m_distributor->getAVUse(AV::KASPER));
     ui->kasperFileButton->setEnabled(m_distributor->getAVUse(AV::KASPER));
     ui->kasperMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
     ui->kasperMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperMaxQueueVolCB->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->kasperMaxQueueVolUnitCB->setEnabled(m_distributor->getAVUse(AV::KASPER));
 
     ui->drwebFileLE->setEnabled(m_distributor->getAVUse(AV::DRWEB));
     ui->drwebFileButton->setEnabled(m_distributor->getAVUse(AV::DRWEB));
     ui->drwebMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
     ui->drwebMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebMaxQueueVolCB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+    ui->drwebMaxQueueVolUnitCB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
 }
 
 int Settings::getVolUnits(AV av) {
     switch(av) {
         case AV::KASPER:
-            return ui->kasperMaxQueueVolCB->currentIndex();
+            return ui->kasperMaxQueueVolUnitCB->currentIndex();
         case AV::DRWEB:
-            return ui->drwebMaxQueueVolCB->currentIndex();
+            return ui->drwebMaxQueueVolUnitCB->currentIndex();
         default:
             return 0;
     }
@@ -113,22 +114,20 @@ void Settings::on_drwebMaxQueueSizeSB_valueChanged(int size) {
     m_distributor->setMaxQueueSize(AV::DRWEB, size);
 }
 
-void Settings::on_kasperMaxQueueVolSB_valueChanged(double kasperMaxQueueVol) {
-    m_distributor->setMaxQueueVol(AV::KASPER, kasperMaxQueueVol * (ui->drwebMaxQueueVolCB->currentIndex() ? 1024 : 1) );
+void Settings::on_kasperMaxQueueVolSB_valueChanged(double kasperMaxQueueVolMb) {
+    m_distributor->setMaxQueueVol(AV::KASPER, kasperMaxQueueVolMb);
 }
 
-void Settings::on_drwebMaxQueueVolSB_valueChanged(double drwebMaxQueueVol) {
-    m_distributor->setMaxQueueVol(AV::DRWEB, drwebMaxQueueVol * (ui->drwebMaxQueueVolCB->currentIndex() ? 1024 : 1) );
+void Settings::on_drwebMaxQueueVolSB_valueChanged(double drwebMaxQueueVolMb) {
+    m_distributor->setMaxQueueVol(AV::DRWEB, drwebMaxQueueVolMb);
 }
 
-void Settings::on_kasperMaxQueueVolCB_currentIndexChanged(int index) {
-    m_kasperVolUnit = index;
-    m_distributor->setMaxQueueVol(AV::KASPER, ui->kasperMaxQueueVolSB->value() * (m_kasperVolUnit ? 1024 : 1) );
+void Settings::on_kasperMaxQueueVolUnitCB_currentIndexChanged(int unitIdx) {
+    m_distributor->setMaxQueueVolUnit(AV::KASPER, unitIdx);
 }
 
-void Settings::on_drwebMaxQueueVolCB_currentIndexChanged(int index) {
-    m_drwebVolUnit = index;
-    m_distributor->setMaxQueueVol(AV::DRWEB, ui->drwebMaxQueueVolSB->value() * (m_drwebVolUnit ? 1024 : 1) );
+void Settings::on_drwebMaxQueueVolUnitCB_currentIndexChanged(int unitIdx){
+    m_distributor->setMaxQueueVolUnit(AV::DRWEB, unitIdx);
 }
 
 void Settings::on_clearWatchDirButton_clicked() {

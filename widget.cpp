@@ -16,14 +16,16 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     distributor.setAVUse(AV::KASPER, settings.value("useKasper", true).toBool());
     distributor.setAVFile(AV::KASPER, settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
     distributor.setMaxQueueSize(AV::KASPER, settings.value("kasperMaxQueueSize", 0).toInt());
-    distributor.setMaxQueueVol(AV::KASPER, settings.value("kasperMaxQueueVol", 0.).toDouble());
+    distributor.setMaxQueueVol(AV::KASPER, settings.value("kasperMaxQueueVol", 1024.).toDouble());
+    distributor.setMaxQueueVolUnit(AV::KASPER, settings.value("kasperVolUnit", 0).toInt());
 
     distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
     distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
     distributor.setMaxQueueSize(AV::DRWEB, settings.value("drwebMaxQueueSize", 0).toInt());
-    distributor.setMaxQueueVol(AV::DRWEB, settings.value("drwebMaxQueueVol", 0.).toDouble());
+    distributor.setMaxQueueVol(AV::DRWEB, settings.value("drwebMaxQueueVol", 1024.).toDouble());
+    distributor.setMaxQueueVolUnit(AV::DRWEB, settings.value("drwebVolUnit", 0).toInt());
 
-    settingsWindow = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
+    settingsWindow  = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
     statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
 
     connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
@@ -54,13 +56,13 @@ Widget::~Widget() {
     settings.setValue("useKasper",              distributor.getAVUse(AV::KASPER));
     settings.setValue("kasperMaxQueueSize",     distributor.getMaxQueueSize(AV::KASPER));
     settings.setValue("kasperMaxQueueVol",      distributor.getMaxQueueVolMb(AV::KASPER));
-    settings.setValue("kasperVolUnit",          settingsWindow->m_kasperVolUnit);
+    settings.setValue("kasperVolUnit",          distributor.getMaxQueueVolUnit(AV::KASPER));
 
     settings.setValue("drwebFilePath",          distributor.getAVFile(AV::DRWEB));
     settings.setValue("useDrweb",               distributor.getAVUse(AV::DRWEB));
     settings.setValue("drwebMaxQueueSize",      distributor.getMaxQueueSize(AV::DRWEB));
     settings.setValue("drwebMaxQueueVol",       distributor.getMaxQueueVolMb(AV::DRWEB));
-    settings.setValue("drwebVolUnit",           settingsWindow->m_drwebVolUnit);
+    settings.setValue("drwebVolUnit",           distributor.getMaxQueueVolUnit(AV::KASPER));
 
     workThread.quit();
     workThread.wait();
@@ -77,12 +79,11 @@ void Widget::log(const QString &s) {
 void Widget::updateUi() {
     ui->startButton->setEnabled(!distributor.isInProcessing());
     ui->stopButton->setEnabled(distributor.isInProcessing());
-
-    settingsWindow->updateUi();
 }
 
 void Widget::on_startButton_clicked() {
     distributor.startWatchDirEye();
+    updateUi();
 }
 
 void Widget::on_stopButton_clicked() {
@@ -92,6 +93,7 @@ void Widget::on_stopButton_clicked() {
                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
         distributor.stopWatchDirEye();
     }
+    updateUi();
 }
 
 void Widget::on_settingsButton_clicked() {

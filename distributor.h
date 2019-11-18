@@ -3,7 +3,7 @@
 
 #include "avwrapper.h"
 
-Q_DECLARE_METATYPE(QList<AVRecord>)
+Q_DECLARE_METATYPE(AVBase)
 
 #define     VERSION               "v1.1"
 
@@ -68,12 +68,15 @@ public:
     int getMaxQueueSize(AV AVName);
     void setMaxQueueVol(AV AVName, double vol);
     double getMaxQueueVolMb(AV AVName);
+    void setMaxQueueVolUnit(AV AVName, int unitIdx);
+    int getMaxQueueVolUnit(AV AVName);
+    double calcMaxQueueVol(AV AVName);
     int getAVDangerFilesNb(AV AVName);
     int getAVCurrentReportIdx(AV AVName);
     int getAVQueueFilesNb(AV AVName);
     double getAVQueueFilesVolMb(AV AVName);
     int getAVProcessedFilesNb(AV AVName);
-    int getAVInprogressFilesNb(AV AVName);
+    int getAVInProgressFilesNb(AV AVName);
     double getAVProcessedFilesSize(AV AVName);
     double getAVAverageSpeed(AV AVName);
     double getAVCurrentSpeed(AV AVName);
@@ -92,13 +95,13 @@ public:
     void updateBase(AVBase& singleAVBase);
 
 // OTHER
-    qint64 getWorkTimeInSecs();
     QDateTime getStartTime() const;
-    QDateTime getEndTime() const;
+    QDateTime getEndTime();
     bool isInProcessing();
     void clearDir(QString dirName);
     double dirSizeMb(QString dirName);
     void moveFilesToInputDir();
+    void clearStatistic();
 
 signals:
     void updateUi();
