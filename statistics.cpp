@@ -11,14 +11,14 @@ Statistics::Statistics(QWidget *parent, Distributor* distributor, QByteArray geo
     setVisible(visible);
 
     m_distributor = distributor;
-    m_workTimer.setInterval(1000);
+    m_workTimer.setInterval(500);
 
     connect(&m_workTimer, &QTimer::timeout, this, &Statistics::updateUi);
     m_workTimer.start();
 
     m_model.setHorizontalHeaderLabels(QStringList() << "Kaspersky" << "DrWeb");
-    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов" << "Просканировано файлов" << "Объем\nпросканированных файлов (Мб)"
-                                                  << "Средняя скорость\nсканирования (Мб/с)" << "Текущая скорость\nсканирования (Мб/с)"
+    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов" << "Просканировано файлов" << "Объем\nпросканированных файлов (МБ)"
+                                                  << "Средняя скорость\nсканирования (МБ/с)" << "Текущая скорость\nсканирования (МБ/с)"
                                                   << "Файлов в обработке" << "Файлов в очереди" << "Количество сформированных\nотчетов");
 
     ui->tableView->setModel(&m_model);

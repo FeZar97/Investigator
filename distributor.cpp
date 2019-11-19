@@ -30,8 +30,11 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
     connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
 
+    // when kasper finish, drweb can start
+    connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
+
     // when last AV finished works, need move remaind files to clear folder
-    connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::moveCleanFiles);
+    connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
 
     configureAV();
 
@@ -367,15 +370,15 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
 }
 
 void Distributor::configureAV() {
-    kasperWrapper.setInputFolder(m_investigatorDir   + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-    kasperWrapper.setProcessFolder(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    kasperWrapper.setOutputFolder(m_investigatorDir  + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME);
-    kasperWrapper.setReportFolder(m_reportDir);
+    kasperWrapper.setFolders(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
+                             m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME,
+                             m_investigatorDir + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME,
+                             m_reportDir);
 
-    drwebWrapper.setInputFolder(m_investigatorDir   + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-    drwebWrapper.setProcessFolder(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-    drwebWrapper.setOutputFolder(m_outputDir);
-    drwebWrapper.setReportFolder(m_reportDir);
+    drwebWrapper.setFolders(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
+                            m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
+                            m_outputDir,
+                            m_reportDir);
 }
 
 void Distributor::startWatchDirEye() {
@@ -383,10 +386,23 @@ void Distributor::startWatchDirEye() {
 
     if(!m_watchDir.isEmpty()) {
         if(watchDirEye.addPath(m_watchDir)) {
+            if(!kasperWrapper.isReadyToProcess() && kasperWrapper.getUsage()) {
+                log("Процесс проверки антивируса Kaspersky уже запущен!");
+                return;
+            }
+
+            if(!drwebWrapper.isReadyToProcess() && drwebWrapper.getUsage()) {
+                log("Процесс проверки антивируса DrWeb уже запущен!");
+                return;
+            }
+
             m_startTime = QDateTime::currentDateTime();
             m_isProcessing = true;
+
             log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(m_watchDir));
+
             onWatchDirChange("");
+
         } else {
             log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir));
         }
@@ -395,8 +411,11 @@ void Distributor::startWatchDirEye() {
 
 void Distributor::stopWatchDirEye() {
     if(!watchDirEye.directories().isEmpty()) {
+
         m_isProcessing = false;
+
         m_endTime = QDateTime::currentDateTime();
+
         log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
@@ -404,8 +423,10 @@ void Distributor::stopWatchDirEye() {
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
-    moveFiles(m_watchDir, m_inputDir);
-    kasperWrapper.process();
+    if(m_isProcessing) {
+        moveFiles(m_watchDir, m_inputDir);
+        kasperWrapper.process();
+    }
 }
 
 void Distributor::updateBase(AVBase* singleAVBase){

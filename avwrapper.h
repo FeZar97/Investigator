@@ -143,6 +143,8 @@ public:
     void setDangerFolder(QString dangerFolder);
     QString getDangerFolder();
 
+    void setFolders(QString inputFolder, QString processFolder, QString outputFolder, QString reportFolder);
+
     void setMaxQueueSize(int size);
     int getMaxQueueSize();
 
@@ -182,6 +184,7 @@ public:
 signals:
     void log(QString message);
     void updateBase(AVBase* singleAVBase);
+    void finishProcess();
 };
 
 #endif // AVWRAPPER_H

@@ -5,7 +5,7 @@
 
 Q_DECLARE_METATYPE(AVBase)
 
-#define     VERSION               "v1.1"
+#define     VERSION               "v1.2"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
