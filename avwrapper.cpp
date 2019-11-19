@@ -230,10 +230,10 @@ double AVWrapper::getProcessedFilesSize() {
 }
 
 double AVWrapper::getAverageSpeed() {
-   if(!m_totalWorkTime) {
+   if(!m_totalWorkTimeInMsec) {
        return 0;
    } else {
-       return m_processedFilesSizeMb * 8 / m_totalWorkTime;
+       return m_processedFilesSizeMb * 8  * 1000 / m_totalWorkTimeInMsec;
    }
 }
 
@@ -242,8 +242,7 @@ double AVWrapper::getCurrentSpeed() {
 }
 
 void AVWrapper::clearStatistic() {
-    m_avBase.clear();
-    m_totalWorkTime = 0;
+    m_totalWorkTimeInMsec = 0;
     m_dangerFileNb = 0;
     m_reportIdx = 0;
     m_inProgressFilesNb = 0;
@@ -288,20 +287,21 @@ bool AVWrapper::isReadyToProcess() {
     return m_readyToProcess;
 }
 
-void AVWrapper::setIndicators(QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList permitStrings) {
+void AVWrapper::setIndicators(QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList denyStrings) {
     m_reportReadyIndicator = readyIndicator;
     m_startRecordsIndicator = startRecordsIndicator;
     m_endRecordsIndicator = endRecordsIndicator;
-    m_permitStrings = permitStrings;
+    m_denyStrings = denyStrings;
 }
 
 bool AVWrapper::isPayload(QString line) {
-    foreach(QString permitString, m_permitStrings) {
-        if(!permitString.isEmpty() && line.contains(permitString)) {
-            return false;
+    foreach(QString denyString, m_denyStrings) {
+        if(!denyString.isEmpty() && line.contains(denyString)) {
+            return true;
         }
     }
-    return true;
+
+    return false;
 }
 
 QString AVWrapper::extractInfectedFileName(QString reportLine) {
@@ -359,9 +359,9 @@ void moveFiles(QString sourceDir, QString destinationDir) {
     while(!QDir(sourceDir + "/").isEmpty()) {
 
         filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
-
-        foreach(QFileInfo fileInfo, filesInSourceDir)
+        foreach(QFileInfo fileInfo, filesInSourceDir) {
             QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName());
+        }
     }
 }
 
@@ -388,14 +388,15 @@ QString currentDateTime() {
 // parse report file
 void AVWrapper::process() {
 
-    if(m_readyToProcess) {
+    // 0
+    m_readyToProcess = false;
+    m_inProgressFilesNb = 0;
+    m_processedLastFilesSizeMb = 0.;
+    m_startProcessTime = QDateTime::currentDateTime();
+    // m_avBase.clear();
+    AVBase* m_dynamicBase = new AVBase();
 
-        // 0
-        m_readyToProcess = false;
-        m_inProgressFilesNb = 0;
-        m_processedLastFilesSizeMb = 0.;
-        m_startProcessTime = QDateTime::currentDateTime();
-        m_avBase.clear();
+    if(m_readyToProcess) {
 
         // 1
         moveFiles(m_inputFolder, m_processFolder);
@@ -431,7 +432,7 @@ void AVWrapper::process() {
             m_processedFilesSizeMb += m_processedLastFilesSizeMb;
             m_processedFilesNb += m_inProgressFilesNb;
             m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
-            m_totalWorkTime += m_startProcessTime.secsTo(QDateTime::currentDateTime());
+            m_totalWorkTimeInMsec += m_startProcessTime.msecsTo(QDateTime::currentDateTime());
 
             // 5
             m_reportFile.setFileName(m_reportName);
@@ -449,7 +450,7 @@ void AVWrapper::process() {
                 m_stream.setDevice(&m_reportFile);
 
                 // seek to position with infected files information
-                m_stream.seek(m_report.indexOf(m_startRecordsIndicator) + m_startRecordsIndicator.length());
+                m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
 
                 // extract info from report file
                 do {
@@ -457,16 +458,17 @@ void AVWrapper::process() {
 
                     if(isPayload(m_reportLine)) {
                         QString infectedFileName = extractInfectedFileName(m_reportLine);
-                        if(!infectedFileName.isEmpty() && m_avBase.findFileName(infectedFileName) == -1) {
+
+                        if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
                             m_dangerFileNb++;
 
-                            QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName);
+                            m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
+                                                        m_type,
+                                                        infectedFileName,
+                                                        extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
+                                                        QFileInfo(m_reportName).fileName()));
 
-                            m_avBase.add(AVRecord(QDateTime::currentDateTime(),
-                                                  m_type,
-                                                  infectedFileName,
-                                                  extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
-                                                  QFileInfo(m_reportName).fileName()));
+                            QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName);
                         }
                     }
                 } while(!m_reportLine.contains(m_endRecordsIndicator));
@@ -474,10 +476,11 @@ void AVWrapper::process() {
                 m_reportFile.close();
             }
         }
-        emit updateBase(m_avBase);
-        process();
-
         moveFiles(m_processFolder, m_outputFolder);
+
+        emit updateBase(m_dynamicBase);
+
+        process();
         m_readyToProcess = true;
     }
 }

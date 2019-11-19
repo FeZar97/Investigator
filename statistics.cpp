@@ -73,14 +73,28 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(7,1), m_distributor->getAVCurrentReportIdx(AV::DRWEB), Qt::DisplayRole);
 
     m_model.item(6,0)->setBackground(
-                ( (m_distributor->getAVQueueFilesNb(AV::KASPER) >= m_distributor->getMaxQueueSize(AV::KASPER) ||
-                  m_distributor->getAVQueueFilesVolMb(AV::KASPER) >= m_distributor->calcMaxQueueVol(AV::KASPER) ) &&
-                  m_distributor->getAVUse(AV::KASPER)) ? QBrush(Qt::red) : QBrush(Qt::transparent));
+                (
+                     (
+                        (m_distributor->getAVQueueFilesNb(AV::KASPER) >= m_distributor->getMaxQueueSize(AV::KASPER))
+                      ||
+                        (m_distributor->getAVQueueFilesVolMb(AV::KASPER) >= m_distributor->calcMaxQueueVol(AV::KASPER))
+                     )
+                 &&
+                     (m_distributor->getAVUse(AV::KASPER))
+                 ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
+                );
 
     m_model.item(6,1)->setBackground(
-                ( (m_distributor->getAVQueueFilesNb(AV::DRWEB) >= m_distributor->getMaxQueueSize(AV::DRWEB) ||
-                  m_distributor->getAVQueueFilesVolMb(AV::DRWEB) >= m_distributor->calcMaxQueueVol(AV::DRWEB) ) &&
-                  m_distributor->getAVUse(AV::DRWEB)) ? QBrush(Qt::red) : QBrush(Qt::transparent));
+                (
+                     (
+                        (m_distributor->getAVQueueFilesNb(AV::DRWEB) >= m_distributor->getMaxQueueSize(AV::DRWEB))
+                      ||
+                        (m_distributor->getAVQueueFilesVolMb(AV::DRWEB) >= m_distributor->calcMaxQueueVol(AV::DRWEB))
+                     )
+                 &&
+                     (m_distributor->getAVUse(AV::DRWEB))
+                 ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
+                );
 }
 
 void Statistics::on_clearButton_clicked() {

@@ -91,8 +91,7 @@ public:
     void onWatchDirChange(const QString &path);
 
 // CORE
-    void sortingProcessedFiles();
-    void updateBase(AVBase& singleAVBase);
+    void updateBase(AVBase* singleAVBase);
 
 // OTHER
     QDateTime getStartTime() const;
@@ -100,8 +99,8 @@ public:
     bool isInProcessing();
     void clearDir(QString dirName);
     double dirSizeMb(QString dirName);
-    void moveFilesToInputDir();
     void clearStatistic();
+    void moveCleanFiles();
 
 signals:
     void updateUi();

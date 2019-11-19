@@ -84,7 +84,7 @@ class AVWrapper : public QObject
     QString m_reportReadyIndicator;
     QString m_startRecordsIndicator;
     QString m_endRecordsIndicator;
-    QStringList m_permitStrings;
+    QStringList m_denyStrings;
 
     // folders
     QString m_inputFolder;
@@ -97,7 +97,7 @@ class AVWrapper : public QObject
     AVBase m_avBase;
     QDateTime m_startProcessTime;
     QDateTime m_endProcessTime;
-    qint64 m_totalWorkTime{0};
+    qint64 m_totalWorkTimeInMsec{0};
     int m_dangerFileNb{0};
     int m_reportIdx{0};
     int m_inProgressFilesNb{0};
@@ -181,7 +181,7 @@ public:
 
 signals:
     void log(QString message);
-    void updateBase(AVBase& singleAVBase);
+    void updateBase(AVBase* singleAVBase);
 };
 
 #endif // AVWRAPPER_H

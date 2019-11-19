@@ -14,12 +14,12 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     kasperWrapper.setIndicators("; Completion:       	100%",
                                 "; ------------------",
                                 ";  --- Statistics ---",
-                                QStringList() << "running" << "completed" << "password protected");
+                                QStringList() << "detected");
 
     drwebWrapper.setIndicators("Scan session completed",
                                "The mask was translated to \"\" filter",
                                "WARNING! Restore points directories have not been scanned",
-                               QStringList() << "password protected");
+                               QStringList() << "infected");
 
 // SSC
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
@@ -29,6 +29,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
     connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
+
+    // when last AV finished works, need move remaind files to clear folder
+    connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::moveCleanFiles);
 
     configureAV();
 
@@ -262,10 +265,10 @@ int Distributor::getMaxQueueVolUnit(AV AVName) {
 double Distributor::calcMaxQueueVol(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return kasperWrapper.getMaxQueueVolMb() * (kasperWrapper.getMaxQueueVolUnit() ? 1 : 1024);
+            return kasperWrapper.getMaxQueueVolMb() * (kasperWrapper.getMaxQueueVolUnit() ? 1024 : 1);
 
         case AV::DRWEB:
-            return drwebWrapper.getMaxQueueVolMb() * (drwebWrapper.getMaxQueueVolUnit() ? 1 : 1024);
+            return drwebWrapper.getMaxQueueVolMb() * (drwebWrapper.getMaxQueueVolUnit() ? 1024 : 1);
 
         default:
             return 0;
@@ -314,10 +317,10 @@ int Distributor::getAVQueueFilesNb(AV AVName) {
 double Distributor::getAVQueueFilesVolMb(AV AVName) {
     switch(AVName) {
         case AV::KASPER:
-            return dirSizeMb(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
+            return dirSizeMb(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME + "/");
 
         case AV::DRWEB:
-            return dirSizeMb(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
+            return dirSizeMb(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME + "/");
 
         default:
             return 0;
@@ -405,38 +408,15 @@ void Distributor::onWatchDirChange(const QString &path) {
     kasperWrapper.process();
 }
 
-void Distributor::sortingProcessedFiles() {
-    int idx;
-
-    if(!QDir(m_dangerDir).exists()) QDir().mkpath(m_dangerDir);
-    if(!QDir(m_cleanDir).exists())  QDir().mkpath(m_cleanDir);
-
-    foreach(QFileInfo avRecord, QDir(m_outputDir).entryInfoList(usingFilters)) {
-        idx = mainBase.findFileName(avRecord.fileName());
-        if(idx != -1) {
-            QFile::rename(avRecord.absoluteFilePath(), m_dangerDir + "/" + avRecord.fileName());
-            mainBase.remove(idx);
-        } else {
-            QFile::rename(avRecord.absoluteFilePath(), m_cleanDir + "/" + avRecord.fileName());
+void Distributor::updateBase(AVBase* singleAVBase){
+    for(int i = 0; i < singleAVBase->size(); i++) {
+        if(!(*singleAVBase)[i].first.m_fileName.isEmpty()) {
+            log((*singleAVBase)[i].first.toString());
+        } else if(!(*singleAVBase)[i].second.m_fileName.isEmpty()) {
+            log((*singleAVBase)[i].second.toString());
         }
     }
-}
-
-void Distributor::updateBase(AVBase& singleAVBase){
-
-    for(int i = 0; i < singleAVBase.size(); i++) {
-
-        if(!singleAVBase[i].first.m_fileName.isEmpty())
-            log(singleAVBase[i].first.toString());
-        else
-            log(singleAVBase[i].second.toString());
-
-        if(mainBase.findFileName(singleAVBase[i].first.m_fileName)  == -1 &&
-           mainBase.findFileName(singleAVBase[i].second.m_fileName) == -1) {
-
-            mainBase.add(singleAVBase[i]);
-        }
-    }
+    delete singleAVBase;
 }
 
 QDateTime Distributor::getStartTime() const {
@@ -462,24 +442,26 @@ void Distributor::clearDir(QString dirName) {
 double Distributor::dirSizeMb(QString dirName) {
     double volMb{0};
     foreach(QFileInfo fileInfo, QDir(dirName).entryInfoList(usingFilters)) {
-        volMb += fileInfo.size() * 128;
+        volMb += fileInfo.size();
     }
+    volMb = (volMb * 8 / 1024) / 1024;
     return volMb;
-}
-
-void Distributor::moveFilesToInputDir() {
-    moveFiles(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME, m_inputDir);
-    moveFiles(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME, m_inputDir);
-    moveFiles(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME, m_inputDir);
-    moveFiles(m_outputDir, m_inputDir);
 }
 
 void Distributor::clearStatistic() {
     m_startTime = QDateTime::currentDateTime();
     m_endTime = QDateTime::currentDateTime();
-    mainBase.clear();
     kasperWrapper.clearStatistic();
     drwebWrapper.clearStatistic();
+}
+
+void Distributor::moveCleanFiles() {
+    if(!QDir(m_dangerDir).exists()) QDir().mkpath(m_dangerDir);
+    if(!QDir(m_cleanDir).exists())  QDir().mkpath(m_cleanDir);
+
+    foreach(QFileInfo avRecord, QDir(m_outputDir).entryInfoList(usingFilters)) {
+        QFile::rename(avRecord.absoluteFilePath(), m_cleanDir + "/" + avRecord.fileName());
+    }
 }
 
 double Distributor::getAVAverageSpeed(AV AVName) {
