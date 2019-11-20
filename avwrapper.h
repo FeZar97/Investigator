@@ -49,9 +49,9 @@ public:
     void add(AVRecord record);
     void add(QPair<AVRecord, AVRecord>& record);
 
-    void remove(QString fileName);
-    void remove(int idx);
-    void clear();
+    // void remove(QString fileName);
+    // void remove(int idx);
+    // void clear();
 
     QPair<AVRecord, AVRecord>& operator[](int idx);
 
@@ -94,9 +94,7 @@ class AVWrapper : public QObject
     QString m_dangerFolder;
 
     // statistics
-    AVBase m_avBase;
     QDateTime m_startProcessTime;
-    QDateTime m_endProcessTime;
     qint64 m_totalWorkTimeInMsec{0};
     int m_dangerFileNb{0};
     int m_reportIdx{0};

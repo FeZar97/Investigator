@@ -21,7 +21,6 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
                                "WARNING! Restore points directories have not been scanned",
                                QStringList() << "infected");
 
-// SSC
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
 
