@@ -15,6 +15,15 @@
 
 #include <QDebug>
 
+#define     VERSION               "v1.3.17"
+
+#define     KASPER_DIR_NAME       "kasper"
+#define     DRWEB_DIR_NAME        "drweb"
+#define     INPUT_DIR_NAME        "input"
+#define     OUTPUT_DIR_NAME       "output"
+#define     REPORT_DIR_NAME       "reports"
+#define     PROCESSED_DIR_NAME    "processed"
+
 enum class AV {
     NONE,
     KASPER,
@@ -48,10 +57,6 @@ public:
 
     void add(AVRecord record);
     void add(QPair<AVRecord, AVRecord>& record);
-
-    // void remove(QString fileName);
-    // void remove(int idx);
-    // void clear();
 
     QPair<AVRecord, AVRecord>& operator[](int idx);
 
@@ -87,6 +92,7 @@ class AVWrapper : public QObject
     QStringList m_denyStrings;
 
     // folders
+    QString m_investigatorDir;
     QString m_inputFolder;
     QString m_processFolder;
     QString m_outputFolder;
@@ -141,7 +147,9 @@ public:
     void setDangerFolder(QString dangerFolder);
     QString getDangerFolder();
 
-    void setFolders(QString inputFolder, QString processFolder, QString outputFolder, QString reportFolder);
+    void setInvestigatorFolder(QString investigatorDir);
+
+    void setFolders(QString investigatorDir, QString inputFolder, QString processFolder, QString outputFolder, QString reportFolder);
 
     void setMaxQueueSize(int size);
     int getMaxQueueSize();

@@ -78,22 +78,6 @@ void AVBase::add(QPair<AVRecord, AVRecord>& record) {
     }
 }
 
-void AVBase::remove(QString fileName) {
-    int idx = findFileName(fileName);
-    if(idx != -1) {
-        m_base.removeAt(idx);
-    }
-}
-
-void AVBase::remove(int idx) {
-    if(!m_base.isEmpty() && idx >= 0 && idx < m_base.size())
-        m_base.removeAt(idx);
-}
-
-void AVBase::clear() {
-    m_base.clear();
-}
-
 QPair<AVRecord, AVRecord>& AVBase::operator[](int idx) {
     return m_base[idx];
 }
@@ -205,7 +189,16 @@ QString AVWrapper::getDangerFolder() {
     return m_dangerFolder;
 }
 
-void AVWrapper::setFolders(QString inputFolder, QString processFolder, QString outputFolder, QString reportFolder) {
+void AVWrapper::setInvestigatorFolder(QString investigatorDir) {
+    m_investigatorDir = investigatorDir;
+}
+
+void AVWrapper::setFolders(QString investigatorDir,
+                           QString inputFolder,
+                           QString processFolder,
+                           QString outputFolder,
+                           QString reportFolder) {
+    setInvestigatorFolder(investigatorDir);
     setInputFolder(inputFolder);
     setProcessFolder(processFolder);
     setOutputFolder(outputFolder);
@@ -309,13 +302,15 @@ bool AVWrapper::isPayload(QString line) {
 
 QString AVWrapper::extractInfectedFileName(QString reportLine) {
 
+    QString relativePath = QDir(m_investigatorDir).dirName() + "\\" + KASPER_DIR_NAME + "\\" + OUTPUT_DIR_NAME;
+
     switch(m_type) {
         case AV::KASPER: {
             foreach(QString part, reportLine.split("\t", QString::SkipEmptyParts)) {
-                if(part.contains(QDir::toNativeSeparators(m_processFolder))) {
+                if(part.contains( relativePath )) {
                     foreach(QString archievePart, part.split("//", QString::SkipEmptyParts)) {
-                        if(archievePart.contains(QDir::toNativeSeparators(m_processFolder))) {
-                            return archievePart.mid(QDir::toNativeSeparators(m_processFolder).length() + 1);
+                        if(archievePart.contains(relativePath)) {
+                            return archievePart.mid(archievePart.indexOf(relativePath) + relativePath.length() + 1);
                         }
                     }
                 }
@@ -389,6 +384,7 @@ void AVWrapper::process() {
     m_processedLastFilesSizeMb = 0.;
     m_reportLine = "";
     m_report = "";
+    m_inProgressFilesNb = 0;
 
     if(m_readyToProcess && !QDir(m_inputFolder).isEmpty()) {
 
@@ -481,7 +477,6 @@ void AVWrapper::process() {
 
             emit updateBase(m_dynamicBase);
         }
-        m_inProgressFilesNb = 0;
 
         moveFiles(m_processFolder, m_outputFolder);
 

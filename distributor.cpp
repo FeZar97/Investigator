@@ -369,12 +369,14 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
 }
 
 void Distributor::configureAV() {
-    kasperWrapper.setFolders(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
+    kasperWrapper.setFolders(m_investigatorDir,
+                             m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
                              m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME,
                              m_investigatorDir + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME,
                              m_reportDir);
 
-    drwebWrapper.setFolders(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
+    drwebWrapper.setFolders(m_investigatorDir,
+                            m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
                             m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
                             m_outputDir,
                             m_reportDir);
@@ -409,13 +411,14 @@ void Distributor::startWatchDirEye() {
 }
 
 void Distributor::stopWatchDirEye() {
+
+    m_isProcessing = false;
+
+    m_endTime = QDateTime::currentDateTime();
+
+    log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
+
     if(!watchDirEye.directories().isEmpty()) {
-
-        m_isProcessing = false;
-
-        m_endTime = QDateTime::currentDateTime();
-
-        log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
 }
