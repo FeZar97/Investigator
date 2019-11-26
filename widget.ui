@@ -63,7 +63,7 @@
          <string>Остановить слежение</string>
         </property>
         <property name="icon">
-         <iconset resource="qrc.qrc">
+         <iconset>
           <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
         </property>
        </widget>

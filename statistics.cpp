@@ -36,9 +36,21 @@ Statistics::~Statistics() {
 
 void Statistics::updateUi() {
 
-    ui->workTimeInfoLabel->setText(
-                    QString("%1 дней ").arg(QDate(m_distributor->getStartTime().date()).daysTo(m_distributor->getEndTime().date())) +
-                    QTime(0,0,0,0).addSecs(QTime(m_distributor->getStartTime().time()).secsTo(m_distributor->getEndTime().time())).toString("hh ч. mm мин. ss сек."));
+    ui->InfoLabel->setText(m_distributor->getProcessInfo());
+
+    qint64 days;
+    if( QDate(m_distributor->getStartTime().date()).daysTo(m_distributor->getEndTime().date()) == 0 ) {
+        days = 0;
+    } else {
+        if(m_distributor->getEndTime().time() >= m_distributor->getStartTime().time()) {
+            days = QDate(m_distributor->getStartTime().date()).daysTo(m_distributor->getEndTime().date());
+        } else {
+            days = QDate(m_distributor->getStartTime().date()).daysTo(m_distributor->getEndTime().date()) - 1;
+        }
+    }
+
+    ui->workTimeInfoLabel->setText(QString("%1 дней ").arg( days ) +
+                                   QTime(0,0,0,0).addSecs(QTime(m_distributor->getStartTime().time()).secsTo(m_distributor->getEndTime().time())).toString("hh ч. mm мин. ss сек."));
 
     // обнаружено зараженных файлов
     m_model.setData(m_model.index(0,0), m_distributor->getAVDangerFilesNb(AV::KASPER), Qt::DisplayRole);

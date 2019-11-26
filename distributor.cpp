@@ -24,6 +24,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
 
+    connect(&kasperWrapper, &AVWrapper::setProcessInfo,             this,           &Distributor::setProcessInfo);
+    connect(&drwebWrapper,  &AVWrapper::setProcessInfo,             this,           &Distributor::setProcessInfo);
+
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
 
     connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
@@ -34,6 +37,10 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     // when last AV finished works, need move remaind files to clear folder
     connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
+
+    // when wrappers finished process, need try to process again
+    connect(&kasperWrapper, &AVWrapper::finishProcess,              &kasperWrapper, &AVWrapper::process);
+    connect(&drwebWrapper,  &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
 
     configureAV();
 
@@ -369,12 +376,14 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
 }
 
 void Distributor::configureAV() {
-    kasperWrapper.setFolders(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
+    kasperWrapper.setFolders(m_investigatorDir,
+                             m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
                              m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME,
                              m_investigatorDir + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME,
                              m_reportDir);
 
-    drwebWrapper.setFolders(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
+    drwebWrapper.setFolders(m_investigatorDir,
+                            m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
                             m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
                             m_outputDir,
                             m_reportDir);
@@ -409,13 +418,14 @@ void Distributor::startWatchDirEye() {
 }
 
 void Distributor::stopWatchDirEye() {
+
+    m_isProcessing = false;
+
+    m_endTime = QDateTime::currentDateTime();
+
+    log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
+
     if(!watchDirEye.directories().isEmpty()) {
-
-        m_isProcessing = false;
-
-        m_endTime = QDateTime::currentDateTime();
-
-        log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
         watchDirEye.removePaths(watchDirEye.directories());
     }
 }
@@ -423,7 +433,11 @@ void Distributor::stopWatchDirEye() {
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
     if(m_isProcessing) {
+
+        emit setProcessInfo(QString("Перемещение файлов: %1 -> %2").arg(QDir(m_watchDir).dirName()).arg(QDir(m_inputDir).dirName()));
         moveFiles(m_watchDir, m_inputDir);
+        emit setProcessInfo(QString("Перемещение завершено"));
+
         kasperWrapper.process();
     }
 }
@@ -482,6 +496,14 @@ void Distributor::moveCleanFiles() {
     foreach(QFileInfo avRecord, QDir(m_outputDir).entryInfoList(usingFilters)) {
         QFile::rename(avRecord.absoluteFilePath(), m_cleanDir + "/" + avRecord.fileName());
     }
+}
+
+void Distributor::setProcessInfo(QString info) {
+    m_processInfo = info;
+}
+
+QString Distributor::getProcessInfo() const {
+    return m_processInfo;
 }
 
 double Distributor::getAVAverageSpeed(AV AVName) {

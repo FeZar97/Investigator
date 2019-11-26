@@ -31,6 +31,8 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
     connect(&distributor,   &Distributor::log,        this,             &Widget::log);
 
+    connect(settingsWindow, &Settings::clearDir,      &distributor,     &Distributor::clearDir);
+
     distributor.moveToThread(&workThread);
     workThread.start();
 

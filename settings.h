@@ -43,11 +43,12 @@ private slots:
     void on_clearCleanDirButton_clicked();
     void on_clearDangerDirButton_clicked();
 
-
-
 private:
     Ui::Settings *ui;
     Distributor* m_distributor;
+
+signals:
+    void clearDir(QString dirPath);
 };
 
 #endif // SETTINGS_H

@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QStandardItemModel>
 #include <QTimer>
+#include <QtMath>
 
 #include "distributor.h"
 

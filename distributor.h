@@ -5,15 +5,6 @@
 
 Q_DECLARE_METATYPE(AVBase)
 
-#define     VERSION               "v1.2"
-
-#define     KASPER_DIR_NAME       "kasper"
-#define     DRWEB_DIR_NAME        "drweb"
-#define     INPUT_DIR_NAME        "input"
-#define     OUTPUT_DIR_NAME       "output"
-#define     REPORT_DIR_NAME       "reports"
-#define     PROCESSED_DIR_NAME    "processed"
-
 class Distributor : public QObject
 {
     Q_OBJECT
@@ -41,6 +32,8 @@ class Distributor : public QObject
     QString m_dangerDir;
 
     AVBase mainBase;
+
+    QString m_processInfo;
 
 public:
     explicit Distributor(QObject *parent = nullptr);
@@ -101,6 +94,8 @@ public:
     double dirSizeMb(QString dirName);
     void clearStatistic();
     void moveCleanFiles();
+    void setProcessInfo(QString info);
+    QString getProcessInfo() const;
 
 signals:
     void updateUi();
