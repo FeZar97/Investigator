@@ -468,6 +468,9 @@ bool Distributor::isInProcessing(){
 }
 
 void Distributor::clearDir(QString dirName) {
+
+    setProcessInfo("Очистка директории " + dirName);
+
     foreach(QFileInfo fileInfo, QDir(dirName).entryInfoList(usingFilters)) {
         QFile::remove(fileInfo.absoluteFilePath());
     }

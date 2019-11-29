@@ -430,7 +430,7 @@
         </property>
         <property name="text">
          <string>Путь к исполняемому
-файлу:</string>
+файлу АВС:</string>
         </property>
        </widget>
       </item>

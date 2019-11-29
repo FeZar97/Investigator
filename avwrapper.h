@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.26:3"
+#define     VERSION               "v1.3.27:5"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -31,7 +31,7 @@ enum class AV {
 };
 
 const static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
-const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden | QDir::NoSymLinks;
+const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
 
 struct AVRecord {
     QDateTime m_timeMark;

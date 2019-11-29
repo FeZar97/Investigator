@@ -441,6 +441,11 @@ void AVWrapper::process() {
                     m_report = m_stream.readAll();
                     m_reportFile.close();
                 }
+
+                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > 15000) {
+                    log(getName(m_type) + " завис на отчете " + m_reportName + ", выход из цикла проверки...");
+                    break;
+                }
             }
 
             // parse report file
@@ -476,6 +481,8 @@ void AVWrapper::process() {
                 } while(!m_reportLine.contains(m_endRecordsIndicator));
 
                 m_reportFile.close();
+            } else {
+                log("Не удалось открыть отчет " + m_reportName);
             }
 
             emit updateBase(m_dynamicBase);
