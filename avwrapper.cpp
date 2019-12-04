@@ -442,47 +442,51 @@ void AVWrapper::process() {
                     m_reportFile.close();
                 }
 
-                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > 15000) {
-                    log(getName(m_type) + " завис на отчете " + m_reportName + ", выход из цикла проверки...");
+                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > m_inProgressFilesNb * 8000) {
+                    log(currentDateTime() + " " + getName(m_type) + " завис на отчете " + m_reportName + ", выход из цикла проверки...");
                     break;
                 }
             }
 
             // parse report file
             emit setProcessInfo(QString("Разбор отчета %1").arg(m_reportName));
-            if(m_reportFile.open(QIODevice::ReadOnly)) {
-                m_stream.setDevice(&m_reportFile);
+            if(m_reportFile.exists()) {
 
-                // seek to position with infected files information
-                m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
+                if(m_reportFile.open(QIODevice::ReadOnly)) {
+                    m_stream.setDevice(&m_reportFile);
 
-                // extract info from report file
-                do {
-                    m_reportLine = m_stream.readLine();
+                    // seek to position with infected files information
+                    m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
 
-                    if(isPayload(m_reportLine)) {
-                        QString infectedFileName = extractInfectedFileName(m_reportLine);
+                    // extract info from report file
+                    do {
+                        m_reportLine = m_stream.readLine();
 
-                        if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
+                        if(isPayload(m_reportLine)) {
+                            QString infectedFileName = extractInfectedFileName(m_reportLine);
 
-                            m_dangerFileNb++;
+                            if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
 
-                            m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
-                                                        m_type,
-                                                        infectedFileName,
-                                                        extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
-                                                        QFileInfo(m_reportName).fileName()));
+                                m_dangerFileNb++;
 
-                            if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
-                                log("Не удалось перенести зараженный файл " + infectedFileName);
+                                m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
+                                                            m_type,
+                                                            infectedFileName,
+                                                            extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
+                                                            QFileInfo(m_reportName).fileName()));
+
+                                if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
+                                    log(currentDateTime() + " " + "Не удалось перенести зараженный файл " + infectedFileName);
+                                }
                             }
                         }
-                    }
-                } while(!m_reportLine.contains(m_endRecordsIndicator));
+                    } while(!m_reportLine.contains(m_endRecordsIndicator));
 
-                m_reportFile.close();
+                    m_reportFile.close();
+                }
+
             } else {
-                log("Не удалось открыть отчет " + m_reportName);
+                log(currentDateTime() + " " + "Отчет " + m_reportName + " не существует...");
             }
 
             emit updateBase(m_dynamicBase);

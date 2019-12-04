@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.27:5"
+#define     VERSION               "v1.3.03:1"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
