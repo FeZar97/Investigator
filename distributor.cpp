@@ -19,7 +19,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     drwebWrapper.setIndicators("Scan session completed",
                                "The mask was translated to \"\" filter",
                                "WARNING! Restore points directories have not been scanned",
-                               QStringList() << "infected");
+                               QStringList() << "infected" << "read error");
 
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);

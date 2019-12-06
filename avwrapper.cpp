@@ -434,7 +434,7 @@ void AVWrapper::process() {
             m_reportFile.setFileName(m_reportName);
 
             // wait for report ready
-            emit setProcessInfo(QString("Ожидание отчета %1").arg(m_reportName));
+            emit setProcessInfo(QString("Ожидание отчета %1(%2 файлов)").arg(m_reportName).arg(m_inProgressFilesNb));
             while(!m_report.contains(m_reportReadyIndicator)) {
                 if(m_reportFile.open(QIODevice::ReadOnly)) {
                     m_stream.setDevice(&m_reportFile);
@@ -442,8 +442,8 @@ void AVWrapper::process() {
                     m_reportFile.close();
                 }
 
-                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > m_inProgressFilesNb * 8000) {
-                    log(currentDateTime() + " " + getName(m_type) + " завис на отчете " + m_reportName + ", выход из цикла проверки...");
+                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
+                    log(QString("%1 %2 завис на отчете %3(%4 файлов), выход из цикла проверки...").arg(currentDateTime()).arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb));
                     break;
                 }
             }
@@ -480,13 +480,15 @@ void AVWrapper::process() {
                                 }
                             }
                         }
-                    } while(!m_reportLine.contains(m_endRecordsIndicator));
+                    } while(!m_stream.atEnd());
+                    //} while(!m_reportLine.contains(m_endRecordsIndicator));
 
                     m_reportFile.close();
                 }
 
             } else {
                 log(currentDateTime() + " " + "Отчет " + m_reportName + " не существует...");
+                m_reportIdx--;
             }
 
             emit updateBase(m_dynamicBase);
