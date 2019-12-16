@@ -21,6 +21,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
                                "WARNING! Restore points directories have not been scanned",
                                QStringList() << "infected" << "read error");
 
+    kasperWrapper.connectProcessingFlag(&m_isProcessing);
+    drwebWrapper.connectProcessingFlag(&m_isProcessing);
+
     connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
 
@@ -46,6 +49,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     kasperWrapper.moveToThread(&kasperThread);
     drwebWrapper.moveToThread(&drwebThread);
+
     kasperThread.start();
     drwebThread.start();
 }
@@ -435,7 +439,7 @@ void Distributor::onWatchDirChange(const QString &path) {
     if(m_isProcessing) {
 
         emit setProcessInfo(QString("Перемещение файлов: %1 -> %2").arg(QDir(m_watchDir).dirName()).arg(QDir(m_inputDir).dirName()));
-        moveFiles(m_watchDir, m_inputDir);
+        moveFiles(m_watchDir, m_inputDir, &m_isProcessing);
         emit setProcessInfo(QString("Перемещение завершено"));
 
         kasperWrapper.process();

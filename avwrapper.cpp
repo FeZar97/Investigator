@@ -95,6 +95,10 @@ void AVWrapper::setType(AV type) {
     m_type = type;
 }
 
+void AVWrapper::connectProcessingFlag(bool* isProcessing) {
+    m_isProcessing = isProcessing;
+}
+
 void AVWrapper::setMaxQueueSize(int size) {
     m_maxQueueSize = size;
 }
@@ -347,7 +351,7 @@ QString AVWrapper::extractDescription(QString reportLine, QString fileName) {
     }
 }
 
-void moveFiles(QString sourceDir, QString destinationDir) {
+void moveFiles(QString sourceDir, QString destinationDir, bool* isProcessing) {
 
     if(!QDir(sourceDir).exists() || !QDir(destinationDir).exists())
         return;
@@ -355,6 +359,10 @@ void moveFiles(QString sourceDir, QString destinationDir) {
     QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
 
     while(!filesInSourceDir.isEmpty()) {
+
+        if(!*isProcessing)
+            return;
+
         foreach(QFileInfo fileInfo, filesInSourceDir) {
             if(QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName())) {
                 filesInSourceDir.removeAll(fileInfo);
@@ -392,110 +400,120 @@ void AVWrapper::process() {
         m_readyToProcess = false;
 
         // move files from input dir to process dir
-        moveFiles(m_inputFolder, m_processFolder);
+        moveFiles(m_inputFolder, m_processFolder, m_isProcessing);
 
         // if av is used, then create report name
         if(m_isUsed) {
 
-            AVBase* m_dynamicBase = new AVBase();
-
-            // save temp  variables
-            m_startProcessTime = QDateTime::currentDateTime();
             m_reportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
-            m_inProgressFilesNb = QDir(m_processFolder + "/").entryInfoList(usingFilters).size();
 
-            // if execution params is correct, then execute av
-            if(checkParams()) {
-                log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
-                return;
-            }
+            m_hasStarvation = QFile(m_reportName).size() > 0;
 
-            emit setProcessInfo(QString("Запуск процесса %1").arg(getName(m_type)));
-            switch(m_type) {
-                case AV::KASPER:
-                    QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
-                    break;
-                case AV::DRWEB:
-                    QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
-                    break;
-                default:
-                    break;
-            }
+            if(m_hasStarvation) {
+                log(currentDateTime() + " " + getName(m_type) + " завис, переход к следующему этапу...");
+                emit setProcessInfo(QString("%1 завис, переход к следующему этапу...").arg(getName(m_type)));
+            } else {
+                AVBase* m_dynamicBase = new AVBase();
 
-            // calculate statistics
-            m_reportIdx++;
-            foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters))
-                m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
-            m_processedFilesSizeMb += m_processedLastFilesSizeMb;
-            m_processedFilesNb += m_inProgressFilesNb;
-            m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
-            m_totalWorkTimeInMsec += m_startProcessTime.msecsTo(QDateTime::currentDateTime());
+                // save temp  variables
+                m_startProcessTime = QDateTime::currentDateTime();
+                m_inProgressFilesNb = QDir(m_processFolder + "/").entryInfoList(usingFilters).size();
 
-            m_reportFile.setFileName(m_reportName);
+                // if execution params is correct, then execute av
+                if(checkParams()) {
+                    log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
+                    return;
+                } else {
+                    emit setProcessInfo(QString("Запуск процесса %1").arg(getName(m_type)));
+                    switch(m_type) {
+                        case AV::KASPER:
+                            QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
+                            break;
+                        case AV::DRWEB:
+                            QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
+                            break;
+                        default:
+                            break;
+                    }
 
-            // wait for report ready
-            emit setProcessInfo(QString("Ожидание отчета %1(%2 файлов)").arg(m_reportName).arg(m_inProgressFilesNb));
-            while(!m_report.contains(m_reportReadyIndicator)) {
-                if(m_reportFile.open(QIODevice::ReadOnly)) {
-                    m_stream.setDevice(&m_reportFile);
-                    m_report = m_stream.readAll();
-                    m_reportFile.close();
-                }
+                    m_reportFile.setFileName(m_reportName);
 
-                if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
-                    log(QString("%1 %2 завис на отчете %3(%4 файлов), выход из цикла проверки...").arg(currentDateTime()).arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb));
-                    break;
-                }
-            }
+                    // wait for report ready
+                    emit setProcessInfo(QString("Ожидание отчета %1(%2 файлов)").arg(m_reportName).arg(m_inProgressFilesNb));
+                    while(!m_report.contains(m_reportReadyIndicator)) {
+                        if(m_reportFile.open(QIODevice::ReadOnly)) {
+                            m_stream.setDevice(&m_reportFile);
+                            m_report = m_stream.readAll();
+                            m_reportFile.close();
+                        }
 
-            // parse report file
-            emit setProcessInfo(QString("Разбор отчета %1").arg(m_reportName));
-            if(m_reportFile.exists()) {
+                        if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
+                            log(QString("%1 %2 завис на отчете %3(%4 файлов), выход из цикла проверки...").arg(currentDateTime()).arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb));
+                            break;
+                        }
+                    }
 
-                if(m_reportFile.open(QIODevice::ReadOnly)) {
-                    m_stream.setDevice(&m_reportFile);
+                    // parse report file
+                    emit setProcessInfo(QString("Разбор отчета %1").arg(m_reportName));
+                    if(m_reportFile.exists()) {
 
-                    // seek to position with infected files information
-                    m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
+                        if(m_reportFile.size() == 0) {
+                            m_hasStarvation = true;
+                        } else {
+                            // calculate statistics
+                            m_reportIdx++;
+                            foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters))
+                                m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
+                            m_processedFilesSizeMb += m_processedLastFilesSizeMb;
+                            m_processedFilesNb += m_inProgressFilesNb;
+                            m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
+                            m_totalWorkTimeInMsec += m_startProcessTime.msecsTo(QDateTime::currentDateTime());
 
-                    // extract info from report file
-                    do {
-                        m_reportLine = m_stream.readLine();
+                            if(m_reportFile.open(QIODevice::ReadOnly)) {
+                                m_stream.setDevice(&m_reportFile);
 
-                        if(isPayload(m_reportLine)) {
-                            QString infectedFileName = extractInfectedFileName(m_reportLine);
+                                // seek to position with infected files information
+                                m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
 
-                            if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
+                                // extract info from report file
+                                do {
+                                    m_reportLine = m_stream.readLine();
 
-                                m_dangerFileNb++;
+                                    if(isPayload(m_reportLine)) {
+                                        QString infectedFileName = extractInfectedFileName(m_reportLine);
 
-                                m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
-                                                            m_type,
-                                                            infectedFileName,
-                                                            extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
-                                                            QFileInfo(m_reportName).fileName()));
+                                        if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
 
-                                if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
-                                    log(currentDateTime() + " " + "Не удалось перенести зараженный файл " + infectedFileName);
-                                }
+                                            m_dangerFileNb++;
+
+                                            m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
+                                                                        m_type,
+                                                                        infectedFileName,
+                                                                        extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
+                                                                        QFileInfo(m_reportName).fileName()));
+
+                                            if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
+                                                log(currentDateTime() + " " + "Не удалось перенести зараженный файл " + infectedFileName);
+                                            }
+                                        }
+                                    }
+                                } while(!m_stream.atEnd());
+
+                                m_reportFile.close();
                             }
                         }
-                    } while(!m_stream.atEnd());
-                    //} while(!m_reportLine.contains(m_endRecordsIndicator));
 
-                    m_reportFile.close();
+                    } else {
+                        log(currentDateTime() + " " + "Отчет " + m_reportName + " не существует...");
+                    }
+
+                    emit updateBase(m_dynamicBase);
                 }
-
-            } else {
-                log(currentDateTime() + " " + "Отчет " + m_reportName + " не существует...");
-                m_reportIdx--;
             }
-
-            emit updateBase(m_dynamicBase);
         }
 
         emit setProcessInfo(QString("Перемещение файлов: %1 -> %2").arg(QDir(m_processFolder).dirName()).arg(QDir(m_outputFolder).dirName()));
-        moveFiles(m_processFolder, m_outputFolder);
+        moveFiles(m_processFolder, m_outputFolder, m_isProcessing);
 
         m_readyToProcess = true;
 

@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.06:2"
+#define     VERSION               "v1.3.12:2"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -63,7 +63,7 @@ public:
     int size();
 };
 
-void moveFiles(QString sourceDir, QString destinationDir);
+void moveFiles(QString sourceDir, QString destinationDir, bool* isProcessing);
 QString getName(AV type);
 QString currentDateTime();
 
@@ -73,6 +73,9 @@ class AVWrapper : public QObject
 
     bool m_readyToProcess{true};
     QFileSystemWatcher m_watcher;
+
+    // distributor params
+    bool* m_isProcessing;
 
     // AV params
     AV m_type;
@@ -84,6 +87,7 @@ class AVWrapper : public QObject
     int m_maxQueueSize{0};
     double m_maxQueueVolMb{0.};
     int m_maxQueueVolUnit{0};
+    bool m_hasStarvation{false};
 
     // indicators
     QString m_reportReadyIndicator;
@@ -122,6 +126,7 @@ public:
     explicit AVWrapper(QObject *parent = nullptr);
 
     void setType(AV type);
+    void connectProcessingFlag(bool* isProcessing);
 
     void setUsage(bool newState);
     bool getUsage();
