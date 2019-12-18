@@ -36,7 +36,7 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget() override;
 
-    void log(const QString &s);
+    void log(QString s);
     void updateUi();
 
 private slots:

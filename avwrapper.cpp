@@ -88,6 +88,112 @@ int AVBase::size() {
 
 // ----------------------------------------- AVWrapper -----------------------------------------
 
+void AVWrapper::flushTempVariables() {
+    m_processedLastFilesSizeMb = 0.;
+    m_reportLine = "";
+    m_report = "";
+    m_inProgressFilesNb = 0;
+}
+
+void AVWrapper::saveTempVariables() {
+    m_startProcessTime = QDateTime::currentDateTime();
+    m_inProgressFilesNb = QDir(m_processFolder + "/").entryInfoList(usingFilters).size();
+}
+
+void AVWrapper::executeAVProgram() {
+
+    logWrapper(QString("Запуск проверки %1").arg(getName(m_type)), LOG_DST(LOG_FILE | LOG_ROW));
+
+    switch(m_type) {
+        case AV::KASPER:
+            QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
+            break;
+        case AV::DRWEB:
+            QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
+            break;
+        default:
+            break;
+    }
+}
+
+void AVWrapper::waitForReportReady() {
+
+    logWrapper(QString("Ожидание отчета %1(%2 файлов)").arg(m_reportName).arg(m_inProgressFilesNb), LOG_DST(LOG_FILE | LOG_ROW));
+
+    while(!m_report.contains(m_reportReadyIndicator)) {
+        if(m_reportFile.open(QIODevice::ReadOnly)) {
+            m_stream.setDevice(&m_reportFile);
+            m_report = m_stream.readAll();
+            m_reportFile.close();
+        }
+
+        if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
+            logWrapper(QString("%1 завис на отчете %2(%3 файлов), выход из цикла проверки").arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb),
+                       LOG_DST(LOG_GUI | LOG_FILE | LOG_ROW));
+            break;
+        }
+    }
+}
+
+void AVWrapper::parseReportFile() {
+
+    if(m_reportFile.exists()) {
+
+        logWrapper(QString("Разбор отчета %1").arg(m_reportName), LOG_DST(LOG_FILE | LOG_ROW));
+
+        if(m_reportFile.size() == 0) {
+            m_hasStarvation = true;
+        } else {
+            accumulateStatistic();
+
+            if(m_reportFile.open(QIODevice::ReadOnly)) {
+                m_stream.setDevice(&m_reportFile);
+
+                // seek to position with infected files information
+                m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
+
+                // extract info from report file
+                do {
+                    m_reportLine = m_stream.readLine();
+
+                    if(isPayload(m_reportLine)) {
+                        QString infectedFileName = extractInfectedFileName(m_reportLine);
+
+                        if(!infectedFileName.isEmpty()) {
+
+                            m_dangerFileNb++;
+
+                            logWrapper(QString("%1 %2 (%3 %4)").arg(infectedFileName)
+                                                               .arg(extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)))
+                                                               .arg(getName(m_type)).arg(QFileInfo(m_reportName).baseName()),
+                                       LOG_GUI);
+
+                            if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
+                                logWrapper(QString("Не удалось перенести зараженный файл %1").arg(infectedFileName), LOG_DST(LOG_FILE | LOG_ROW));
+                            }
+                        }
+                    }
+                } while(!m_stream.atEnd());
+
+                m_reportFile.close();
+            }
+        }
+
+    } else {
+        logWrapper(QString("Отчет %1 не существует").arg(m_reportName), LOG_DST(LOG_ROW | LOG_FILE));
+        m_reportIdx--;
+    }
+}
+
+void AVWrapper::accumulateStatistic() {
+    foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters))
+        m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
+    m_processedFilesSizeMb += m_processedLastFilesSizeMb;
+    m_processedFilesNb += m_inProgressFilesNb;
+    m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
+    m_totalWorkTimeInMsec += m_startProcessTime.msecsTo(QDateTime::currentDateTime());
+}
+
 AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {
 }
 
@@ -276,7 +382,7 @@ int AVWrapper::checkParams() {
     if(!QDir(m_processFolder).exists())     return 4;
     if(!QDir(m_outputFolder).exists())      return 5;
     if(!QDir(m_reportFolder).exists())      return 6;
-    if(QFile::exists(m_reportName))         return 7;
+    // if(QFile::exists(m_reportName))         return 7;
     if(m_reportReadyIndicator.isEmpty())    return 8;
     if(m_startRecordsIndicator.isEmpty())   return 9;
     if(m_endRecordsIndicator.isEmpty())     return 10;
@@ -388,137 +494,47 @@ QString currentDateTime() {
 
 void AVWrapper::process() {
 
-    // clear temp variables
-    m_processedLastFilesSizeMb = 0.;
-    m_reportLine = "";
-    m_report = "";
-    m_inProgressFilesNb = 0;
+    flushTempVariables();
 
     if(m_readyToProcess && !QDir(m_inputFolder).isEmpty()) {
 
-        // block wrapper
-        m_readyToProcess = false;
+        m_readyToProcess = false; // block wrapper
 
-        // move files from input dir to process dir
+        logWrapper(QString("Перенос файлов из %1 в %2").arg(m_inputFolder).arg(m_processFolder), LOG_DST(LOG_FILE | LOG_ROW));
         moveFiles(m_inputFolder, m_processFolder, m_isProcessing);
 
-        // if av is used, then create report name
         if(m_isUsed) {
+            QString prevReportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
+            m_hasStarvation = ((QFile(prevReportName).size() == 0) || (!QFile(prevReportName).exists())) && (m_reportIdx != 0);
 
-            m_reportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
+            logWrapper(QString("Предыдущий отчет: %1, размер: %2 байт, состояние антивируса: %3").arg(prevReportName).arg(QString::number(QFile(prevReportName).size())).arg(m_hasStarvation ? "завис" : "в норме"),
+                       LOG_DST(LOG_FILE));
 
-            m_hasStarvation = QFile(m_reportName).size() > 0;
-
+            // если размер файла 0 или его не существует
             if(m_hasStarvation) {
-                log(currentDateTime() + " " + getName(m_type) + " завис, переход к следующему этапу...");
-                emit setProcessInfo(QString("%1 завис, переход к следующему этапу...").arg(getName(m_type)));
+                logWrapper(QString("Антивирус %1 не отвечает, переход к следующему этапу проверки").arg(getName(m_type)), LOG_DST(LOG_GUI | LOG_FILE | LOG_ROW));
             } else {
-                AVBase* m_dynamicBase = new AVBase();
-
-                // save temp  variables
-                m_startProcessTime = QDateTime::currentDateTime();
-                m_inProgressFilesNb = QDir(m_processFolder + "/").entryInfoList(usingFilters).size();
+                m_reportIdx++;
+                m_reportName = m_reportFolder + "/report_" + QString::number(m_reportIdx) + "." + m_reportExtension;
+                m_reportFile.setFileName(m_reportName);
 
                 // if execution params is correct, then execute av
                 if(checkParams()) {
-                    log(currentDateTime() + " " + QString("Ошибка в параметрах запуска антивируса(%1).").arg(QString::number(checkParams())));
-                    return;
+                    logWrapper(QString("Ошибка в параметрах вызова антивируса(%1)").arg(QString::number(checkParams())), LOG_DST(LOG_GUI | LOG_FILE | LOG_ROW));
                 } else {
-                    emit setProcessInfo(QString("Запуск процесса %1").arg(getName(m_type)));
-                    switch(m_type) {
-                        case AV::KASPER:
-                            QProcess::execute(m_avPath, QStringList() << "scan" << m_processFolder << "/i0" << QString("/R:" + m_reportName));
-                            break;
-                        case AV::DRWEB:
-                            QProcess::execute(m_avPath, QStringList() << QString("/RP:" + m_reportName) << m_processFolder);
-                            break;
-                        default:
-                            break;
-                    }
-
-                    m_reportFile.setFileName(m_reportName);
-
-                    // wait for report ready
-                    emit setProcessInfo(QString("Ожидание отчета %1(%2 файлов)").arg(m_reportName).arg(m_inProgressFilesNb));
-                    while(!m_report.contains(m_reportReadyIndicator)) {
-                        if(m_reportFile.open(QIODevice::ReadOnly)) {
-                            m_stream.setDevice(&m_reportFile);
-                            m_report = m_stream.readAll();
-                            m_reportFile.close();
-                        }
-
-                        if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
-                            log(QString("%1 %2 завис на отчете %3(%4 файлов), выход из цикла проверки...").arg(currentDateTime()).arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb));
-                            break;
-                        }
-                    }
-
-                    // parse report file
-                    emit setProcessInfo(QString("Разбор отчета %1").arg(m_reportName));
-                    if(m_reportFile.exists()) {
-
-                        if(m_reportFile.size() == 0) {
-                            m_hasStarvation = true;
-                        } else {
-                            // calculate statistics
-                            m_reportIdx++;
-                            foreach(QFileInfo fileInfo, QDir(m_processFolder).entryInfoList(usingFilters))
-                                m_processedLastFilesSizeMb += fileInfo.size() / (1024. * 1024.);
-                            m_processedFilesSizeMb += m_processedLastFilesSizeMb;
-                            m_processedFilesNb += m_inProgressFilesNb;
-                            m_currentProcessSpeed = m_processedLastFilesSizeMb * 8 * 1000 / m_startProcessTime.msecsTo(QDateTime::currentDateTime());
-                            m_totalWorkTimeInMsec += m_startProcessTime.msecsTo(QDateTime::currentDateTime());
-
-                            if(m_reportFile.open(QIODevice::ReadOnly)) {
-                                m_stream.setDevice(&m_reportFile);
-
-                                // seek to position with infected files information
-                                m_stream.seek(m_report.indexOf(m_startRecordsIndicator));
-
-                                // extract info from report file
-                                do {
-                                    m_reportLine = m_stream.readLine();
-
-                                    if(isPayload(m_reportLine)) {
-                                        QString infectedFileName = extractInfectedFileName(m_reportLine);
-
-                                        if(!infectedFileName.isEmpty() && m_dynamicBase->findFileName(infectedFileName) == -1) {
-
-                                            m_dangerFileNb++;
-
-                                            m_dynamicBase->add(AVRecord(QDateTime::currentDateTime(),
-                                                                        m_type,
-                                                                        infectedFileName,
-                                                                        extractDescription(m_reportLine, extractInfectedFileName(m_reportLine)),
-                                                                        QFileInfo(m_reportName).fileName()));
-
-                                            if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
-                                                log(currentDateTime() + " " + "Не удалось перенести зараженный файл " + infectedFileName);
-                                            }
-                                        }
-                                    }
-                                } while(!m_stream.atEnd());
-
-                                m_reportFile.close();
-                            }
-                        }
-
-                    } else {
-                        log(currentDateTime() + " " + "Отчет " + m_reportName + " не существует...");
-                    }
-
-                    emit updateBase(m_dynamicBase);
+                    saveTempVariables();
+                    executeAVProgram();
+                    waitForReportReady();
+                    parseReportFile();
                 }
             }
         }
 
-        emit setProcessInfo(QString("Перемещение файлов: %1 -> %2").arg(QDir(m_processFolder).dirName()).arg(QDir(m_outputFolder).dirName()));
+        logWrapper(QString("Перенос файлов из %1 в %2").arg(m_processFolder).arg(m_outputFolder), LOG_DST(LOG_FILE | LOG_ROW));
         moveFiles(m_processFolder, m_outputFolder, m_isProcessing);
 
         m_readyToProcess = true;
 
         emit finishProcess();
-
-        emit setProcessInfo(QString("Процесс %1 успешно завершен").arg(getName(m_type)));
     }
 }

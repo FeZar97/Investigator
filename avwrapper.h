@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.12:2"
+#define     VERSION               "v1.3.18:4"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -28,6 +28,13 @@ enum class AV {
     NONE,
     KASPER,
     DRWEB
+};
+
+enum LOG_DST {
+    NONE_LOG = 0x00,
+    LOG_ROW  = 0X01,
+    LOG_FILE = 0X02,
+    LOG_GUI  = 0X04,
 };
 
 const static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
@@ -122,6 +129,13 @@ class AVWrapper : public QObject
     QString m_report;
     QString m_reportLine;
 
+    void flushTempVariables();
+    void saveTempVariables();
+    void executeAVProgram();
+    void waitForReportReady();
+    void parseReportFile();
+    void accumulateStatistic();
+
 public:
     explicit AVWrapper(QObject *parent = nullptr);
 
@@ -193,7 +207,7 @@ public:
     void process();
 
 signals:
-    void log(QString message);
+    void logWrapper(QString message, LOG_DST flags);
     void updateBase(AVBase* singleAVBase);
     void finishProcess();
     void setProcessInfo(QString info);

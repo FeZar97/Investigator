@@ -34,6 +34,8 @@ class Distributor : public QObject
     AVBase mainBase;
 
     QString m_processInfo;
+    QFile m_logFile;
+    QTextStream m_logStream;
 
 public:
     explicit Distributor(QObject *parent = nullptr);
@@ -83,9 +85,6 @@ public:
 // EVENTS
     void onWatchDirChange(const QString &path);
 
-// CORE
-    void updateBase(AVBase* singleAVBase);
-
 // OTHER
     QDateTime getStartTime() const;
     QDateTime getEndTime();
@@ -96,10 +95,11 @@ public:
     void moveCleanFiles();
     void setProcessInfo(QString info);
     QString getProcessInfo() const;
+    void log(QString text, LOG_DST flags);
 
 signals:
     void updateUi();
-    void log(QString _message);
+    void logGui(QString text);
 };
 
 #endif // DISTRIBUTOR_H

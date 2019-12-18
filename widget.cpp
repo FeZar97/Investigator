@@ -29,7 +29,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
 
     connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
-    connect(&distributor,   &Distributor::log,        this,             &Widget::log);
+    connect(&distributor,   &Distributor::logGui,     this,             &Widget::log);
 
     connect(settingsWindow, &Settings::clearDir,      &distributor,     &Distributor::clearDir);
 
@@ -74,7 +74,7 @@ Widget::~Widget() {
 
     delete ui;
 }
-void Widget::log(const QString &s) {
+void Widget::log(QString s) {
     ui->logPTE->appendPlainText(s);
 }
 
@@ -89,7 +89,7 @@ void Widget::on_startButton_clicked() {
 }
 
 void Widget::on_stopButton_clicked() {
-    if( QMessageBox::warning(this,
+    if(QMessageBox::warning(this,
                              tr("Подтвердите действие"),
                              QString("Вы действительно хотите остановить слежение за папкой?"),
                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {

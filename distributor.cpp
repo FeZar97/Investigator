@@ -4,6 +4,11 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     
     qRegisterMetaType<AVBase>("AVBase&");
 
+    m_logFile.setFileName("global log.txt");
+    if(m_logFile.open(QFile::WriteOnly)) {
+          m_logStream.setDevice(&m_logFile);
+      }
+
 // initial settings
     kasperWrapper.setType(AV::KASPER);
     drwebWrapper.setType(AV::DRWEB);
@@ -24,16 +29,10 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     kasperWrapper.connectProcessingFlag(&m_isProcessing);
     drwebWrapper.connectProcessingFlag(&m_isProcessing);
 
-    connect(&kasperWrapper, &AVWrapper::log,                        this,           &Distributor::log);
-    connect(&drwebWrapper,  &AVWrapper::log,                        this,           &Distributor::log);
-
-    connect(&kasperWrapper, &AVWrapper::setProcessInfo,             this,           &Distributor::setProcessInfo);
-    connect(&drwebWrapper,  &AVWrapper::setProcessInfo,             this,           &Distributor::setProcessInfo);
+    connect(&kasperWrapper, &AVWrapper::logWrapper,                 this,           &Distributor::log);
+    connect(&drwebWrapper,  &AVWrapper::logWrapper,                 this,           &Distributor::log);
 
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
-
-    connect(&kasperWrapper, &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
-    connect(&drwebWrapper,  &AVWrapper::updateBase,                 this,           &Distributor::updateBase);
 
     // when kasper finish, drweb can start
     connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
@@ -55,6 +54,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 }
 
 Distributor::~Distributor() {
+    if(m_logFile.isOpen())
+        m_logFile.close();
+
     kasperThread.quit();
     kasperThread.wait();
 
@@ -65,7 +67,7 @@ Distributor::~Distributor() {
 void Distributor::setWatchDir(QString _watchDir) {
 
     if(_watchDir.isEmpty()) {
-        log(currentDateTime() + " " + "Не найдена директория для слежения.");
+        log("Не найдена директория для слежения.", LOG_GUI);
     } else {
         m_watchDir = _watchDir;
     }
@@ -78,7 +80,7 @@ QString Distributor::getWatchDir() {
 void Distributor::setInvestigatorDir(QString _investigatorDir) {
 
     if(_investigatorDir.isEmpty()) {
-        log(currentDateTime() + " " + "Не найдена директория для временных файлов.");
+        log("Не найдена директория для временных файлов.", LOG_GUI);
     } else {
         m_investigatorDir = _investigatorDir;
 
@@ -105,7 +107,7 @@ QString Distributor::getInvestigatorDir() {
 
 void Distributor::setCleanDir(QString _cleanDir) {
     if(_cleanDir.isEmpty()) {
-        log(currentDateTime() + " " + "Не найдена директория для чистых файлов.");
+        log("Не найдена директория для чистых файлов.", LOG_GUI);
     } else {
         m_cleanDir = _cleanDir;
     }
@@ -117,7 +119,7 @@ QString Distributor::getCleanDir() {
 
 void Distributor::setDangerDir(QString _dangerDir) {
     if(_dangerDir.isEmpty()) {
-        log(currentDateTime() + " " + "Не найдена директория для зараженных файлов.");
+        log("Не найдена директория для зараженных файлов.", LOG_GUI);
     } else {
         m_dangerDir = _dangerDir;
         kasperWrapper.setDangerFolder(m_dangerDir);
@@ -132,7 +134,7 @@ QString Distributor::getDangerDir() {
 void Distributor::setAVFile(AV AVName, QString AVFilePath) {
 
     if(AVFilePath.isEmpty()) {
-        log(currentDateTime() + " " + QString("Не найдена исполняемый файл антивируса %1.").arg(getName(AVName)));
+        log(QString("Не найдена исполняемый файл антивируса %1.").arg(getName(AVName)), LOG_GUI);
         return;
     }
 
@@ -399,24 +401,24 @@ void Distributor::startWatchDirEye() {
     if(!m_watchDir.isEmpty()) {
         if(watchDirEye.addPath(m_watchDir)) {
             if(!kasperWrapper.isReadyToProcess() && kasperWrapper.getUsage()) {
-                log("Процесс проверки антивируса Kaspersky уже запущен!");
+                log("Процесс проверки антивируса Kaspersky уже запущен!", LOG_GUI);
                 return;
             }
 
             if(!drwebWrapper.isReadyToProcess() && drwebWrapper.getUsage()) {
-                log("Процесс проверки антивируса DrWeb уже запущен!");
+                log("Процесс проверки антивируса DrWeb уже запущен!", LOG_GUI);
                 return;
             }
 
             m_startTime = QDateTime::currentDateTime();
             m_isProcessing = true;
 
-            log(currentDateTime() + " " + QString("Запущено слежение за директорией %1.").arg(m_watchDir));
+            log(QString("Запущено слежение за директорией %1.").arg(m_watchDir), LOG_GUI);
 
             onWatchDirChange("");
 
         } else {
-            log(currentDateTime() + " " + QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir));
+            log(QString("Не удалось начать слежение за папкой %1.").arg(m_watchDir), LOG_GUI);
         }
     }
 }
@@ -427,7 +429,7 @@ void Distributor::stopWatchDirEye() {
 
     m_endTime = QDateTime::currentDateTime();
 
-    log(currentDateTime() + " " + QString("Слежение за директорией %1 остановлено.").arg(m_watchDir));
+    log(QString("Слежение за директорией %1 остановлено.").arg(m_watchDir), LOG_GUI);
 
     if(!watchDirEye.directories().isEmpty()) {
         watchDirEye.removePaths(watchDirEye.directories());
@@ -436,25 +438,13 @@ void Distributor::stopWatchDirEye() {
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
-    if(m_isProcessing) {
 
-        emit setProcessInfo(QString("Перемещение файлов: %1 -> %2").arg(QDir(m_watchDir).dirName()).arg(QDir(m_inputDir).dirName()));
+    if(m_isProcessing) {
+        log(QString("Перенос файлов из %1 в %2").arg(m_watchDir).arg(m_inputDir), LOG_DST(LOG_FILE | LOG_ROW));
         moveFiles(m_watchDir, m_inputDir, &m_isProcessing);
-        emit setProcessInfo(QString("Перемещение завершено"));
 
         kasperWrapper.process();
     }
-}
-
-void Distributor::updateBase(AVBase* singleAVBase){
-    for(int i = 0; i < singleAVBase->size(); i++) {
-        if(!(*singleAVBase)[i].first.m_fileName.isEmpty()) {
-            log((*singleAVBase)[i].first.toString());
-        } else if(!(*singleAVBase)[i].second.m_fileName.isEmpty()) {
-            log((*singleAVBase)[i].second.toString());
-        }
-    }
-    delete singleAVBase;
 }
 
 QDateTime Distributor::getStartTime() const {
@@ -511,6 +501,19 @@ void Distributor::setProcessInfo(QString info) {
 
 QString Distributor::getProcessInfo() const {
     return m_processInfo;
+}
+
+void Distributor::log(QString text, LOG_DST flags) {
+
+    if(flags & LOG_FILE)
+        m_logStream << currentDateTime() + " " + text << endl;
+
+    if(flags & LOG_ROW)
+        m_processInfo = text;
+
+    if(flags & LOG_GUI) {
+        emit logGui(currentDateTime() + " " + text);
+    }
 }
 
 double Distributor::getAVAverageSpeed(AV AVName) {
