@@ -1,93 +1,5 @@
  #include "avwrapper.h"
 
-// ----------------------------------------- AVRecord -----------------------------------------
-
-AVRecord::AVRecord() {
-    m_timeMark = QDateTime::currentDateTime();
-    m_av = AV::NONE;
-    m_fileName = "";
-    m_description = "";
-    m_reportName = "";
-}
-
-AVRecord::AVRecord(QDateTime timeMark, AV av, QString fileName, QString description, QString reportName) {
-    m_timeMark = timeMark;
-    m_av = av;
-    m_fileName = fileName;
-    m_description = description;
-    m_reportName = reportName;
-}
-
-AVRecord::AVRecord(const AVRecord &record){
-    m_timeMark = record.m_timeMark;
-    m_av = record.m_av;
-    m_fileName = record.m_fileName;
-    m_description = record.m_description;
-    m_reportName = record.m_reportName;
-}
-
-QString AVRecord::toString() {
-    return m_timeMark.toString(dateTimePattern) + " " +
-           m_fileName + " " +
-           m_description + " " +
-            "(" + getName(m_av) + " " + QFileInfo(m_reportName).baseName() + ")";
-}
-
-AVRecord &AVRecord::operator=(const AVRecord &record) {
-    if(&record == this)
-        return *this;
-
-    m_timeMark = record.m_timeMark;
-    m_av = record.m_av;
-    m_fileName = record.m_fileName;
-    m_description = record.m_description;
-    m_reportName = record.m_reportName;
-
-    return *this;
-}
-
-// ----------------------------------------- AVBase -----------------------------------------
-int AVBase::findFileName(QString fileName) {
-    for(int  i = 0; i < m_base.size(); i++) {
-        if(m_base.at(i).first.m_fileName == fileName || m_base.at(i).second.m_fileName == fileName) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-void AVBase::add(AVRecord record) {
-    int idx = findFileName(record.m_fileName);
-    if(idx != -1) {
-        if(record.m_av == AV::KASPER)
-            m_base[idx] = QPair<AVRecord, AVRecord>(record, m_base[idx].second);
-        if(record.m_av == AV::DRWEB)
-            m_base[idx] = QPair<AVRecord, AVRecord>(m_base[idx].first, record);
-    } else {
-        if(record.m_av == AV::KASPER)
-            m_base.push_back(QPair<AVRecord, AVRecord>(record, AVRecord()));
-        if(record.m_av == AV::DRWEB)
-            m_base.push_back(QPair<AVRecord, AVRecord>(AVRecord(), record));
-    }
-}
-
-void AVBase::add(QPair<AVRecord, AVRecord>& record) {
-    if(findFileName(record.first.m_fileName)  == -1 &&
-       findFileName(record.second.m_fileName) == -1) {
-        m_base.push_back(record);
-    }
-}
-
-QPair<AVRecord, AVRecord>& AVBase::operator[](int idx) {
-    return m_base[idx];
-}
-
-int AVBase::size() {
-    return m_base.size();
-}
-
-// ----------------------------------------- AVWrapper -----------------------------------------
-
 void AVWrapper::flushTempVariables() {
     m_processedLastFilesSizeMb = 0.;
     m_reportLine = "";
@@ -306,12 +218,10 @@ void AVWrapper::setInvestigatorFolder(QString investigatorDir) {
 void AVWrapper::setFolders(QString investigatorDir,
                            QString inputFolder,
                            QString processFolder,
-                           QString outputFolder,
                            QString reportFolder) {
     setInvestigatorFolder(investigatorDir);
     setInputFolder(inputFolder);
     setProcessFolder(processFolder);
-    setOutputFolder(outputFolder);
     setReportFolder(reportFolder);
 }
 
@@ -389,6 +299,10 @@ int AVWrapper::checkParams() {
     return 0;
 }
 
+bool AVWrapper::hasStarvation() {
+    return m_hasStarvation;
+}
+
 bool AVWrapper::isReadyToProcess() {
     return m_readyToProcess;
 }
@@ -459,21 +373,13 @@ QString AVWrapper::extractDescription(QString reportLine, QString fileName) {
 
 void moveFiles(QString sourceDir, QString destinationDir, bool* isProcessing) {
 
-    if(!QDir(sourceDir).exists() || !QDir(destinationDir).exists())
+    if(!QDir(sourceDir).exists() || !QDir(destinationDir).exists() || !*isProcessing)
         return;
 
     QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
 
-    while(!filesInSourceDir.isEmpty()) {
-
-        if(!*isProcessing)
-            return;
-
-        foreach(QFileInfo fileInfo, filesInSourceDir) {
-            if(QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName())) {
-                filesInSourceDir.removeAll(fileInfo);
-            }
-        }
+    foreach(QFileInfo fileInfo, filesInSourceDir) {
+        QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName());
     }
 }
 

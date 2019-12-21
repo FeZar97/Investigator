@@ -1,13 +1,14 @@
 #include "distributor.h"
+#include "widget.h"
 
 Distributor::Distributor(QObject *parent) : QObject(parent) {
     
-    qRegisterMetaType<AVBase>("AVBase&");
+    qRegisterMetaType<LOG_DST>("LOG_DST&");
 
-    m_logFile.setFileName("global log.txt");
+    m_logFile.setFileName("global log " + currentDateTime() + ".txt");
     if(m_logFile.open(QFile::WriteOnly)) {
-          m_logStream.setDevice(&m_logFile);
-      }
+        m_logStream.setDevice(&m_logFile);
+    }
 
 // initial settings
     kasperWrapper.setType(AV::KASPER);
@@ -34,17 +35,7 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
 
-    // when kasper finish, drweb can start
-    connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
-
-    // when last AV finished works, need move remaind files to clear folder
-    connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
-
-    // when wrappers finished process, need try to process again
-    connect(&kasperWrapper, &AVWrapper::finishProcess,              &kasperWrapper, &AVWrapper::process);
-    connect(&drwebWrapper,  &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
-
-    configureAV();
+    configureChain();
 
     kasperWrapper.moveToThread(&kasperThread);
     drwebWrapper.moveToThread(&drwebThread);
@@ -84,8 +75,7 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
     } else {
         m_investigatorDir = _investigatorDir;
 
-        m_inputDir  = m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME;
-        QDir().mkpath(m_inputDir);
+        QDir().mkpath(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
         QDir().mkpath(m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
 
         QDir().mkpath(m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
@@ -97,7 +87,17 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
         m_reportDir = m_investigatorDir + "/" + REPORT_DIR_NAME;
         QDir().mkpath(m_reportDir);
 
-        configureAV();
+        kasperWrapper.setFolders(m_investigatorDir,
+                                 m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
+                                 m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME,
+                                 m_reportDir);
+
+        drwebWrapper.setFolders(m_investigatorDir,
+                                m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
+                                m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
+                                m_reportDir);
+
+        configureChain();
     }
 }
 
@@ -178,6 +178,7 @@ void Distributor::setAVUse(AV AVName, bool use) {
         default:
             break;
     }
+    configureChain();
 }
 
 bool Distributor::getAVUse(AV AVName) {
@@ -381,20 +382,6 @@ double Distributor::getAVProcessedFilesSize(AV AVName) {
     }
 }
 
-void Distributor::configureAV() {
-    kasperWrapper.setFolders(m_investigatorDir,
-                             m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME,
-                             m_investigatorDir + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME,
-                             m_investigatorDir + "/" + DRWEB_DIR_NAME  + "/" + INPUT_DIR_NAME,
-                             m_reportDir);
-
-    drwebWrapper.setFolders(m_investigatorDir,
-                            m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME,
-                            m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
-                            m_outputDir,
-                            m_reportDir);
-}
-
 void Distributor::startWatchDirEye() {
     stopWatchDirEye();
 
@@ -443,7 +430,7 @@ void Distributor::onWatchDirChange(const QString &path) {
         log(QString("Перенос файлов из %1 в %2").arg(m_watchDir).arg(m_inputDir), LOG_DST(LOG_FILE | LOG_ROW));
         moveFiles(m_watchDir, m_inputDir, &m_isProcessing);
 
-        kasperWrapper.process();
+        emit startProcess();
     }
 }
 
@@ -505,11 +492,13 @@ QString Distributor::getProcessInfo() const {
 
 void Distributor::log(QString text, LOG_DST flags) {
 
-    if(flags & LOG_FILE)
-        m_logStream << currentDateTime() + " " + text << endl;
+    if(flags & LOG_FILE) {
+        m_logStream << currentDateTime() + " " + text + "\r\n";
+    }
 
-    if(flags & LOG_ROW)
+    if(flags & LOG_ROW) {
         m_processInfo = text;
+    }
 
     if(flags & LOG_GUI) {
         emit logGui(currentDateTime() + " " + text);
@@ -539,5 +528,46 @@ double Distributor::getAVCurrentSpeed(AV AVName) {
 
         default:
             return 0;
+    }
+}
+
+void Distributor::disconnectAll() {
+    disconnect(this,           &Distributor::startProcess, nullptr,  nullptr);
+    disconnect(&kasperWrapper, &AVWrapper::finishProcess,  nullptr,  nullptr);
+    disconnect(&drwebWrapper,  &AVWrapper::finishProcess,  nullptr,  nullptr);
+}
+
+void Distributor::configureChain() {
+
+    disconnectAll();
+
+    if(kasperWrapper.getUsage()) {
+        if(!kasperWrapper.hasStarvation()) {
+        // if kasper hasn`t starvation
+
+            m_inputDir = kasperWrapper.getInputFolder();
+
+            kasperWrapper.setOutputFolder(drwebWrapper.getInputFolder());
+            drwebWrapper.setOutputFolder(m_outputDir);
+
+            connect(this,           &Distributor::startProcess,             &kasperWrapper, &AVWrapper::process);
+
+            // when kasper finish, drweb can start
+            connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
+
+            // when last AV finished works, need move remaind files to clear folder
+            connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
+        } else {
+        // if kasper has starvation
+
+            m_inputDir = drwebWrapper.getInputFolder();
+
+            drwebWrapper.setOutputFolder(m_outputDir);
+
+            connect(this,           &Distributor::startProcess,             &drwebWrapper,  &AVWrapper::process);
+
+            // when last AV finished works, need move remaind files to clear folder
+            connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
+        }
     }
 }

@@ -3,7 +3,7 @@
 
 #include "avwrapper.h"
 
-Q_DECLARE_METATYPE(AVBase)
+Q_DECLARE_METATYPE(LOG_DST)
 
 class Distributor : public QObject
 {
@@ -30,8 +30,6 @@ class Distributor : public QObject
 
     QString m_cleanDir;
     QString m_dangerDir;
-
-    AVBase mainBase;
 
     QString m_processInfo;
     QFile m_logFile;
@@ -76,7 +74,8 @@ public:
     double getAVAverageSpeed(AV AVName);
     double getAVCurrentSpeed(AV AVName);
 
-    void configureAV();
+    void disconnectAll();
+    void configureChain();
 
 // CONTROL
     void startWatchDirEye();
@@ -100,6 +99,7 @@ public:
 signals:
     void updateUi();
     void logGui(QString text);
+    void startProcess();
 };
 
 #endif // DISTRIBUTOR_H

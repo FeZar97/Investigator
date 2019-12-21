@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.18:4"
+#define     VERSION               "v1.3.20:2"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -37,38 +37,8 @@ enum LOG_DST {
     LOG_GUI  = 0X04,
 };
 
-const static QString dateTimePattern = "yyyy/MM/dd hh:mm:ss";
+const static QString dateTimePattern = "yyyy-MM-dd hh-mm-ss";
 const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
-
-struct AVRecord {
-    QDateTime m_timeMark;
-    AV m_av;
-    QString m_fileName{""};
-    QString m_description;
-    QString m_reportName;
-
-    AVRecord();
-    AVRecord(QDateTime dt, AV av, QString fileName, QString description, QString reportName);
-    AVRecord(const AVRecord &record);
-
-    QString toString();
-
-    AVRecord& operator=(const AVRecord &record);
-};
-
-class AVBase {
-    QList<QPair<AVRecord, AVRecord>> m_base;
-
-public:
-    int findFileName(QString fileName);
-
-    void add(AVRecord record);
-    void add(QPair<AVRecord, AVRecord>& record);
-
-    QPair<AVRecord, AVRecord>& operator[](int idx);
-
-    int size();
-};
 
 void moveFiles(QString sourceDir, QString destinationDir, bool* isProcessing);
 QString getName(AV type);
@@ -168,7 +138,7 @@ public:
 
     void setInvestigatorFolder(QString investigatorDir);
 
-    void setFolders(QString investigatorDir, QString inputFolder, QString processFolder, QString outputFolder, QString reportFolder);
+    void setFolders(QString investigatorDir, QString inputFolder, QString processFolder, QString reportFolder);
 
     void setMaxQueueSize(int size);
     int getMaxQueueSize();
@@ -195,6 +165,7 @@ public:
 
     int checkParams();
 
+    bool hasStarvation();
     bool isReadyToProcess();
 
     void setIndicators(QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList permitStrings);
@@ -208,7 +179,6 @@ public:
 
 signals:
     void logWrapper(QString message, LOG_DST flags);
-    void updateBase(AVBase* singleAVBase);
     void finishProcess();
     void setProcessInfo(QString info);
 };
