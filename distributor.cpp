@@ -6,9 +6,6 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
     qRegisterMetaType<LOG_DST>("LOG_DST&");
 
     m_logFile.setFileName("global log " + currentDateTime() + ".txt");
-    if(m_logFile.open(QFile::WriteOnly)) {
-        m_logStream.setDevice(&m_logFile);
-    }
 
 // initial settings
     kasperWrapper.setType(AV::KASPER);
@@ -32,6 +29,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     connect(&kasperWrapper, &AVWrapper::logWrapper,                 this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::logWrapper,                 this,           &Distributor::log);
+
+    connect(&kasperWrapper, &AVWrapper::finishProcess,              this,           &Distributor::updateStatistic);
+    connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::updateStatistic);
 
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
 
@@ -493,7 +493,12 @@ QString Distributor::getProcessInfo() const {
 void Distributor::log(QString text, LOG_DST flags) {
 
     if(flags & LOG_FILE) {
-        m_logStream << currentDateTime() + " " + text + "\r\n";
+
+        // if(m_logFile.open(QIODevice::Append)) {
+        //     m_logStream.setDevice(&m_logFile);
+        //     m_logStream << currentDateTime() + " " + text + "\r\n";
+        //     m_logFile.close();
+        // }
     }
 
     if(flags & LOG_ROW) {

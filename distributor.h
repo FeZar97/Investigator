@@ -98,6 +98,7 @@ public:
 
 signals:
     void updateUi();
+    void updateStatistic();
     void logGui(QString text);
     void startProcess();
 };

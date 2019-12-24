@@ -39,7 +39,7 @@ void AVWrapper::waitForReportReady() {
             m_reportFile.close();
         }
 
-        if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000)) {
+        if(m_startProcessTime.msecsTo(QDateTime::currentDateTime()) > qMin(m_inProgressFilesNb * 8000, 60 * 1000) && m_inProgressFilesNb) {
             logWrapper(QString("%1 завис на отчете %2(%3 файлов), выход из цикла проверки").arg(getName(m_type)).arg(m_reportName).arg(m_inProgressFilesNb),
                        LOG_DST(LOG_GUI | LOG_FILE | LOG_ROW));
             break;
@@ -83,6 +83,7 @@ void AVWrapper::parseReportFile() {
                             if(!QFile::rename(m_processFolder + "/" + infectedFileName, m_dangerFolder + "/" + infectedFileName)) {
                                 logWrapper(QString("Не удалось перенести зараженный файл %1").arg(infectedFileName), LOG_DST(LOG_FILE | LOG_ROW));
                             }
+                            flushTempVariables();
                         }
                     }
                 } while(!m_stream.atEnd());
@@ -107,6 +108,7 @@ void AVWrapper::accumulateStatistic() {
 }
 
 AVWrapper::AVWrapper(QObject *parent) : QObject(parent) {
+    flushTempVariables();
 }
 
 void AVWrapper::setType(AV type) {
@@ -376,11 +378,28 @@ void moveFiles(QString sourceDir, QString destinationDir, bool* isProcessing) {
     if(!QDir(sourceDir).exists() || !QDir(destinationDir).exists() || !*isProcessing)
         return;
 
-    QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters);
+    QFileInfoList filesInSourceDir = QDir(sourceDir + "/").entryInfoList(usingFilters),
+                  filesInDestinationDir = QDir(destinationDir + "/").entryInfoList(usingFilters);
 
-    foreach(QFileInfo fileInfo, filesInSourceDir) {
-        QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName());
+    QDateTime startMoveTime = QDateTime::currentDateTime();
+
+    while(!filesInSourceDir.isEmpty()) {
+
+        foreach(QFileInfo fileInfo, filesInSourceDir) {
+            QFileInfo oldFileInfo(fileInfo);
+            if(QFile::rename(fileInfo.absoluteFilePath(), destinationDir + "/" + fileInfo.fileName())) {
+                filesInSourceDir.removeAll(oldFileInfo);
+            }
+        }
+
+        if(startMoveTime.msecsTo(QDateTime::currentDateTime()) > qMin(filesInSourceDir.size() * 3000, 60 * 1000) && filesInSourceDir.size()) {
+            // logWrapper(QString("Зависание при переносе файлов из %1 в %2...").arg(sourceDir).arg(destinationDir),
+            //            LOG_DST(LOG_GUI | LOG_FILE | LOG_ROW));
+            break;
+        }
     }
+
+
 }
 
 QString getName(AV type) {
@@ -399,8 +418,6 @@ QString currentDateTime() {
 }
 
 void AVWrapper::process() {
-
-    flushTempVariables();
 
     if(m_readyToProcess && !QDir(m_inputFolder).isEmpty()) {
 
@@ -432,6 +449,7 @@ void AVWrapper::process() {
                     executeAVProgram();
                     waitForReportReady();
                     parseReportFile();
+                    flushTempVariables();
                 }
             }
         }

@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.20:2"
+#define     VERSION               "v1.3.23:11"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -34,7 +34,7 @@ enum LOG_DST {
     NONE_LOG = 0x00,
     LOG_ROW  = 0X01,
     LOG_FILE = 0X02,
-    LOG_GUI  = 0X04,
+    LOG_GUI  = 0X04
 };
 
 const static QString dateTimePattern = "yyyy-MM-dd hh-mm-ss";

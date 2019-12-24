@@ -28,10 +28,12 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
     settingsWindow  = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
     statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
 
-    connect(&distributor,   &Distributor::updateUi,   this,             &Widget::updateUi);
-    connect(&distributor,   &Distributor::logGui,     this,             &Widget::log);
+    connect(&distributor,   &Distributor::updateUi,          this,             &Widget::updateUi);
+    connect(&distributor,   &Distributor::logGui,            this,             &Widget::log);
 
-    connect(settingsWindow, &Settings::clearDir,      &distributor,     &Distributor::clearDir);
+    connect(&distributor,   &Distributor::updateStatistic,   statisticWindow,  &Statistics::updateUi);
+
+    connect(settingsWindow, &Settings::clearDir,             &distributor,     &Distributor::clearDir);
 
     distributor.moveToThread(&workThread);
     workThread.start();
