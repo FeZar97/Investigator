@@ -7,25 +7,29 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     m_logFile.setFileName("global log " + currentDateTime() + ".txt");
 
-// initial settings
     kasperWrapper.setType(AV::KASPER);
     drwebWrapper.setType(AV::DRWEB);
 
     kasperWrapper.setReportExtension("kres");
     drwebWrapper.setReportExtension("dres");
 
-    kasperWrapper.setIndicators("; Completion:       	100%",
+    kasperWrapper.setIndicators("",
+                                "; Completion:       	100%",
                                 "; ------------------",
                                 ";  --- Statistics ---",
                                 QStringList() << "detected");
 
-    drwebWrapper.setIndicators("Scan session completed",
+    drwebWrapper.setIndicators("Engine ",
+                               "Scan session completed",
                                "The mask was translated to \"\" filter",
                                "WARNING! Restore points directories have not been scanned",
-                               QStringList() << "infected" << "read error");
+                               QStringList() << "infected" << "error");
 
     kasperWrapper.connectProcessingFlag(&m_isProcessing);
     drwebWrapper.connectProcessingFlag(&m_isProcessing);
+
+    connect(this,           &Distributor::extractAVInfo,            &kasperWrapper, &AVWrapper::extractAVInfo);
+    connect(this,           &Distributor::extractAVInfo,            &drwebWrapper,  &AVWrapper::extractAVInfo);
 
     connect(&kasperWrapper, &AVWrapper::logWrapper,                 this,           &Distributor::log);
     connect(&drwebWrapper,  &AVWrapper::logWrapper,                 this,           &Distributor::log);
@@ -35,7 +39,9 @@ Distributor::Distributor(QObject *parent) : QObject(parent) {
 
     connect(&watchDirEye,   &QFileSystemWatcher::directoryChanged,  this,           &Distributor::onWatchDirChange);
 
-    configureChain();
+    connect(this,           &Distributor::process,                  &kasperWrapper, &AVWrapper::process); // when dir change try start process
+    connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process); // when kasper finish, drweb can start
+    connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles); // when kasper and drweb finished, need move clean files to corresponding dir
 
     kasperWrapper.moveToThread(&kasperThread);
     drwebWrapper.moveToThread(&drwebThread);
@@ -97,7 +103,9 @@ void Distributor::setInvestigatorDir(QString _investigatorDir) {
                                 m_investigatorDir + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME,
                                 m_reportDir);
 
-        configureChain();
+        m_inputDir = kasperWrapper.getInputFolder();
+        kasperWrapper.setOutputFolder(drwebWrapper.getInputFolder());
+        drwebWrapper.setOutputFolder(m_outputDir);
     }
 }
 
@@ -134,7 +142,7 @@ QString Distributor::getDangerDir() {
 void Distributor::setAVFile(AV AVName, QString AVFilePath) {
 
     if(AVFilePath.isEmpty()) {
-        log(QString("Не найдена исполняемый файл антивируса %1.").arg(getName(AVName)), LOG_GUI);
+        log(QString("Не найден исполняемый файл антивируса %1.").arg(getName(AVName)), LOG_GUI);
         return;
     }
 
@@ -178,7 +186,6 @@ void Distributor::setAVUse(AV AVName, bool use) {
         default:
             break;
     }
-    configureChain();
 }
 
 bool Distributor::getAVUse(AV AVName) {
@@ -423,14 +430,22 @@ void Distributor::stopWatchDirEye() {
     }
 }
 
+void Distributor::updateAV(QString updaterFilePath) {
+    if(QFile(updaterFilePath).exists()) {
+        QProcess::execute(updaterFilePath);
+    } else {
+        log(QString("Не удалось открыть файл обновления."), LOG_DST(LOG_GUI | LOG_ROW));
+    }
+}
+
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
 
-    if(m_isProcessing) {
+    if(m_isProcessing && kasperWrapper.isReadyToProcess() && drwebWrapper.isReadyToProcess()) {
         log(QString("Перенос файлов из %1 в %2").arg(m_watchDir).arg(m_inputDir), LOG_DST(LOG_FILE | LOG_ROW));
         moveFiles(m_watchDir, m_inputDir, &m_isProcessing);
 
-        emit startProcess();
+        emit process();
     }
 }
 
@@ -474,12 +489,16 @@ void Distributor::clearStatistic() {
 }
 
 void Distributor::moveCleanFiles() {
-    if(!QDir(m_dangerDir).exists()) QDir().mkpath(m_dangerDir);
-    if(!QDir(m_cleanDir).exists())  QDir().mkpath(m_cleanDir);
 
-    foreach(QFileInfo avRecord, QDir(m_outputDir).entryInfoList(usingFilters)) {
-        QFile::rename(avRecord.absoluteFilePath(), m_cleanDir + "/" + avRecord.fileName());
+    log("Перенос чистых файлов.", LOG_GUI);
+
+    if(!QDir(m_cleanDir).exists()) {
+        QDir().mkpath(m_cleanDir);
     }
+
+    moveFiles(m_outputDir, m_cleanDir, &m_isProcessing);
+
+    emit process();
 }
 
 void Distributor::setProcessInfo(QString info) {
@@ -492,17 +511,19 @@ QString Distributor::getProcessInfo() const {
 
 void Distributor::log(QString text, LOG_DST flags) {
 
+    /*
     if(flags & LOG_FILE) {
-
-        // if(m_logFile.open(QIODevice::Append)) {
-        //     m_logStream.setDevice(&m_logFile);
-        //     m_logStream << currentDateTime() + " " + text + "\r\n";
-        //     m_logFile.close();
-        // }
+        if(m_logFile.open(QIODevice::Append)) {
+            m_logStream.setDevice(&m_logFile);
+            m_logStream << currentDateTime() + " " + text + "\r\n";
+            m_logFile.close();
+        }
     }
+    */
 
     if(flags & LOG_ROW) {
         m_processInfo = text;
+        emit logGui(currentDateTime() + " " + text);
     }
 
     if(flags & LOG_GUI) {
@@ -536,43 +557,19 @@ double Distributor::getAVCurrentSpeed(AV AVName) {
     }
 }
 
-void Distributor::disconnectAll() {
-    disconnect(this,           &Distributor::startProcess, nullptr,  nullptr);
-    disconnect(&kasperWrapper, &AVWrapper::finishProcess,  nullptr,  nullptr);
-    disconnect(&drwebWrapper,  &AVWrapper::finishProcess,  nullptr,  nullptr);
+QString Distributor::getAVInfo(AV AVName) {
+    switch(AVName) {
+        case AV::KASPER:
+            return kasperWrapper.getAVInfo();
+
+        case AV::DRWEB:
+            return drwebWrapper.getAVInfo();
+
+        default:
+            return "не определено";
+    }
 }
 
-void Distributor::configureChain() {
-
-    disconnectAll();
-
-    if(kasperWrapper.getUsage()) {
-        if(!kasperWrapper.hasStarvation()) {
-        // if kasper hasn`t starvation
-
-            m_inputDir = kasperWrapper.getInputFolder();
-
-            kasperWrapper.setOutputFolder(drwebWrapper.getInputFolder());
-            drwebWrapper.setOutputFolder(m_outputDir);
-
-            connect(this,           &Distributor::startProcess,             &kasperWrapper, &AVWrapper::process);
-
-            // when kasper finish, drweb can start
-            connect(&kasperWrapper, &AVWrapper::finishProcess,              &drwebWrapper,  &AVWrapper::process);
-
-            // when last AV finished works, need move remaind files to clear folder
-            connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
-        } else {
-        // if kasper has starvation
-
-            m_inputDir = drwebWrapper.getInputFolder();
-
-            drwebWrapper.setOutputFolder(m_outputDir);
-
-            connect(this,           &Distributor::startProcess,             &drwebWrapper,  &AVWrapper::process);
-
-            // when last AV finished works, need move remaind files to clear folder
-            connect(&drwebWrapper,  &AVWrapper::finishProcess,              this,           &Distributor::moveCleanFiles);
-        }
-    }
+void Distributor::queryAVInfo() {
+    emit extractAVInfo();
 }

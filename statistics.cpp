@@ -1,31 +1,21 @@
 #include "statistics.h"
 #include "ui_statistics.h"
 
-Statistics::Statistics(QWidget *parent, Distributor* distributor, QByteArray geometry, bool visible): QDialog(parent), ui(new Ui::Statistics) {
+Statistics::Statistics(QWidget *parent, Distributor* distributor, QByteArray geometry): QDialog(parent), ui(new Ui::Statistics) {
 
     ui->setupUi(this);
 
     setLayout(ui->mainLayout);
     setWindowTitle("Статистика работы");
     restoreGeometry(geometry);
-    setVisible(visible);
+    setVisible(true);
+    resize(this->minimumSize());
 
     m_distributor = distributor;
     m_workTimer.setInterval(500);
 
     connect(&m_workTimer, &QTimer::timeout, this, &Statistics::updateUi);
     m_workTimer.start();
-
-    m_model.setHorizontalHeaderLabels(QStringList() << "Kaspersky" << "DrWeb");
-    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов" << "Просканировано файлов" << "Объем\nпросканированных файлов (МБ)"
-                                                  << "Средняя скорость\nсканирования (МБ/с)" << "Текущая скорость\nсканирования (МБ/с)"
-                                                  << "Файлов в обработке" << "Файлов в очереди" << "Количество сформированных\nотчетов");
-
-    ui->tableView->setModel(&m_model);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->tableView->setSelectionMode(QAbstractItemView::NoSelection);
 
     updateUi();
 }
@@ -37,6 +27,17 @@ Statistics::~Statistics() {
 void Statistics::updateUi() {
 
     ui->InfoLabel->setText(m_distributor->getProcessInfo());
+
+    m_model.setHorizontalHeaderLabels(QStringList() << "Kaspersky" << "DrWeb");
+    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов" << "Просканировано файлов" << "Объем\nпросканированных файлов (МБ)"
+                                                  << "Средняя скорость\nсканирования (МБ/с)" << "Текущая скорость\nсканирования (МБ/с)"
+                                                  << "Файлов в обработке" << "Файлов в очереди" << "Количество сформированных\nотчетов" << "Версия АВС");
+
+    ui->tableView->setModel(&m_model);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView->setSelectionMode(QAbstractItemView::NoSelection);
 
     qint64 days;
     if( QDate(m_distributor->getStartTime().date()).daysTo(m_distributor->getEndTime().date()) == 0 ) {
@@ -84,6 +85,10 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(7,0), m_distributor->getAVCurrentReportIdx(AV::KASPER), Qt::DisplayRole);
     m_model.setData(m_model.index(7,1), m_distributor->getAVCurrentReportIdx(AV::DRWEB), Qt::DisplayRole);
 
+    // версии АВС
+    m_model.setData(m_model.index(8,0), m_distributor->getAVInfo(AV::KASPER), Qt::DisplayRole);
+    m_model.setData(m_model.index(8,1), m_distributor->getAVInfo(AV::DRWEB), Qt::DisplayRole);
+
     m_model.item(6,0)->setBackground(
                 (
                      (
@@ -107,6 +112,13 @@ void Statistics::updateUi() {
                      (m_distributor->getAVUse(AV::DRWEB))
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
+
+    if(!m_distributor->getAVUse(AV::DRWEB)) {
+        m_model.removeColumns(1,1);
+    }
+    if(!m_distributor->getAVUse(AV::KASPER)) {
+        m_model.removeColumns(0,1);
+    }
 }
 
 void Statistics::on_clearButton_clicked() {

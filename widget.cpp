@@ -15,18 +15,18 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     distributor.setAVUse(AV::KASPER, settings.value("useKasper", true).toBool());
     distributor.setAVFile(AV::KASPER, settings.value("kasperFilePath", "C:/Program Files (x86)/Kaspersky Lab/Kaspersky Endpoint Security for Windows/avp.com").toString());
-    distributor.setMaxQueueSize(AV::KASPER, settings.value("kasperMaxQueueSize", 0).toInt());
-    distributor.setMaxQueueVol(AV::KASPER, settings.value("kasperMaxQueueVol", 1024.).toDouble());
+    distributor.setMaxQueueSize(AV::KASPER, settings.value("kasperMaxQueueSize", 10).toInt());
+    distributor.setMaxQueueVol(AV::KASPER, settings.value("kasperMaxQueueVol", 128.).toDouble());
     distributor.setMaxQueueVolUnit(AV::KASPER, settings.value("kasperVolUnit", 0).toInt());
 
     distributor.setAVUse(AV::DRWEB, settings.value("useDrweb", true).toBool());
     distributor.setAVFile(AV::DRWEB, settings.value("drwebFilePath", "C:/Program Files/DrWeb/dwscancl.exe").toString());
-    distributor.setMaxQueueSize(AV::DRWEB, settings.value("drwebMaxQueueSize", 0).toInt());
-    distributor.setMaxQueueVol(AV::DRWEB, settings.value("drwebMaxQueueVol", 1024.).toDouble());
+    distributor.setMaxQueueSize(AV::DRWEB, settings.value("drwebMaxQueueSize", 10).toInt());
+    distributor.setMaxQueueVol(AV::DRWEB, settings.value("drwebMaxQueueVol", 128.).toDouble());
     distributor.setMaxQueueVolUnit(AV::DRWEB, settings.value("drwebVolUnit", 0).toInt());
 
-    settingsWindow  = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray(), settings.value("settingsWinVisible").toBool());
-    statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray(), settings.value("statisticWinVisible").toBool());
+    settingsWindow  = new Settings(this, &distributor, settings.value("settingsWinGeometry").toByteArray());
+    statisticWindow = new Statistics(this, &distributor, settings.value("statisticWinGeometry").toByteArray());
 
     connect(&distributor,   &Distributor::updateUi,          this,             &Widget::updateUi);
     connect(&distributor,   &Distributor::logGui,            this,             &Widget::log);
@@ -35,8 +35,12 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), settings("
 
     connect(settingsWindow, &Settings::clearDir,             &distributor,     &Distributor::clearDir);
 
+    connect(settingsWindow, &Settings::updateAV,             &distributor,     &Distributor::updateAV);
+
     distributor.moveToThread(&workThread);
     workThread.start();
+
+    distributor.queryAVInfo();
 
     log(currentDateTime() + " Программа запущена.");
 
@@ -76,6 +80,7 @@ Widget::~Widget() {
 
     delete ui;
 }
+
 void Widget::log(QString s) {
     ui->logPTE->appendPlainText(s);
 }

@@ -17,7 +17,7 @@ class Statistics : public QDialog {
     Q_OBJECT
 
 public:
-    explicit Statistics(QWidget *parent = nullptr, Distributor* distributor = nullptr, QByteArray geometry = nullptr, bool visible = false);
+    explicit Statistics(QWidget *parent = nullptr, Distributor* distributor = nullptr, QByteArray geometry = nullptr);
     ~Statistics();
 
     void updateUi();

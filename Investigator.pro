@@ -5,7 +5,7 @@ QT       += core gui concurrent widgets
 TARGET = Investigator
 TEMPLATE = app
 
-VERSION = 1.1
+VERSION = 1.3
 
 QMAKE_TARGET_COMPANY     = FeZar97
 QMAKE_TARGET_PRODUCT     = Investigator

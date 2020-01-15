@@ -73,13 +73,13 @@ public:
     double getAVProcessedFilesSize(AV AVName);
     double getAVAverageSpeed(AV AVName);
     double getAVCurrentSpeed(AV AVName);
-
-    void disconnectAll();
-    void configureChain();
+    QString getAVInfo(AV AVName);
 
 // CONTROL
+    void queryAVInfo();
     void startWatchDirEye();
     void stopWatchDirEye();
+    void updateAV(QString updaterFilePath);
 
 // EVENTS
     void onWatchDirChange(const QString &path);
@@ -100,7 +100,8 @@ signals:
     void updateUi();
     void updateStatistic();
     void logGui(QString text);
-    void startProcess();
+    void process();
+    void extractAVInfo();
 };
 
 #endif // DISTRIBUTOR_H

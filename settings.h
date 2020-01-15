@@ -16,7 +16,7 @@ class Settings : public QDialog {
     Q_OBJECT
 
 public:
-    explicit Settings(QWidget *parent = nullptr, Distributor* distributor = nullptr, QByteArray geometry = nullptr, bool visible = false);
+    explicit Settings(QWidget *parent = nullptr, Distributor* distributor = nullptr, QByteArray geometry = nullptr);
     ~Settings();
 
     void updateUi();
@@ -43,12 +43,15 @@ private slots:
     void on_clearCleanDirButton_clicked();
     void on_clearDangerDirButton_clicked();
 
+    void on_upgradeAVButton_clicked();
+
 private:
     Ui::Settings *ui;
     Distributor* m_distributor;
 
 signals:
     void clearDir(QString dirPath);
+    void updateAV(QString updaterPath);
 };
 
 #endif // SETTINGS_H

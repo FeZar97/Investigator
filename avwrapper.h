@@ -15,7 +15,7 @@
 
 #include <QDebug>
 
-#define     VERSION               "v1.3.23:11"
+#define     VERSION               "v1.4.15:1"
 
 #define     KASPER_DIR_NAME       "kasper"
 #define     DRWEB_DIR_NAME        "drweb"
@@ -61,12 +61,14 @@ class AVWrapper : public QObject
     QString m_reportExtension{"unknown"};
     QString m_reportName;
     QFile m_reportFile;
-    int m_maxQueueSize{0};
-    double m_maxQueueVolMb{0.};
+    QString m_avInfo{"не определена"};
+    int m_maxQueueSize{10};
+    double m_maxQueueVolMb{128.};
     int m_maxQueueVolUnit{0};
     bool m_hasStarvation{false};
 
     // indicators
+    QString m_startInfoIndicator;
     QString m_reportReadyIndicator;
     QString m_startRecordsIndicator;
     QString m_endRecordsIndicator;
@@ -156,6 +158,8 @@ public:
     double getProcessedFilesSize();
     double getAverageSpeed();
     double getCurrentSpeed();
+    QString getAVInfo();
+
     void clearStatistic();
 
     void setExecArgs(QStringList execArgs);
@@ -168,11 +172,13 @@ public:
     bool hasStarvation();
     bool isReadyToProcess();
 
-    void setIndicators(QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList permitStrings);
+    void setIndicators(QString startInfoIndicator, QString readyIndicator, QString startRecordsIndicator, QString endRecordsIndicator, QStringList permitStrings);
 
     bool isPayload(QString line);
     QString extractInfectedFileName(QString reportLine);
     QString extractDescription(QString reportLine, QString fileName);
+
+    void extractAVInfo();
 
 // CORE
     void process();

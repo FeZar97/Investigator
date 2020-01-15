@@ -1,13 +1,14 @@
 #include "settings.h"
 #include "ui_settings.h"
 
-Settings::Settings(QWidget *parent, Distributor* distributor, QByteArray geometry, bool visible): QDialog(parent), ui(new Ui::Settings) {
+Settings::Settings(QWidget *parent, Distributor* distributor, QByteArray geometry): QDialog(parent), ui(new Ui::Settings) {
     ui->setupUi(this);
 
     setLayout(ui->mainLayout);
     setWindowTitle("Настройки программы");
     restoreGeometry(geometry);
-    setVisible(visible);
+    setVisible(true);
+    resize(this->minimumSize());
 
     m_distributor = distributor;
     updateUi();
@@ -136,7 +137,6 @@ void Settings::on_clearWatchDirButton_clicked() {
                              QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getWatchDir()),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        // m_distributor->clearDir(m_distributor->getWatchDir());
         emit clearDir(m_distributor->getWatchDir());
     }
 }
@@ -147,15 +147,6 @@ void Settings::on_clearTempDirButton_clicked() {
                              QString("Вы действительно хотите очистить все временные директории?"),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-        //
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-        //
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + PROCESSED_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + REPORT_DIR_NAME);
-
 
         emit clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
         emit clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
@@ -174,18 +165,21 @@ void Settings::on_clearCleanDirButton_clicked() {
                              QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getCleanDir()),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        //m_distributor->clearDir(m_distributor->getCleanDir());
         emit clearDir(m_distributor->getCleanDir());
     }
 }
 
 void Settings::on_clearDangerDirButton_clicked() {
-    if( QMessageBox::warning(this,
+    if(QMessageBox::warning(this,
                              tr("Подтвердите действие"),
                              QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getDangerDir()),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        //m_distributor->clearDir(m_distributor->getDangerDir());
         emit clearDir(m_distributor->getDangerDir());
     }
+}
+
+void Settings::on_upgradeAVButton_clicked() {
+    QString updaterFilePath = QFileDialog::getOpenFileName(this, QString("Выбор файла-установщика"), tr("*.exe"));
+    emit updateAV(updaterFilePath);
 }
