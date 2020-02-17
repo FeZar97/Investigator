@@ -55,6 +55,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     connect(m_investigator,   &Investigator::process,             this,              &Widget::startProcess);
     connect(&m_process,       &QProcess::readyReadStandardOutput, this,              &Widget::parseResultOfProcess);
+    connect(m_investigator,   &Investigator::saveReport,          this,              &Widget::saveReport);
     connect(this,             &Widget::parseReport,               m_investigator,    &Investigator::parseReport);
 
     connect(m_investigator,   &Investigator::stopProcess,         &m_process,        &QProcess::close);
@@ -113,7 +114,6 @@ Widget::~Widget() {
     m_workThread.wait();
 
     log("Завершение работы программы.", INFO);
-    log(REPORTS_SPLITTER, INFO);
 
     delete m_settingsWindow;
     delete m_statisticWindow;
@@ -149,6 +149,22 @@ void Widget::startProcess(QString path, QStringList args) {
 void Widget::parseResultOfProcess() {
     emit parseReport(m_win1251Codec->toUnicode(m_process.readAllStandardOutput()));
     m_process.close();
+}
+
+void Widget::saveReport(QString report, unsigned long long reportIdx) {
+
+    if(!QDir(m_investigator->m_reportsDir).exists()) {
+        QDir().mkdir(m_investigator->m_reportsDir);
+    }
+
+    QFile outFile(QString("%1report_%2_(%3).txt")
+                  .arg(m_investigator->m_reportsDir + "/")
+                  .arg(reportIdx)
+                  .arg(QDate::currentDate().toString("dd.MM.yy")));
+    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    QTextStream ts(&outFile);
+    ts << report << endl;
+    outFile.close();
 }
 
 void Widget::on_startButton_clicked() {

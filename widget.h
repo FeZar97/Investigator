@@ -26,6 +26,7 @@ public:
     void updateUi();
     void startProcess(QString path, QStringList args);
     void parseResultOfProcess();
+    void saveReport(QString report, unsigned long long reportIdx);
 
 private slots:
     void on_startButton_clicked();

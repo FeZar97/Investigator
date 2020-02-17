@@ -175,9 +175,11 @@ void Investigator::clearStatistic() {
 void Investigator::configureDirs() {
     m_inputDir   = m_investigatorDir + "/" + INPUT_DIR_NAME;
     m_processDir = m_investigatorDir + "/" + OUTPUT_DIR_NAME;
+    m_reportsDir = m_investigatorDir + "/" + "reports";
 
     QDir().mkpath(m_inputDir);
     QDir().mkpath(m_processDir);
+    QDir().mkpath(m_reportsDir);
 }
 
 void Investigator::onProcessFinished() {
@@ -193,11 +195,11 @@ void Investigator::onProcessFinished() {
                                                                                                   .arg(m_inputDir)
                                                                                                   .arg(m_processDir)
                                                                                                   .arg(m_maxQueueSize), MSG_CATEGORY(INFO + LOG_ROW));
-        m_processedFiles.clear();
-        m_processedFiles = QDir(m_inputDir).entryList(usingFilters);
+        m_inProcessFileList.clear();
+        m_inProcessFileList = QDir(m_inputDir).entryList(usingFilters);
 
-        if(m_processedFiles.size()) {
-            log(QString("Проверяемые файлы: %1").arg(entryListToString(m_processedFiles)), MSG_CATEGORY(INFO));
+        if(m_inProcessFileList.size()) {
+            log(QString("Проверяемые файлы: %1").arg(entryListToString(m_inProcessFileList)), MSG_CATEGORY(INFO));
         }
 
         moveFiles(m_inputDir, m_processDir, m_maxQueueSize);
@@ -246,6 +248,7 @@ void Investigator::stopWork() {
 
 void Investigator::parseReport(QString report) {
     m_lastReport = report;
+    emit saveReport(QString(m_lastReport), m_reportCnt++);
 
     QStringList infectedFilesList, tempSplitList, reportLines;
     QString tempFileName;
@@ -331,16 +334,14 @@ void Investigator::parseReport(QString report) {
                                                                                     .arg(m_cleanDir)
                                                                                     .arg(entryListToString(clearFiles)), MSG_CATEGORY(INFO));
     // перенос только тех, которые отправлялись на проверку
-    foreach(QString fileName, QDir(m_processDir).entryList(usingFilters)) {
-        if(m_processedFiles.contains(fileName)) {
+    foreach(QString fileName, clearFiles) {
+        if(m_inProcessFileList.contains(fileName)) {
             moveFile(fileName, m_processDir, m_cleanDir);
-        } else {
-            moveFile(fileName, m_processDir, m_inputDir);
         }
     }
 
     // все оставшиеся файлы возвращаются обратно в m_inputDir
-    // moveFiles(m_processDir, m_cleanDir, ALL_FILES);
+    moveFiles(m_processDir, m_cleanDir, ALL_FILES);
 
     collectStatistics();
 

@@ -19,14 +19,15 @@
 
 #include "stylehelper.h"
 
-#define     VERSION               "v1.4.14 stable"
+#define     MAJOR_VERSION         1
+#define     MINOR_VERSION         5
+#define     PATCH_VERSION         17.2
+#define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
 #define     OUTPUT_DIR_NAME       "output"
 
 #define     ALL_FILES             -1
-
-#define     REPORTS_SPLITTER      "--------------------------------------------------"
 
 enum ACTION_TYPE {
     MOVE_TO_DIR,
@@ -79,14 +80,16 @@ public:
 
     QString m_inputDir; // куда копируются файлы из m_watchDir
     QString m_processDir; // где проверяются файлы
+    QString m_reportsDir; // каталог репортов АВС
 
     QString m_cleanDir; // каталог для читых файлов
     QString m_dangerDir; // каталог для зараженных файлов
 
     QString m_processInfo; // информация для строки в окне статистики
     QString m_lastReport; // последний репорт
+    unsigned long long m_reportCnt{0}; // счетчик репортов
 
-    QStringList m_processedFiles; // файлы в обработке
+    QStringList m_inProcessFileList; // файлы в обработке
 
     ACTION_TYPE m_infectedFileAction{MOVE_TO_DIR}; // действие с зараженными файлами
 
@@ -165,6 +168,9 @@ signals:
 
     /* вывод информации */
     void log(QString s, MSG_CATEGORY cat);
+
+    /* сохранение отчета АВС */
+    void saveReport(QString report, unsigned long long idx);
 };
 
 #endif // INVESTIGATOR_H
