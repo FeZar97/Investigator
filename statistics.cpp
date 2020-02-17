@@ -82,10 +82,6 @@ void Statistics::updateUi() {
     // версии АВС
     m_model.setData(m_model.index(7,0), m_investigator->m_avVersion, Qt::DisplayRole);
 
-    // версии АВС
-    m_model.setData(m_model.index(8,0), m_distributor->getAVInfo(AV::KASPER), Qt::DisplayRole);
-    m_model.setData(m_model.index(8,1), m_distributor->getAVInfo(AV::DRWEB), Qt::DisplayRole);
-
     m_model.item(6,0)->setBackground(
                 (
                      (
