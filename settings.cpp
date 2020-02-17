@@ -1,15 +1,16 @@
 #include "settings.h"
 #include "ui_settings.h"
 
-Settings::Settings(QWidget *parent, Distributor* distributor, QByteArray geometry, bool visible): QDialog(parent), ui(new Ui::Settings) {
+Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geometry): QDialog(parent), ui(new Ui::Settings) {
     ui->setupUi(this);
 
     setLayout(ui->mainLayout);
     setWindowTitle("Настройки программы");
     restoreGeometry(geometry);
-    setVisible(visible);
+    setVisible(true);
+    resize(this->minimumSize());
 
-    m_distributor = distributor;
+    m_investigator = investigator;
     updateUi();
 }
 
@@ -18,174 +19,215 @@ Settings::~Settings() {
 }
 
 void Settings::on_watchDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для слежения"), m_distributor->getWatchDir());
-    m_distributor->setWatchDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для слежения"), m_investigator->m_watchDir);
+    if(dir.isEmpty()) {
+        log("Не найден каталог для слежения.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_watchDir = dir;
+        log(QString("Выбран новый каталог для слежения: %1").arg(dir), MSG_CATEGORY(INFO));
+    }
+
     updateUi();
 }
 
 void Settings::on_tempDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для временных файлов программы"), m_distributor->getInvestigatorDir());
-    m_distributor->setInvestigatorDir(dir);
+
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для временных файлов программы"), m_investigator->m_investigatorDir);
+
+    if(dir.isEmpty()) {
+        log("Не найден каталог для временных файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_investigatorDir = dir;
+        m_investigator->configureDirs();
+        log(QString("Выбран новый каталог для временных файлов программы: %1").arg(dir), MSG_CATEGORY(INFO));
+    }
+
     updateUi();
 }
 
 void Settings::on_cleanDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для чистых файлов"), m_distributor->getCleanDir());
-    m_distributor->setCleanDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для чистых файлов"), m_investigator->m_cleanDir);
+
+    if(dir.isEmpty()) {
+        log("Не найден каталог для чистых файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_cleanDir = dir;
+        log(QString("Выбран новый каталог для чистых файлов: %1").arg(dir), MSG_CATEGORY(INFO));
+    }
+
     updateUi();
 }
 
 void Settings::on_dangerousDirButton_clicked() {
-    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор директории для зараженных файлов"), m_distributor->getDangerDir());
-    m_distributor->setDangerDir(dir);
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для зараженных файлов"), m_investigator->m_dangerDir);
+    if(m_investigator->m_dangerDir.isEmpty()) {
+        log("Не найден каталог для зараженных файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_dangerDir = dir;
+        log(QString("Выбран новый каталог для зараженных файлов: %1").arg(dir), MSG_CATEGORY(INFO));
+    }
+
     updateUi();
 }
 
-void Settings::on_kasperFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::KASPER)), m_distributor->getAVFile(AV::KASPER), tr("*.com"));
-    m_distributor->setAVFile(AV::KASPER, filePath);
-    updateUi();
-}
+void Settings::on_avFileButton_clicked() {
+    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса"), m_investigator->m_avPath, tr("*.exe"));
 
-void Settings::on_drwebFileButton_clicked() {
-    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса " + getName(AV::DRWEB)), m_distributor->getAVFile(AV::DRWEB), tr("*.exe"));
-    m_distributor->setAVFile(AV::DRWEB, filePath);
-    updateUi();
-}
+    if(!QFile(filePath).exists()) {
+        log("Не найден исполняемый файл АВС.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_avPath = filePath;
+        log(QString("Выбран новый исполняемый файл АВС: %1").arg(filePath), MSG_CATEGORY(INFO));
+    }
 
-void Settings::on_kasperCB_clicked(bool isUsed) {
-    m_distributor->setAVUse(AV::KASPER, isUsed);
-    updateUi();
-}
-
-void Settings::on_drwebCB_clicked(bool isUsed) {
-    m_distributor->setAVUse(AV::DRWEB, isUsed);
     updateUi();
 }
 
 void Settings::updateUi() {
-    ui->watchDirLE->setText(m_distributor->getWatchDir());
-    ui->investigatorDirLE->setText(m_distributor->getInvestigatorDir());
-    ui->cleanDirLE->setText(m_distributor->getCleanDir());
-    ui->dangerousDirLE->setText(m_distributor->getDangerDir());
+    ui->watchDirLE->setText(m_investigator->m_watchDir);
+    ui->investigatorDirLE->setText(m_investigator->m_investigatorDir);
+    ui->cleanDirLE->setText(m_investigator->m_cleanDir);
+    ui->dangerousDirLE->setText(m_investigator->m_dangerDir);
 
-    ui->kasperFileLE->setText(m_distributor->getAVFile(AV::KASPER));
-    ui->kasperCB->setChecked(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::KASPER));
-    ui->kasperMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::KASPER));
-    ui->kasperMaxQueueVolUnitCB->setCurrentIndex(m_distributor->getMaxQueueVolUnit(AV::KASPER));
+    ui->avFileLE->setText(m_investigator->m_avPath);
+    ui->avMaxQueueSizeSB->setValue(m_investigator->m_maxQueueSize);
+    ui->avMaxQueueVolSB->setValue(m_investigator->m_maxQueueVolMb);
+    ui->avMaxQueueVolUnitCB->setCurrentIndex(m_investigator->m_maxQueueVolUnit);
 
-    ui->drwebFileLE->setText(m_distributor->getAVFile(AV::DRWEB));
-    ui->drwebCB->setChecked(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebMaxQueueSizeSB->setValue(m_distributor->getMaxQueueSize(AV::DRWEB));
-    ui->drwebMaxQueueVolSB->setValue(m_distributor->getMaxQueueVolMb(AV::DRWEB));
-    ui->drwebMaxQueueVolUnitCB->setCurrentIndex(m_distributor->getMaxQueueVolUnit(AV::DRWEB));
+    ui->infectActionCB->setCurrentIndex(m_investigator->m_infectedFileAction);
 
-// enabled
-    ui->kasperFileLE->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperFileButton->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::KASPER));
-    ui->kasperMaxQueueVolUnitCB->setEnabled(m_distributor->getAVUse(AV::KASPER));
+    ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
+    ui->externalHandlerFileLE->setText(m_investigator->m_externalHandlerPath);
+    ui->externalHandlerFileLE->setEnabled(m_investigator->m_useExternalHandler);
+    ui->externalHandlerFileButton->setEnabled(m_investigator->m_useExternalHandler);
 
-    ui->drwebFileLE->setEnabled(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebFileButton->setEnabled(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebMaxQueueSizeSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebMaxQueueVolSB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
-    ui->drwebMaxQueueVolUnitCB->setEnabled(m_distributor->getAVUse(AV::DRWEB));
+    ui->syslogCB->setChecked(m_investigator->m_useSyslog);
+    ui->syslogAddressLE->setEnabled(m_investigator->m_useSyslog);
+    ui->syslogAddressLE->setText(m_investigator->m_syslogAddress);
+
+    // --- STYLESHEETS ---
+    ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->investigatorDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()          ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->cleanDirLE->setStyleSheet(QDir(m_investigator->m_cleanDir).exists()                        ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->dangerousDirLE->setStyleSheet(QDir(m_investigator->m_dangerDir).exists()                   ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+
+    ui->avFileLE->setStyleSheet(QFile(m_investigator->m_avPath).exists()                           ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+
+    if(m_investigator->m_useExternalHandler)
+        ui->externalHandlerFileLE->setStyleSheet(QFile(m_investigator->m_externalHandlerPath).exists() ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    else
+        ui->externalHandlerFileLE->setStyleSheet("");
+
+    if(m_investigator->m_useSyslog)
+        ui->syslogAddressLE->setStyleSheet(m_investigator->checkSyslogAddress() ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    else
+        ui->syslogAddressLE->setStyleSheet("");
+
 }
 
-int Settings::getVolUnits(AV av) {
-    switch(av) {
-        case AV::KASPER:
-            return ui->kasperMaxQueueVolUnitCB->currentIndex();
-        case AV::DRWEB:
-            return ui->drwebMaxQueueVolUnitCB->currentIndex();
-        default:
-            return 0;
-    }
+int Settings::getVolUnits() {
+    return ui->avMaxQueueVolUnitCB->currentIndex();
 }
 
-void Settings::on_kasperMaxQueueSizeSB_valueChanged(int size) {
-    m_distributor->setMaxQueueSize(AV::KASPER, size);
+void Settings::on_avMaxQueueSizeSB_valueChanged(int size) {
+    m_investigator->m_maxQueueSize = size;
 }
 
-void Settings::on_drwebMaxQueueSizeSB_valueChanged(int size) {
-    m_distributor->setMaxQueueSize(AV::DRWEB, size);
+void Settings::on_avMaxQueueVolSB_valueChanged(double maxQueueVolMb) {
+    m_investigator->m_maxQueueVolMb = maxQueueVolMb;
 }
 
-void Settings::on_kasperMaxQueueVolSB_valueChanged(double kasperMaxQueueVolMb) {
-    m_distributor->setMaxQueueVol(AV::KASPER, kasperMaxQueueVolMb);
-}
-
-void Settings::on_drwebMaxQueueVolSB_valueChanged(double drwebMaxQueueVolMb) {
-    m_distributor->setMaxQueueVol(AV::DRWEB, drwebMaxQueueVolMb);
-}
-
-void Settings::on_kasperMaxQueueVolUnitCB_currentIndexChanged(int unitIdx) {
-    m_distributor->setMaxQueueVolUnit(AV::KASPER, unitIdx);
-}
-
-void Settings::on_drwebMaxQueueVolUnitCB_currentIndexChanged(int unitIdx){
-    m_distributor->setMaxQueueVolUnit(AV::DRWEB, unitIdx);
+void Settings::on_avMaxQueueVolUnitCB_currentIndexChanged(int unitIdx) {
+    m_investigator->m_maxQueueVolUnit = unitIdx;
 }
 
 void Settings::on_clearWatchDirButton_clicked() {
-    if( QMessageBox::warning(this,
-                             tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getWatchDir()),
-                             QMessageBox::Yes | QMessageBox::No,
-                             QMessageBox::Yes) == QMessageBox::Yes) {
-        // m_distributor->clearDir(m_distributor->getWatchDir());
-        emit clearDir(m_distributor->getWatchDir());
+    if(QMessageBox::warning(this,
+                            tr("Подтвердите действие"),
+                            QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_watchDir),
+                            QMessageBox::Yes | QMessageBox::No,
+                            QMessageBox::Yes) == QMessageBox::Yes) {
+        log(QString("Очистка каталога для слежения: %1.").arg(m_investigator->m_watchDir), MSG_CATEGORY(INFO + LOG_ROW));
+        emit clearDir(m_investigator->m_watchDir);
     }
 }
 
 void Settings::on_clearTempDirButton_clicked() {
     if( QMessageBox::warning(this,
                              tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить все временные директории?"),
+                             QString("Вы действительно хотите очистить все временные каталоги программы?"),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-        //
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-        //
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + PROCESSED_DIR_NAME);
-        // m_distributor->clearDir(m_distributor->getInvestigatorDir() + "/" + REPORT_DIR_NAME);
 
-
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + INPUT_DIR_NAME);
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + KASPER_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + INPUT_DIR_NAME);
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + DRWEB_DIR_NAME + "/" + OUTPUT_DIR_NAME);
-
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + PROCESSED_DIR_NAME);
-        emit clearDir(m_distributor->getInvestigatorDir() + "/" + REPORT_DIR_NAME);
+        log(QString("Очистка временных каталогов программы."), MSG_CATEGORY(INFO + LOG_ROW));
+        emit clearDir(m_investigator->m_inputDir);
+        emit clearDir(m_investigator->m_processDir);
     }
 }
 
 void Settings::on_clearCleanDirButton_clicked() {
     if( QMessageBox::warning(this,
                              tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getCleanDir()),
+                             QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_cleanDir),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        //m_distributor->clearDir(m_distributor->getCleanDir());
-        emit clearDir(m_distributor->getCleanDir());
+        log(QString("Очистка каталога для чистых файлов: %1.").arg(m_investigator->m_cleanDir), MSG_CATEGORY(INFO + LOG_ROW));
+        emit clearDir(m_investigator->m_cleanDir);
     }
 }
 
 void Settings::on_clearDangerDirButton_clicked() {
-    if( QMessageBox::warning(this,
+    if(QMessageBox::warning(this,
                              tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить директорию %1 ?").arg(m_distributor->getDangerDir()),
+                             QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_dangerDir),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        //m_distributor->clearDir(m_distributor->getDangerDir());
-        emit clearDir(m_distributor->getDangerDir());
+        log(QString("Очистка каталога для зараженных файлов: %1.").arg(m_investigator->m_cleanDir), MSG_CATEGORY(INFO + LOG_ROW));
+        emit clearDir(m_investigator->m_dangerDir);
     }
+}
+
+void Settings::on_infectActionCB_currentIndexChanged(int actionIdx) {
+    m_investigator->m_infectedFileAction = ACTION_TYPE(actionIdx);
+    if(m_investigator->m_infectedFileAction == DELETE) {
+        m_investigator->m_useExternalHandler = false;
+        ui->externalHandlerFileCB->setEnabled(false);
+    } else {
+        m_investigator->m_useExternalHandler = ui->externalHandlerFileCB->isChecked();
+        ui->externalHandlerFileCB->setEnabled(true);
+    }
+    log(QString("Изменена обработка зараженных файлов: %1.").arg(m_investigator->m_infectedFileAction), MSG_CATEGORY(INFO));
+    updateUi();
+}
+
+void Settings::on_externalHandlerFileButton_clicked() {
+    QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор внешнего обработчика"), m_investigator->m_externalHandlerPath, tr("*.*"));
+
+    if(!QFile(filePath).exists()) {
+        log("Не найден файл внешнего обработчика.", MSG_CATEGORY(INFO + LOG_GUI));
+    } else {
+        m_investigator->m_externalHandlerPath = filePath;
+        log(QString("Изменен путь к внешнему обработчику зараженных файлов: %1.").arg(filePath), MSG_CATEGORY(INFO));
+    }
+
+    updateUi();
+}
+
+void Settings::on_externalHandlerFileCB_clicked(bool checked) {
+    m_investigator->m_useExternalHandler = checked;
+    log(QString("Смена состояния флага использования внешнего обработчика: %1.").arg(checked), MSG_CATEGORY(INFO));
+    updateUi();
+}
+
+void Settings::on_syslogCB_clicked(bool checked) {
+    m_investigator->m_useSyslog = checked;
+    m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
+    log(QString("Смена состояния флага использования syslog: %1.").arg(checked), MSG_CATEGORY(INFO));
+    updateUi();
+}
+
+void Settings::on_syslogAddressLE_textChanged(const QString &newAddr) {
+    m_investigator->m_syslogAddress = newAddr;
+    log(QString("Изменен URL демона syslog: %1.").arg(newAddr), MSG_CATEGORY(INFO));
+    updateUi();
 }

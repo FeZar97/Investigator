@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <QtMath>
 
-#include "distributor.h"
+#include "investigator.h"
 
 namespace Ui {
     class Statistics;
@@ -17,7 +17,7 @@ class Statistics : public QDialog {
     Q_OBJECT
 
 public:
-    explicit Statistics(QWidget *parent = nullptr, Distributor* distributor = nullptr, QByteArray geometry = nullptr, bool visible = false);
+    explicit Statistics(QWidget *parent = nullptr, Investigator* investigator = nullptr, QByteArray geometry = nullptr);
     ~Statistics();
 
     void updateUi();
@@ -27,8 +27,8 @@ private slots:
 
 private:
     Ui::Statistics *ui;
+    Investigator* m_investigator;
     QStandardItemModel m_model;
-    Distributor* m_distributor;
     QTimer m_workTimer;
 };
 

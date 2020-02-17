@@ -8,6 +8,7 @@
 
 #include "settings.h"
 #include "statistics.h"
+#include "distributor.h"
 
 namespace Ui {
     class Widget;
@@ -21,8 +22,10 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget() override;
 
-    void log(QString s);
+    void log(QString s, MSG_CATEGORY cat);
     void updateUi();
+    void startProcess(QString path, QStringList args);
+    void parseResultOfProcess();
 
 private slots:
     void on_startButton_clicked();
@@ -34,12 +37,21 @@ private slots:
 private:
     Ui::Widget *ui;
 
-    Distributor distributor;
-    QSettings settings;
-    QThread workThread;
+    QSettings m_settings;
+    QTextCodec *m_win1251Codec;
+    QProcess m_process;
 
-    Settings *settingsWindow;
-    Statistics *statisticWindow;
+    Investigator *m_investigator;
+    Distributor *m_distributor;
+    QThread m_workThread;
+
+    Settings *m_settingsWindow;
+    Statistics *m_statisticWindow;
+
+signals:
+    void parseReport(QString report);
+    void startWork();
+    void stopWork();
 };
 
 #endif // WIDGET_H
