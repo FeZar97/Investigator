@@ -248,111 +248,117 @@ void Investigator::stopWork() {
 
 void Investigator::parseReport(QString report) {
     m_lastReport = report;
-    emit saveReport(QString(m_lastReport), m_reportCnt++);
 
-    QStringList infectedFilesList, tempSplitList, reportLines;
-    QString tempFileName;
+    if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
+        emit saveReport(QString(m_lastReport), m_reportCnt++);
 
-    reportLines = m_lastReport.split("\n");
+        QStringList infectedFilesList, tempSplitList, reportLines;
+        QString tempFileName;
 
-    if(reportLines.size() > 5) {
-        QString baseVersion       = reportLines[2].remove("Версия баз: ");
-        QString m52coreVersion    = reportLines[3].remove("Версия ядра M-52: ");
-        QString drwebCoreVersion  = reportLines[4].remove("Версия ядра Dr.Web: ");
-        QString kasperCoreVersion = reportLines[5].remove("Версия ядра Касперский: ");
-        QString newVersion = QString("Ядро M-52: %1\nЯдро Dr.Web: %2\nЯдро Kaspersky: %3").arg(m52coreVersion).arg(drwebCoreVersion).arg(kasperCoreVersion);
-        if(m_avVersion != newVersion) {
-            m_avVersion = newVersion;
-            log(QString("Определена версия АВС: %1").arg(newVersion), INFO);
+        reportLines = m_lastReport.split("\n");
+
+        if(reportLines.size() > 5) {
+            QString baseVersion       = reportLines[2].remove("Версия баз: ");
+            QString m52coreVersion    = reportLines[3].remove("Версия ядра M-52: ");
+            QString drwebCoreVersion  = reportLines[4].remove("Версия ядра Dr.Web: ");
+            QString kasperCoreVersion = reportLines[5].remove("Версия ядра Касперский: ");
+            QString newVersion = QString("Ядро M-52: %1\nЯдро Dr.Web: %2\nЯдро Kaspersky: %3").arg(m52coreVersion).arg(drwebCoreVersion).arg(kasperCoreVersion);
+            if(m_avVersion != newVersion) {
+                m_avVersion = newVersion;
+                log(QString("Определена версия АВС: %1").arg(newVersion), INFO);
+            }
         }
-    }
 
-    // accumulate statistic
-    if(m_isWorking) {
-        double lastProcessedFilesSizeMb = 0.;
-        m_processedFilesNb += QDir(m_processDir).entryList(usingFilters).size();
-        foreach(QFileInfo fi, QDir(m_processDir).entryInfoList(usingFilters)) {
-            lastProcessedFilesSizeMb += double(fi.size()) / 1024. / 1024.;
+        // accumulate statistic
+        if(m_isWorking) {
+            double lastProcessedFilesSizeMb = 0.;
+            m_processedFilesNb += QDir(m_processDir).entryList(usingFilters).size();
+            foreach(QFileInfo fi, QDir(m_processDir).entryInfoList(usingFilters)) {
+                lastProcessedFilesSizeMb += double(fi.size()) / 1024. / 1024.;
+            }
+            m_processedFilesSizeMb += lastProcessedFilesSizeMb;
+            double workTimeInSecs = double(m_startTime.msecsTo(getEndTime())) / 1000.;
+            m_averageProcessSpeed = (workTimeInSecs > 0.01) ? (m_processedFilesSizeMb / workTimeInSecs) : 0;
+            m_currentProcessSpeed = (workTimeInSecs > 0.01) ? (lastProcessedFilesSizeMb / workTimeInSecs) : 0;
+            emit updateUi();
         }
-        m_processedFilesSizeMb += lastProcessedFilesSizeMb;
-        double workTimeInSecs = double(m_startTime.msecsTo(getEndTime())) / 1000.;
-        m_averageProcessSpeed = (workTimeInSecs > 0.01) ? (m_processedFilesSizeMb / workTimeInSecs) : 0;
-        m_currentProcessSpeed = (workTimeInSecs > 0.01) ? (lastProcessedFilesSizeMb / workTimeInSecs) : 0;
-        emit updateUi();
-    }
 
-    if(reportLines.size() > 13) {
-        for(int i = 6; i < reportLines.size() - 7; i++) {
-            if(reportLines[i].contains(QDir::toNativeSeparators(m_processDir))) {
-                tempSplitList = reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\");
-                tempSplitList = tempSplitList[1].split("'");
+        if(reportLines.size() > 13) {
+            for(int i = 6; i < reportLines.size() - 7; i++) {
+                if(reportLines[i].contains(QDir::toNativeSeparators(m_processDir))) {
+                    tempSplitList = reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\");
+                    tempSplitList = tempSplitList[1].split("'");
 
-                if(tempSplitList[0].contains("//")) {
-                    tempFileName = tempSplitList[0].split("//")[0];
-                } else {
-                    tempFileName = tempSplitList[0];
-                }
+                    if(tempSplitList[0].contains("//")) {
+                        tempFileName = tempSplitList[0].split("//")[0];
+                    } else {
+                        tempFileName = tempSplitList[0];
+                    }
 
-                if(!infectedFilesList.contains(tempFileName)) {
-                    infectedFilesList.push_back(tempFileName);
+                    if(!infectedFilesList.contains(tempFileName)) {
+                        infectedFilesList.push_back(tempFileName);
+                    }
                 }
             }
         }
-    }
 
-    m_infectedFilesNb += infectedFilesList.size();
+        m_infectedFilesNb += infectedFilesList.size();
 
-    // обработка зараженных
-    foreach(QString infectedFile, infectedFilesList) {
+        // обработка зараженных
+        foreach(QString infectedFile, infectedFilesList) {
 
-        log(QString("Найден зараженный файл: %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
-        sendSyslogMessage(QString("Detected infected file: %1").arg(infectedFile), SYS_CRITICAL, SYS_USER);
+            log(QString("Найден зараженный файл: %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
+            sendSyslogMessage(QString("Detected infected file: %1").arg(infectedFile), SYS_CRITICAL, SYS_USER);
 
-        switch(m_infectedFileAction) {
+            switch(m_infectedFileAction) {
 
-            case MOVE_TO_DIR:
-                log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile).arg(m_dangerDir), MSG_CATEGORY(INFO));
-                moveFile(infectedFile, m_processDir, m_dangerDir);
-                break;
+                case MOVE_TO_DIR:
+                    log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile).arg(m_dangerDir), MSG_CATEGORY(INFO));
+                    moveFile(infectedFile, m_processDir, m_dangerDir);
+                    break;
 
-            case DELETE:
-                if(!QFile(m_processDir + "/" + infectedFile).remove())
-                    log(QString("Не удалось удалить зараженный файл %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
-                else
-                    log(QString("Файл %1 удален.").arg(infectedFile), MSG_CATEGORY(INFO));
-                break;
+                case DELETE:
+                    if(!QFile(m_processDir + "/" + infectedFile).remove())
+                        log(QString("Не удалось удалить зараженный файл %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
+                    else
+                        log(QString("Файл %1 удален.").arg(infectedFile), MSG_CATEGORY(INFO));
+                    break;
+            }
+
+            if(m_useExternalHandler) {
+                log(QString("Внешняя обработка зараженного файла %1.").arg(m_dangerDir + "/" + infectedFile), MSG_CATEGORY(INFO));
+            }
         }
 
-        if(m_useExternalHandler) {
-            log(QString("Внешняя обработка зараженного файла %1.").arg(m_dangerDir + "/" + infectedFile), MSG_CATEGORY(INFO));
+        // перенос чистых
+        QStringList clearFiles = QDir(m_processDir).entryList(usingFilters);
+        log(QString("Перенос %1 проверенных файлов в каталог для чистых файлов(%2): %3").arg(QDir(m_processDir).entryList(usingFilters).size())
+                                                                                        .arg(m_cleanDir)
+                                                                                        .arg(entryListToString(clearFiles)), MSG_CATEGORY(INFO));
+        // перенос только тех, которые отправлялись на проверку
+        foreach(QString fileName, clearFiles) {
+            if(m_inProcessFileList.contains(fileName)) {
+                moveFile(fileName, m_processDir, m_cleanDir);
+            }
         }
+
+        // все оставшиеся файлы возвращаются обратно в m_inputDir
+        moveFiles(m_processDir, m_cleanDir, ALL_FILES);
+
+        collectStatistics();
+
+        log(QString("Время работы: %1, проверено %2 файлов объемом %3 Мб, найдено зараженных файлов: %4").arg(m_workTime)
+                                                                                                         .arg(m_processedFilesNb)
+                                                                                                         .arg(m_processedFilesSizeMb)
+                                                                                                         .arg(m_infectedFilesNb), MSG_CATEGORY(INFO));
+        sendSyslogMessage(QString("Work time: %1, cheked %2 file with total volume: %3 Mb, detected %4 infected files.").arg(m_workTimeEn)
+                                                                                                                        .arg(m_processedFilesNb)
+                                                                                                                        .arg(m_processedFilesSizeMb)
+                                                                                                                        .arg(m_infectedFilesNb), SYS_INFO, SYS_USER);
+    } else {
+        log(QString("Ошибка разбора отчета: отчет поврежден. Файлы будут перепроверены."), MSG_CATEGORY(INFO));
+        moveFiles(m_processDir, m_inputDir, ALL_FILES);
     }
-
-    // перенос чистых
-    QStringList clearFiles = QDir(m_processDir).entryList(usingFilters);
-    log(QString("Перенос %1 проверенных файлов в каталог для чистых файлов(%2): %3").arg(QDir(m_processDir).entryList(usingFilters).size())
-                                                                                    .arg(m_cleanDir)
-                                                                                    .arg(entryListToString(clearFiles)), MSG_CATEGORY(INFO));
-    // перенос только тех, которые отправлялись на проверку
-    foreach(QString fileName, clearFiles) {
-        if(m_inProcessFileList.contains(fileName)) {
-            moveFile(fileName, m_processDir, m_cleanDir);
-        }
-    }
-
-    // все оставшиеся файлы возвращаются обратно в m_inputDir
-    moveFiles(m_processDir, m_cleanDir, ALL_FILES);
-
-    collectStatistics();
-
-    log(QString("Время работы: %1, проверено %2 файлов объемом %3 Мб, найдено зараженных файлов: %4").arg(m_workTime)
-                                                                                                     .arg(m_processedFilesNb)
-                                                                                                     .arg(m_processedFilesSizeMb)
-                                                                                                     .arg(m_infectedFilesNb), MSG_CATEGORY(INFO));
-    sendSyslogMessage(QString("Work time: %1, cheked %2 file with total volume: %3 Mb, detected %4 infected files.").arg(m_workTimeEn)
-                                                                                                                    .arg(m_processedFilesNb)
-                                                                                                                    .arg(m_processedFilesSizeMb)
-                                                                                                                    .arg(m_infectedFilesNb), SYS_INFO, SYS_USER);
 
     m_isInProcess = false;
 
