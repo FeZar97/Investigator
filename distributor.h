@@ -19,6 +19,7 @@ public:
 
     void startWatchDirEye();
     void stopWatchDirEye();
+    void updateAV(QString updaterFilePath);
 
     void onWatchDirChange(const QString &path);
 
