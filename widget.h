@@ -27,6 +27,7 @@ public:
     void startProcess(QString path, QStringList args);
     void parseResultOfProcess();
     void saveReport(QString report, unsigned long long reportIdx);
+    void startExternalHandler(QString path, QStringList args);
 
 private slots:
     void on_startButton_clicked();

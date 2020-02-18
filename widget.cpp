@@ -41,24 +41,26 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray());
     m_statisticWindow = new Statistics(this, m_investigator, m_settings.value("statisticWinGeometry").toByteArray());
 
-    connect(this,             &Widget::startWork,                 m_distributor,     &Distributor::startWatchDirEye);
-    connect(this,             &Widget::stopWork,                  m_distributor,     &Distributor::stopWatchDirEye);
+    connect(this,             &Widget::startWork,                  m_distributor,     &Distributor::startWatchDirEye);
+    connect(this,             &Widget::stopWork,                   m_distributor,     &Distributor::stopWatchDirEye);
 
-    connect(m_distributor,    &Distributor::updateUi,             this,              &Widget::updateUi);
-    connect(m_investigator,   &Investigator::updateUi,            m_statisticWindow, &Statistics::updateUi);
+    connect(m_distributor,    &Distributor::updateUi,              this,              &Widget::updateUi);
+    connect(m_investigator,   &Investigator::updateUi,             m_statisticWindow, &Statistics::updateUi);
 
-    connect(m_investigator,   &Investigator::log,                 this,              &Widget::log);
-    connect(m_settingsWindow, &Settings::log,                     this,              &Widget::log);
-    connect(m_distributor,    &Distributor::log,                  this,              &Widget::log);
+    connect(m_investigator,   &Investigator::log,                  this,              &Widget::log);
+    connect(m_settingsWindow, &Settings::log,                      this,              &Widget::log);
+    connect(m_distributor,    &Distributor::log,                   this,              &Widget::log);
 
-    connect(m_settingsWindow, &Settings::clearDir,                m_distributor,     &Distributor::clearDir);
+    connect(m_settingsWindow, &Settings::clearDir,                 m_distributor,     &Distributor::clearDir);
 
-    connect(m_investigator,   &Investigator::process,             this,              &Widget::startProcess);
-    connect(&m_process,       &QProcess::readyReadStandardOutput, this,              &Widget::parseResultOfProcess);
-    connect(m_investigator,   &Investigator::saveReport,          this,              &Widget::saveReport);
-    connect(this,             &Widget::parseReport,               m_investigator,    &Investigator::parseReport);
+    connect(m_investigator,   &Investigator::process,              this,              &Widget::startProcess);
+    connect(&m_process,       &QProcess::readyReadStandardOutput,  this,              &Widget::parseResultOfProcess);
+    connect(m_investigator,   &Investigator::saveReport,           this,              &Widget::saveReport);
+    connect(this,             &Widget::parseReport,                m_investigator,    &Investigator::parseReport);
 
-    connect(m_investigator,   &Investigator::stopProcess,         &m_process,        &QProcess::close);
+    connect(m_investigator,   &Investigator::startExternalHandler, this,              &Widget::startExternalHandler);
+
+    connect(m_investigator,   &Investigator::stopProcess,          &m_process,        &QProcess::close);
 
     m_workThread.start();
 
@@ -165,6 +167,15 @@ void Widget::saveReport(QString report, unsigned long long reportIdx) {
     QTextStream ts(&outFile);
     ts << report << endl;
     outFile.close();
+}
+
+void Widget::startExternalHandler(QString path, QStringList args) {
+    log(QString("Вызов внешнего обработчика %1 с аргументами: %2").arg(path).arg(entryListToString(args)), MSG_CATEGORY(INFO));
+    if(QFile(path).exists()) {
+        QProcess::execute(path, args);
+    } else {
+        log(QString("Внешний обработчик не найден!"), MSG_CATEGORY(INFO));
+    }
 }
 
 void Widget::on_startButton_clicked() {

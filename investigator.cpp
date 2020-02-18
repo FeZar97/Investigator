@@ -87,7 +87,6 @@ bool Investigator::checkAvParams() {
 
     bool problem = false;
 
-    // m_watchDir
     if(m_watchDir.isEmpty()) {
         log("Не выбран каталог для слежения!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -97,7 +96,6 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    // m_investigatorDir
     if(m_investigatorDir.isEmpty()) {
         log("Не выбран каталог для временных файлов программы!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -107,7 +105,6 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    // m_cleanDir
     if(m_cleanDir.isEmpty()) {
         log("Не выбран каталог для чистых файлов!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -117,7 +114,6 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    // m_dangerDir
     if(m_dangerDir.isEmpty()) {
         log("Не выбран каталог для зараженных файлов!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -127,7 +123,6 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    // m_avPath
     if(m_avPath.isEmpty()) {
         log("Не выбран файл АВС!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -137,13 +132,11 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    // m_isWorking
     if(m_isWorking) {
         log("Слежение уже начато!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
     }
 
-    // m_isInProcess
     if(m_isInProcess) {
         log("Процесс АВС уже запущен!", MSG_CATEGORY(INFO + LOG_GUI));
         problem = true;
@@ -192,9 +185,9 @@ void Investigator::onProcessFinished() {
         m_isInProcess = true;
 
         log(QString("Перенос %1 файлов из inputDir(%2) в processDir(%3) с ограничением %4 файлов.").arg(filesNumber)
-                                                                                                  .arg(m_inputDir)
-                                                                                                  .arg(m_processDir)
-                                                                                                  .arg(m_maxQueueSize), MSG_CATEGORY(INFO + LOG_ROW));
+                                                                                                   .arg(m_inputDir)
+                                                                                                   .arg(m_processDir)
+                                                                                                   .arg(m_maxQueueSize), MSG_CATEGORY(INFO + LOG_ROW));
         m_inProcessFileList.clear();
         m_inProcessFileList = QDir(m_inputDir).entryList(usingFilters);
 
@@ -252,17 +245,24 @@ void Investigator::parseReport(QString report) {
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
         emit saveReport(QString(m_lastReport), m_reportCnt++);
 
-        QStringList infectedFilesList, tempSplitList, reportLines;
-        QString tempFileName;
+        m_infectedFiles.clear();
+        QStringList tempSplitList, reportLines;
+        QString tempFileName, tempVirusInfo;
 
         reportLines = m_lastReport.split("\n");
 
         if(reportLines.size() > 5) {
-            QString baseVersion       = reportLines[2].remove("Версия баз: ");
+            m_baseVersion             = reportLines[2].remove("Версия баз: ");
             QString m52coreVersion    = reportLines[3].remove("Версия ядра M-52: ");
             QString drwebCoreVersion  = reportLines[4].remove("Версия ядра Dr.Web: ");
             QString kasperCoreVersion = reportLines[5].remove("Версия ядра Касперский: ");
-            QString newVersion = QString("Ядро M-52: %1\nЯдро Dr.Web: %2\nЯдро Kaspersky: %3").arg(m52coreVersion).arg(drwebCoreVersion).arg(kasperCoreVersion);
+
+            m_baseVersion.chop(1);
+            m52coreVersion.chop(1);
+            drwebCoreVersion.chop(1);
+            kasperCoreVersion.chop(1);
+
+            QString newVersion = QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4").arg(m_baseVersion).arg(m52coreVersion).arg(drwebCoreVersion).arg(kasperCoreVersion);
             if(m_avVersion != newVersion) {
                 m_avVersion = newVersion;
                 log(QString("Определена версия АВС: %1").arg(newVersion), INFO);
@@ -283,10 +283,12 @@ void Investigator::parseReport(QString report) {
             emit updateUi();
         }
 
+        // если есть зараженные файлы
         if(reportLines.size() > 13) {
             for(int i = 6; i < reportLines.size() - 7; i++) {
-                if(reportLines[i].contains(QDir::toNativeSeparators(m_processDir))) {
-                    tempSplitList = reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\");
+                // если часть строки репорта содержит путь к папке проверки, то в этой строке инфа о зараженном файле
+                if(reportLines[i].contains(QDir::toNativeSeparators(m_processDir)) && reportLines[i].contains("M-52:")) {
+                    tempSplitList = reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\"); // разделитель - путь к папке с файлами
                     tempSplitList = tempSplitList[1].split("'");
 
                     if(tempSplitList[0].contains("//")) {
@@ -295,38 +297,50 @@ void Investigator::parseReport(QString report) {
                         tempFileName = tempSplitList[0];
                     }
 
-                    if(!infectedFilesList.contains(tempFileName)) {
-                        infectedFilesList.push_back(tempFileName);
+                    // извлечение информации о вирусе
+                    tempSplitList = reportLines[i].split("инфицирован ");
+                    if(tempSplitList.size()) tempVirusInfo = tempSplitList[1];
+                    tempVirusInfo.remove(" - Файл пропущен");
+                    tempVirusInfo.truncate(tempVirusInfo.lastIndexOf(")") + 1);
+
+                    // в список зараженных файлов файл добавляется только в том случае, если его там еще нет
+                    if(!isContainedFile(m_infectedFiles, tempFileName)) {
+                        m_infectedFiles.push_back(QPair<QString,QString>{tempFileName, tempVirusInfo});
                     }
                 }
             }
         }
 
-        m_infectedFilesNb += infectedFilesList.size();
+        m_infectedFilesNb += m_infectedFiles.size();
 
         // обработка зараженных
-        foreach(QString infectedFile, infectedFilesList) {
+        foreach(auto infectedFile, m_infectedFiles) {
 
-            log(QString("Найден зараженный файл: %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
-            sendSyslogMessage(QString("Detected infected file: %1").arg(infectedFile), SYS_CRITICAL, SYS_USER);
+            log(QString("Найден зараженный файл: %1.").arg(infectedFile.first), MSG_CATEGORY(CRITICAL + LOG_GUI));
+            sendSyslogMessage(QString("Detected infected file: %1 %2").arg(infectedFile.first).arg(infectedFile.second), SYS_CRITICAL, SYS_USER);
+
+
+            if(m_useExternalHandler) {
+                emit startExternalHandler(m_externalHandlerPath,
+                                          QStringList()
+                                            << QString("'%1'").arg(m_dangerDir + "/" + infectedFile.first)
+                                            << QString("'%1'").arg(infectedFile.second)
+                                            << QString("'%1'").arg(m_baseVersion));
+            }
 
             switch(m_infectedFileAction) {
 
                 case MOVE_TO_DIR:
-                    log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile).arg(m_dangerDir), MSG_CATEGORY(INFO));
-                    moveFile(infectedFile, m_processDir, m_dangerDir);
+                    log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile.first).arg(m_dangerDir), MSG_CATEGORY(INFO));
+                    moveFile(infectedFile.first, m_processDir, m_dangerDir);
                     break;
 
                 case DELETE:
-                    if(!QFile(m_processDir + "/" + infectedFile).remove())
-                        log(QString("Не удалось удалить зараженный файл %1.").arg(infectedFile), MSG_CATEGORY(CRITICAL + LOG_GUI));
+                    if(!QFile(m_processDir + "/" + infectedFile.first).remove())
+                        log(QString("Не удалось удалить зараженный файл %1.").arg(infectedFile.first), MSG_CATEGORY(CRITICAL + LOG_GUI));
                     else
-                        log(QString("Файл %1 удален.").arg(infectedFile), MSG_CATEGORY(INFO));
+                        log(QString("Файл %1 удален.").arg(infectedFile.first), MSG_CATEGORY(INFO));
                     break;
-            }
-
-            if(m_useExternalHandler) {
-                log(QString("Внешняя обработка зараженного файла %1.").arg(m_dangerDir + "/" + infectedFile), MSG_CATEGORY(INFO));
             }
         }
 
@@ -343,7 +357,7 @@ void Investigator::parseReport(QString report) {
         }
 
         // все оставшиеся файлы возвращаются обратно в m_inputDir
-        moveFiles(m_processDir, m_cleanDir, ALL_FILES);
+        moveFiles(m_processDir, m_inputDir, ALL_FILES);
 
         collectStatistics();
 
@@ -385,4 +399,11 @@ QString entryListToString(QStringList &list) {
         res += list[list.size() - 1] + ".";
     }
     return res;
+}
+
+bool isContainedFile(QList<QPair<QString, QString>>& fileList, QString fileName) {
+    foreach(auto pair, fileList)
+        if(pair.first == fileName)
+            return true;
+    return false;
 }

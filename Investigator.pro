@@ -1,11 +1,11 @@
 # Project created by QtCreator 2019-09-17T09:15:03
 
-QT       += core gui widgets network
+QT += core gui widgets network
 
 TARGET = Investigator
 TEMPLATE = app
 
-VERSION = 1.4
+VERSION = 1.5.02.18
 
 QMAKE_TARGET_COMPANY     = FeZar97
 QMAKE_TARGET_PRODUCT     = Investigator
@@ -16,36 +16,29 @@ DEFINES += QT_DEPRECATED_WARNINGS QT_MESSAGELOGCONTEXT
 
 CONFIG += c++11
 
-SOURCES += \
-        distributor.cpp \
-        investigator.cpp \
-        main.cpp \
-        settings.cpp \
-        statistics.cpp \
-        widget.cpp
+HEADERS +=  distributor.h \
+            investigator.h \
+            settings.h \
+            statistics.h \
+            stylehelper.h \
+            widget.h
 
-HEADERS += \
-        distributor.h \
-        investigator.h \
-        settings.h \
-        statistics.h \
-        stylehelper.h \
-        widget.h
+SOURCES += distributor.cpp \
+           investigator.cpp \
+           main.cpp \
+           settings.cpp \
+           statistics.cpp \
+           widget.cpp
 
-FORMS += \
-        settings.ui \
-        statistics.ui \
-        widget.ui
+FORMS += settings.ui \
+         statistics.ui \
+         widget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-DISTFILES +=
-
-RESOURCES += \
-    img.qrc
+RESOURCES += img.qrc
 
 win32: RC_ICONS = $$PWD/img/INVESTIGATOR.ico
-
