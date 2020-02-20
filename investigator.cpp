@@ -243,26 +243,25 @@ void Investigator::parseReport(QString report) {
     m_lastReport = report;
 
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
+
+        clearParserTemps();
+
         emit saveReport(QString(m_lastReport), m_reportCnt++);
 
-        m_infectedFiles.clear();
-        QStringList tempSplitList, reportLines;
-        QString tempFileName, tempVirusInfo;
+        m_reportLines = m_lastReport.split("\n");
 
-        reportLines = m_lastReport.split("\n");
-
-        if(reportLines.size() > 5) {
-            m_baseVersion             = reportLines[2].remove("Версия баз: ");
-            QString m52coreVersion    = reportLines[3].remove("Версия ядра M-52: ");
-            QString drwebCoreVersion  = reportLines[4].remove("Версия ядра Dr.Web: ");
-            QString kasperCoreVersion = reportLines[5].remove("Версия ядра Касперский: ");
+        if(m_reportLines.size() > 5) {
+            m_baseVersion       = m_reportLines[2].remove("Версия баз: ");
+            m_m52coreVersion    = m_reportLines[3].remove("Версия ядра M-52: ");
+            m_drwebCoreVersion  = m_reportLines[4].remove("Версия ядра Dr.Web: ");
+            m_kasperCoreVersion = m_reportLines[5].remove("Версия ядра Касперский: ");
 
             m_baseVersion.chop(1);
-            m52coreVersion.chop(1);
-            drwebCoreVersion.chop(1);
-            kasperCoreVersion.chop(1);
+            m_m52coreVersion.chop(1);
+            m_drwebCoreVersion.chop(1);
+            m_kasperCoreVersion.chop(1);
 
-            QString newVersion = QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4").arg(m_baseVersion).arg(m52coreVersion).arg(drwebCoreVersion).arg(kasperCoreVersion);
+            QString newVersion = QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4").arg(m_baseVersion).arg(m_m52coreVersion).arg(m_drwebCoreVersion).arg(m_kasperCoreVersion);
             if(m_avVersion != newVersion) {
                 m_avVersion = newVersion;
                 log(QString("Определена версия АВС: %1").arg(newVersion), INFO);
@@ -271,41 +270,41 @@ void Investigator::parseReport(QString report) {
 
         // accumulate statistic
         if(m_isWorking) {
-            double lastProcessedFilesSizeMb = 0.;
+            m_lastProcessedFilesSizeMb = 0.;
             m_processedFilesNb += QDir(m_processDir).entryList(usingFilters).size();
             foreach(QFileInfo fi, QDir(m_processDir).entryInfoList(usingFilters)) {
-                lastProcessedFilesSizeMb += double(fi.size()) / 1024. / 1024.;
+                m_lastProcessedFilesSizeMb += double(fi.size()) / 1024. / 1024.;
             }
-            m_processedFilesSizeMb += lastProcessedFilesSizeMb;
+            m_processedFilesSizeMb += m_lastProcessedFilesSizeMb;
             double workTimeInSecs = double(m_startTime.msecsTo(getEndTime())) / 1000.;
             m_averageProcessSpeed = (workTimeInSecs > 0.01) ? (m_processedFilesSizeMb / workTimeInSecs) : 0;
-            m_currentProcessSpeed = (workTimeInSecs > 0.01) ? (lastProcessedFilesSizeMb / workTimeInSecs) : 0;
+            m_currentProcessSpeed = (workTimeInSecs > 0.01) ? (m_lastProcessedFilesSizeMb / workTimeInSecs) : 0;
             emit updateUi();
         }
 
         // если есть зараженные файлы
-        if(reportLines.size() > 13) {
-            for(int i = 6; i < reportLines.size() - 7; i++) {
+        if(m_reportLines.size() > 13) {
+            for(int i = 6; i < m_reportLines.size() - 7; i++) {
                 // если часть строки репорта содержит путь к папке проверки, то в этой строке инфа о зараженном файле
-                if(reportLines[i].contains(QDir::toNativeSeparators(m_processDir)) && reportLines[i].contains("M-52:")) {
-                    tempSplitList = reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\"); // разделитель - путь к папке с файлами
-                    tempSplitList = tempSplitList[1].split("'");
+                if(m_reportLines[i].contains(QDir::toNativeSeparators(m_processDir)) && m_reportLines[i].contains("M-52:")) {
+                    m_tempSplitList = m_reportLines[i].split(QDir::toNativeSeparators(m_processDir) + "\\"); // разделитель - путь к папке с файлами
+                    m_tempSplitList = m_tempSplitList[1].split("'");
 
-                    if(tempSplitList[0].contains("//")) {
-                        tempFileName = tempSplitList[0].split("//")[0];
+                    if(m_tempSplitList[0].contains("//")) {
+                        m_tempFileName = m_tempSplitList[0].split("//")[0];
                     } else {
-                        tempFileName = tempSplitList[0];
+                        m_tempFileName = m_tempSplitList[0];
                     }
 
                     // извлечение информации о вирусе
-                    tempSplitList = reportLines[i].split("инфицирован ");
-                    if(tempSplitList.size()) tempVirusInfo = tempSplitList[1];
-                    tempVirusInfo.remove(" - Файл пропущен");
-                    tempVirusInfo.truncate(tempVirusInfo.lastIndexOf(")") + 1);
+                    m_tempSplitList = m_reportLines[i].split("инфицирован ");
+                    if(m_tempSplitList.size()) m_tempVirusInfo = m_tempSplitList[1];
+                    m_tempVirusInfo.remove(" - Файл пропущен");
+                    m_tempVirusInfo.truncate(m_tempVirusInfo.lastIndexOf(")") + 1);
 
                     // в список зараженных файлов файл добавляется только в том случае, если его там еще нет
-                    if(!isContainedFile(m_infectedFiles, tempFileName)) {
-                        m_infectedFiles.push_back(QPair<QString,QString>{tempFileName, tempVirusInfo});
+                    if(!isContainedFile(m_infectedFiles, m_tempFileName)) {
+                        m_infectedFiles.push_back(QPair<QString,QString>{m_tempFileName, m_tempVirusInfo});
                     }
                 }
             }
@@ -388,6 +387,14 @@ void Investigator::sendSyslogMessage(QString msg, SYSLOG_PRIORITIES pri, SYSLOG_
                                                                               .arg(m_msg.size())
                                                                               .arg(QHostAddress(syslogAddress).toString()), MSG_CATEGORY(INFO));
     }
+}
+
+void Investigator::clearParserTemps() {
+    m_infectedFiles.clear();
+    m_tempSplitList.clear();
+    m_reportLines.clear();
+    m_tempFileName.clear();
+    m_tempVirusInfo.clear();
 }
 
 QString entryListToString(QStringList &list) {

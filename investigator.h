@@ -21,7 +21,7 @@
 
 #define     MAJOR_VERSION         1
 #define     MINOR_VERSION         5
-#define     PATCH_VERSION         18.9
+#define     PATCH_VERSION         20.1
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -74,7 +74,7 @@ public:
     QDateTime m_endTime{QDateTime::currentDateTime()};
 
     QString m_avPath; // путь к исполняемому файлу
-    QString m_baseVersion{""}; // версии баз M-52
+    QString m_baseVersion{""}, m_m52coreVersion, m_drwebCoreVersion, m_kasperCoreVersion; // версии баз
     QString m_avVersion{"Не удалось определить версию продукта."}; // все версии
 
     QString m_watchDir; // каталог за которой следим
@@ -90,6 +90,10 @@ public:
     QString m_processInfo; // информация для строки в окне статистики
     QString m_lastReport; // последний репорт
     unsigned long long m_reportCnt{0}; // счетчик репортов
+
+    QStringList m_tempSplitList, m_reportLines; // для метода parseReport
+    QString m_tempFileName, m_tempVirusInfo; // для метода parseReport
+    double m_lastProcessedFilesSizeMb{0};
 
     QStringList m_inProcessFileList; // файлы в обработке
     QList<QPair<QString,QString>> m_infectedFiles; // зараженные файлы, выявленные в процессе проверки
@@ -158,6 +162,9 @@ public:
 
     /* send syslog message */
     void sendSyslogMessage(QString msg, SYSLOG_PRIORITIES pri, SYSLOG_FACILITIES fac);
+
+    /* сброс временных пееременных для метода parseReport */
+    void clearParserTemps();
 
 signals:
     /* эмитится каждый раз при изменении статистики */
