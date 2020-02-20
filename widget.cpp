@@ -144,6 +144,7 @@ void Widget::updateUi() {
 
 void Widget::startProcess(QString path, QStringList args) {
     if(m_investigator->m_isWorking) {
+        m_investigator->m_lastProcessStartTime = QDateTime::currentDateTime();
         m_process.start(path, args);
     }
 }

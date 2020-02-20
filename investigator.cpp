@@ -245,6 +245,7 @@ void Investigator::parseReport(QString report) {
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
 
         clearParserTemps();
+        m_lastProcessWorkTimeInSec = m_lastProcessStartTime.secsTo(QDateTime::currentDateTime());
 
         emit saveReport(QString(m_lastReport), m_reportCnt++);
 
@@ -270,15 +271,14 @@ void Investigator::parseReport(QString report) {
 
         // accumulate statistic
         if(m_isWorking) {
-            m_lastProcessedFilesSizeMb = 0.;
             m_processedFilesNb += QDir(m_processDir).entryList(usingFilters).size();
             foreach(QFileInfo fi, QDir(m_processDir).entryInfoList(usingFilters)) {
                 m_lastProcessedFilesSizeMb += double(fi.size()) / 1024. / 1024.;
             }
             m_processedFilesSizeMb += m_lastProcessedFilesSizeMb;
-            double workTimeInSecs = double(m_startTime.msecsTo(getEndTime())) / 1000.;
-            m_averageProcessSpeed = (workTimeInSecs > 0.01) ? (m_processedFilesSizeMb / workTimeInSecs) : 0;
-            m_currentProcessSpeed = (workTimeInSecs > 0.01) ? (m_lastProcessedFilesSizeMb / workTimeInSecs) : 0;
+
+            m_averageProcessSpeed = m_startTime.secsTo(getEndTime()) ? (m_processedFilesSizeMb / m_startTime.secsTo(getEndTime())) : 0;
+            m_currentProcessSpeed = m_lastProcessWorkTimeInSec ? (m_lastProcessedFilesSizeMb / m_lastProcessWorkTimeInSec) : 0;
             emit updateUi();
         }
 
@@ -319,19 +319,20 @@ void Investigator::parseReport(QString report) {
             sendSyslogMessage(QString("Detected infected file: %1 %2").arg(infectedFile.first).arg(infectedFile.second), SYS_CRITICAL, SYS_USER);
 
 
-            if(m_useExternalHandler) {
-                emit startExternalHandler(m_externalHandlerPath,
-                                          QStringList()
-                                            << QString("'%1'").arg(m_dangerDir + "/" + infectedFile.first)
-                                            << QString("'%1'").arg(infectedFile.second)
-                                            << QString("'%1'").arg(m_baseVersion));
-            }
 
             switch(m_infectedFileAction) {
 
                 case MOVE_TO_DIR:
                     log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile.first).arg(m_dangerDir), MSG_CATEGORY(INFO));
                     moveFile(infectedFile.first, m_processDir, m_dangerDir);
+
+                    if(m_useExternalHandler) {
+                        emit startExternalHandler(m_externalHandlerPath,
+                                                  QStringList()
+                                                    << QString("'%1'").arg(m_dangerDir + "/" + infectedFile.first)
+                                                    << QString("'%1'").arg(infectedFile.second)
+                                                    << QString("'%1'").arg(m_baseVersion));
+                    }
                     break;
 
                 case DELETE:
@@ -395,6 +396,7 @@ void Investigator::clearParserTemps() {
     m_reportLines.clear();
     m_tempFileName.clear();
     m_tempVirusInfo.clear();
+    m_lastProcessedFilesSizeMb = 0.;
 }
 
 QString entryListToString(QStringList &list) {

@@ -70,8 +70,8 @@ public:
     bool m_isWorking{false};
     bool m_isInProcess{false};
 
-    QDateTime m_startTime{QDateTime::currentDateTime()};
-    QDateTime m_endTime{QDateTime::currentDateTime()};
+    QDateTime m_startTime{QDateTime::currentDateTime()}; // время запуска программы
+    QDateTime m_endTime{QDateTime::currentDateTime()}; // время окончания работы (в процессе работы постоянно обновляется)
 
     QString m_avPath; // путь к исполняемому файлу
     QString m_baseVersion{""}, m_m52coreVersion, m_drwebCoreVersion, m_kasperCoreVersion; // версии баз
@@ -93,7 +93,9 @@ public:
 
     QStringList m_tempSplitList, m_reportLines; // для метода parseReport
     QString m_tempFileName, m_tempVirusInfo; // для метода parseReport
-    double m_lastProcessedFilesSizeMb{0};
+    double m_lastProcessedFilesSizeMb{0}; // объем последней просканированной выборки файлов
+    QDateTime m_lastProcessStartTime{QDateTime::currentDateTime()}; // время начала последней проверки
+    unsigned int m_lastProcessWorkTimeInSec{0}; // время обработки последней выборки
 
     QStringList m_inProcessFileList; // файлы в обработке
     QList<QPair<QString,QString>> m_infectedFiles; // зараженные файлы, выявленные в процессе проверки
