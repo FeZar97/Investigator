@@ -21,7 +21,7 @@
 
 #define     MAJOR_VERSION         1
 #define     MINOR_VERSION         5
-#define     PATCH_VERSION         20.1
+#define     PATCH_VERSION         20.3
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -114,8 +114,9 @@ public:
     QUdpSocket *syslogSocket; // сокет для syslog
     QHostAddress syslogAddress; // адрес демона
     quint16 syslogPort; // используемый порт
+
     int m_maxQueueSize{10}; // макс число файлов в очереди
-    double m_maxQueueVolMb{128.}; // макс объем файлов в очереди
+    double m_maxQueueVolMb{128.}; // макс объем файлов в очереди в мегабайтах
     int m_maxQueueVolUnit{0}; // единицы измерения объема
 
     int m_infectedFilesNb{0}; // кол-во найденных зараженных файлов

@@ -36,7 +36,9 @@ void messageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString
     uid++;
     txt = QString("%1:%2 %3").arg(dateTime.toString("yyyy-MM-dd hh:mm:ss")).arg(uid).arg(txt);
 
-    QFile outFile(QString("%1/log-%2-%3.log").arg(".").arg(QDate::currentDate().toString("dd.MM.yy")).arg(VERSION));
+    QString dirPath = "C:/logs";
+    if(!QDir(dirPath).exists()) QDir().mkpath(dirPath);
+    QFile outFile(QString("%1KAP-log-%2-%3.log").arg(dirPath+ "/").arg(QDateTime::currentDateTime().toString("dd.MM.yy-hh")).arg(VERSION));
     outFile.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream ts(&outFile);
     ts << txt << endl;

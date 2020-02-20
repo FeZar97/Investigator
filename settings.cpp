@@ -106,20 +106,20 @@ void Settings::updateUi() {
     ui->syslogAddressLE->setText(m_investigator->m_syslogAddress);
 
     // --- STYLESHEETS ---
-    ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->investigatorDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()          ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->cleanDirLE->setStyleSheet(QDir(m_investigator->m_cleanDir).exists()                        ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->dangerousDirLE->setStyleSheet(QDir(m_investigator->m_dangerDir).exists()                   ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->investigatorDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()          ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->cleanDirLE->setStyleSheet(QDir(m_investigator->m_cleanDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->dangerousDirLE->setStyleSheet(QDir(m_investigator->m_dangerDir).exists()                   ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
 
-    ui->avFileLE->setStyleSheet(QFile(m_investigator->m_avPath).exists()                           ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->avFileLE->setStyleSheet(QFile(m_investigator->m_avPath).exists()                           ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
 
     if(m_investigator->m_useExternalHandler)
-        ui->externalHandlerFileLE->setStyleSheet(QFile(m_investigator->m_externalHandlerPath).exists() ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+        ui->externalHandlerFileLE->setStyleSheet(QFile(m_investigator->m_externalHandlerPath).exists() ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
     else
         ui->externalHandlerFileLE->setStyleSheet("");
 
     if(m_investigator->m_useSyslog)
-        ui->syslogAddressLE->setStyleSheet(m_investigator->checkSyslogAddress() ? Stylehelper::correctLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+        ui->syslogAddressLE->setStyleSheet(m_investigator->checkSyslogAddress() ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
     else
         ui->syslogAddressLE->setStyleSheet("");
 
@@ -135,10 +135,12 @@ void Settings::on_avMaxQueueSizeSB_valueChanged(int size) {
 
 void Settings::on_avMaxQueueVolSB_valueChanged(double maxQueueVolMb) {
     m_investigator->m_maxQueueVolMb = maxQueueVolMb;
+    emit s_updateUi();
 }
 
 void Settings::on_avMaxQueueVolUnitCB_currentIndexChanged(int unitIdx) {
     m_investigator->m_maxQueueVolUnit = unitIdx;
+    emit s_updateUi();
 }
 
 void Settings::on_clearWatchDirButton_clicked() {

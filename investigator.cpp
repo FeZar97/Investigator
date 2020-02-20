@@ -197,6 +197,11 @@ void Investigator::onProcessFinished() {
 
         moveFiles(m_inputDir, m_processDir, m_maxQueueSize);
 
+        m_inQueueFileSizeMb = 0;
+        foreach(QFileInfo fi, QDir(m_processDir).entryInfoList(usingFilters)) {
+            m_inQueueFileSizeMb += double(fi.size()) / 1024. / 1024.;
+        }
+
         // если каталог с файлами не пуст
         if(!QDir(m_processDir).isEmpty()) {
             log("Запуск проверки...", MSG_CATEGORY(INFO + LOG_ROW));
@@ -242,12 +247,12 @@ void Investigator::stopWork() {
 void Investigator::parseReport(QString report) {
     m_lastReport = report;
 
+    emit saveReport(QString(m_lastReport), m_reportCnt++);
+
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
 
         clearParserTemps();
         m_lastProcessWorkTimeInSec = m_lastProcessStartTime.secsTo(QDateTime::currentDateTime());
-
-        emit saveReport(QString(m_lastReport), m_reportCnt++);
 
         m_reportLines = m_lastReport.split("\n");
 
@@ -259,8 +264,12 @@ void Investigator::parseReport(QString report) {
 
             m_baseVersion.chop(1);
             m_m52coreVersion.chop(1);
-            m_drwebCoreVersion.chop(1);
-            m_kasperCoreVersion.chop(1);
+
+            m_drwebCoreVersion.truncate(m_drwebCoreVersion.lastIndexOf(" количество записей"));
+            m_drwebCoreVersion.replace(m_drwebCoreVersion.lastIndexOf(","), 1, ")");
+
+            m_kasperCoreVersion.truncate(m_kasperCoreVersion.lastIndexOf(" количество записей"));
+            m_kasperCoreVersion.replace(m_kasperCoreVersion.lastIndexOf(","), 1, ")");
 
             QString newVersion = QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4").arg(m_baseVersion).arg(m_m52coreVersion).arg(m_drwebCoreVersion).arg(m_kasperCoreVersion);
             if(m_avVersion != newVersion) {
@@ -371,6 +380,9 @@ void Investigator::parseReport(QString report) {
                                                                                                                         .arg(m_infectedFilesNb), SYS_INFO, SYS_USER);
     } else {
         log(QString("Ошибка разбора отчета: отчет поврежден. Файлы будут перепроверены."), MSG_CATEGORY(INFO));
+        if(m_maxQueueSize > 10) {
+            m_maxQueueSize /= 2;
+        }
         moveFiles(m_processDir, m_inputDir, ALL_FILES);
     }
 

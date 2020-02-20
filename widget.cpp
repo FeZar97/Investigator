@@ -46,6 +46,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     connect(m_distributor,    &Distributor::updateUi,              this,              &Widget::updateUi);
     connect(m_investigator,   &Investigator::updateUi,             m_statisticWindow, &Statistics::updateUi);
+    connect(m_settingsWindow, &Settings::s_updateUi,               this,              &Widget::updateUi);
 
     connect(m_investigator,   &Investigator::log,                  this,              &Widget::log);
     connect(m_settingsWindow, &Settings::log,                      this,              &Widget::log);
@@ -146,6 +147,7 @@ void Widget::startProcess(QString path, QStringList args) {
     if(m_investigator->m_isWorking) {
         m_investigator->m_lastProcessStartTime = QDateTime::currentDateTime();
         m_process.start(path, args);
+        log("Выполнение проверки...", MSG_CATEGORY(INFO + LOG_ROW));
     }
 }
 
@@ -155,7 +157,6 @@ void Widget::parseResultOfProcess() {
 }
 
 void Widget::saveReport(QString report, unsigned long long reportIdx) {
-
     if(!QDir(m_investigator->m_reportsDir).exists()) {
         QDir().mkdir(m_investigator->m_reportsDir);
     }
@@ -164,7 +165,7 @@ void Widget::saveReport(QString report, unsigned long long reportIdx) {
                   .arg(m_investigator->m_reportsDir + "/")
                   .arg(reportIdx)
                   .arg(QDate::currentDate().toString("dd.MM.yy")));
-    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    outFile.open(QIODevice::WriteOnly);
     QTextStream ts(&outFile);
     ts << report << endl;
     outFile.close();

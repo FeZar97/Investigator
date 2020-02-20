@@ -53,6 +53,7 @@ private:
 signals:
     void log(QString s, MSG_CATEGORY cat);
     void clearDir(QString dirPath);
+    void s_updateUi();
 };
 
 #endif // SETTINGS_H

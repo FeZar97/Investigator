@@ -18,6 +18,10 @@ public:
                         background: #FFC0C0;\
                     };";
         }
+    static QString defaultLEStylesheet() {
+            return "QLineEdit { \
+                    };";
+        }
 };
 
 #endif // STYLEHELPER_H

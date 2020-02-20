@@ -36,7 +36,7 @@ void Statistics::updateUi() {
 
     ui->tableView->setModel(&m_model);
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableView->setSelectionMode(QAbstractItemView::NoSelection);
 
@@ -65,13 +65,13 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(1,0), m_investigator->m_processedFilesNb, Qt::DisplayRole);
 
     // объем просканированных файлов
-    m_model.setData(m_model.index(2,0), m_investigator->m_processedFilesSizeMb, Qt::DisplayRole);
+    m_model.setData(m_model.index(2,0), QString::number(m_investigator->m_processedFilesSizeMb, 'f', 2), Qt::DisplayRole);
 
     // средняя скорость сканирования
-    m_model.setData(m_model.index(3,0), m_investigator->m_averageProcessSpeed, Qt::DisplayRole);
+    m_model.setData(m_model.index(3,0), QString::number(m_investigator->m_averageProcessSpeed, 'f', 2), Qt::DisplayRole);
 
     // текущая скорость сканирования
-    m_model.setData(m_model.index(4,0), m_investigator->m_currentProcessSpeed, Qt::DisplayRole);
+    m_model.setData(m_model.index(4,0), QString::number(m_investigator->m_currentProcessSpeed, 'f', 2), Qt::DisplayRole);
 
     // файлов в обработке
     m_model.setData(m_model.index(5,0), m_investigator->m_inProgressFilesNb, Qt::DisplayRole);
@@ -87,10 +87,11 @@ void Statistics::updateUi() {
                      (
                         (m_investigator->m_inQueueFilesNb >= m_investigator->m_maxQueueSize)
                       ||
-                        (m_investigator->m_inQueueFileSizeMb >= m_investigator->m_maxQueueVolMb)
+                        (m_investigator->m_inQueueFileSizeMb > m_investigator->m_maxQueueVolMb * (m_investigator->m_maxQueueVolUnit ? 1024 : 1) )
                      )
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
+    ui->tableView->resizeRowsToContents();
 }
 
 void Statistics::on_clearButton_clicked() {
