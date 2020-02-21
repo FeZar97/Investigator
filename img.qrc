@@ -8,5 +8,7 @@
         <file>img/STOP.png</file>
         <file>img/STATISTIC.png</file>
         <file>img/CLEARDIR.png</file>
+        <file>img/LOCK.jpg</file>
+        <file>img/UNLOCK.jpg</file>
     </qresource>
 </RCC>

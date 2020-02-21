@@ -38,14 +38,14 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     m_distributor     = new Distributor(nullptr, m_investigator);
     m_distributor->moveToThread(&m_workThread);
 
-    m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray());
-    m_statisticWindow = new Statistics(this, m_investigator, m_settings.value("statisticWinGeometry").toByteArray());
+    m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray(), &m_lockUi);
+    m_statisticWindow = new Statistics(this, m_investigator, m_settings.value("statisticWinGeometry").toByteArray(), &m_lockUi);
 
     connect(this,             &Widget::startWork,                  m_distributor,     &Distributor::startWatchDirEye);
     connect(this,             &Widget::stopWork,                   m_distributor,     &Distributor::stopWatchDirEye);
 
     connect(m_distributor,    &Distributor::updateUi,              this,              &Widget::updateUi);
-    connect(m_investigator,   &Investigator::updateUi,             m_statisticWindow, &Statistics::updateUi);
+    connect(m_investigator,   &Investigator::updateUi,             this,              &Widget::updateUi);
     connect(m_settingsWindow, &Settings::s_updateUi,               this,              &Widget::updateUi);
 
     connect(m_investigator,   &Investigator::log,                  this,              &Widget::log);
@@ -137,8 +137,18 @@ void Widget::log(QString s, MSG_CATEGORY cat) {
 }
 
 void Widget::updateUi() {
-    ui->startButton->setEnabled(!m_investigator->m_isWorking);
-    ui->stopButton->setEnabled(m_investigator->m_isWorking);
+    if(m_lockUi) {
+        ui->startButton->setEnabled(false);
+        ui->stopButton->setEnabled(false);
+        ui->clearButton->setEnabled(false);
+        ui->lockButton->setIcon(QIcon(":/img/UNLOCK.jpg"));
+    } else {
+        ui->startButton->setEnabled(!m_investigator->m_isWorking);
+        ui->stopButton->setEnabled(m_investigator->m_isWorking);
+        ui->clearButton->setEnabled(true);
+        ui->lockButton->setIcon(QIcon(":/img/LOCK.jpg"));
+    }
+
     m_settingsWindow->updateUi();
     m_statisticWindow->updateUi();
 }
@@ -180,15 +190,28 @@ void Widget::startExternalHandler(QString path, QStringList args) {
     }
 }
 
+void Widget::closeEvent(QCloseEvent *event) {
+    if(QMessageBox::warning(this,
+                            QString("Подтвердите действие"),
+                            QString("Вы действительно хотите завершить работу программы?"),
+                            QString("Да"), QString("Нет"), QString(),
+                            1) == 0) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
+}
+
 void Widget::on_startButton_clicked() {
     emit startWork();
 }
 
 void Widget::on_stopButton_clicked() {
     if(QMessageBox::warning(this,
-                            tr("Подтвердите действие"),
+                            QString("Подтвердите действие"),
                             QString("Вы действительно хотите остановить слежение за каталогом?"),
-                            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes) {
+                            QString("Да"), QString("Нет"), QString(),
+                            1) == 0) {
         log(QString("Слежение за каталогом %1 остановлено.").arg(m_investigator->m_watchDir), MSG_CATEGORY(INFO + LOG_GUI));
         emit stopWork();
     }
@@ -205,4 +228,9 @@ void Widget::on_statisticButton_clicked() {
 void Widget::on_clearButton_clicked() {
     log("Окно отображения лога очищено.", INFO);
     ui->logPTE->clear();
+}
+
+void Widget::on_lockButton_clicked() {
+    m_lockUi = !m_lockUi;
+    updateUi();
 }

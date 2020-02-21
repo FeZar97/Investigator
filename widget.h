@@ -28,6 +28,7 @@ public:
     void parseResultOfProcess();
     void saveReport(QString report, unsigned long long reportIdx);
     void startExternalHandler(QString path, QStringList args);
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void on_startButton_clicked();
@@ -35,9 +36,12 @@ private slots:
     void on_settingsButton_clicked();
     void on_statisticButton_clicked();
     void on_clearButton_clicked();
+    void on_lockButton_clicked();
 
 private:
     Ui::Widget *ui;
+
+    bool m_lockUi{false}; // флаг блокировки интерфейса
 
     QSettings m_settings;
     QTextCodec *m_win1251Codec;

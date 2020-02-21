@@ -1,7 +1,7 @@
 #include "settings.h"
 #include "ui_settings.h"
 
-Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geometry): QDialog(parent), ui(new Ui::Settings) {
+Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geometry, bool *lockUi): QDialog(parent), ui(new Ui::Settings), m_lockUi(lockUi) {
     ui->setupUi(this);
 
     setLayout(ui->mainLayout);
@@ -84,8 +84,39 @@ void Settings::on_avFileButton_clicked() {
 }
 
 void Settings::updateUi() {
+
+    // ---
+    ui->watchDirLE->setEnabled(!*m_lockUi);
+    ui->watchDirButton->setEnabled(!*m_lockUi);
+    ui->clearWatchDirButton->setEnabled(!*m_lockUi);
+
+    ui->tempDirLE->setEnabled(!*m_lockUi);
+    ui->tempDirButton->setEnabled(!*m_lockUi);
+    ui->clearTempDirButton->setEnabled(!*m_lockUi);
+
+    ui->cleanDirLE->setEnabled(!*m_lockUi);
+    ui->cleanDirButton->setEnabled(!*m_lockUi);
+    ui->clearCleanDirButton->setEnabled(!*m_lockUi);
+
+    ui->dangerousDirLE->setEnabled(!*m_lockUi);
+    ui->dangerousDirButton->setEnabled(!*m_lockUi);
+    ui->clearDangerDirButton->setEnabled(!*m_lockUi);
+
+    ui->avFileLE->setEnabled(!*m_lockUi);
+    ui->avFileButton->setEnabled(!*m_lockUi);
+    ui->infectActionCB->setEnabled(!*m_lockUi);
+    ui->avMaxQueueSizeSB->setEnabled(!*m_lockUi);
+    ui->avMaxQueueVolSB->setEnabled(!*m_lockUi);
+    ui->avMaxQueueVolUnitCB->setEnabled(!*m_lockUi);
+    ui->externalHandlerFileCB->setEnabled(!*m_lockUi);
+    ui->externalHandlerFileLE->setEnabled(!*m_lockUi);
+    ui->externalHandlerFileButton->setEnabled(!*m_lockUi);
+    ui->syslogCB->setEnabled(!*m_lockUi);
+    ui->syslogAddressLE->setEnabled(!*m_lockUi);
+
+    // ---
     ui->watchDirLE->setText(m_investigator->m_watchDir);
-    ui->investigatorDirLE->setText(m_investigator->m_investigatorDir);
+    ui->tempDirLE->setText(m_investigator->m_investigatorDir);
     ui->cleanDirLE->setText(m_investigator->m_cleanDir);
     ui->dangerousDirLE->setText(m_investigator->m_dangerDir);
 
@@ -107,7 +138,7 @@ void Settings::updateUi() {
 
     // --- STYLESHEETS ---
     ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->investigatorDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()          ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->tempDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()                  ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
     ui->cleanDirLE->setStyleSheet(QDir(m_investigator->m_cleanDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
     ui->dangerousDirLE->setStyleSheet(QDir(m_investigator->m_dangerDir).exists()                   ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
 

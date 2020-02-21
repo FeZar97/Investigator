@@ -1,7 +1,7 @@
 #include "statistics.h"
 #include "ui_statistics.h"
 
-Statistics::Statistics(QWidget *parent, Investigator* investigator, QByteArray geometry): QDialog(parent), ui(new Ui::Statistics) {
+Statistics::Statistics(QWidget *parent, Investigator* investigator, QByteArray geometry, bool *lockUi): QDialog(parent), ui(new Ui::Statistics), m_lockUi(lockUi) {
 
     ui->setupUi(this);
 
@@ -25,6 +25,8 @@ Statistics::~Statistics() {
 }
 
 void Statistics::updateUi() {
+
+    ui->clearButton->setEnabled(!*m_lockUi);
 
     ui->InfoLabel->setText(m_investigator->m_processInfo);
 

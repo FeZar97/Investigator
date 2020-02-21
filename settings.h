@@ -16,7 +16,7 @@ class Settings : public QDialog {
     Q_OBJECT
 
 public:
-    explicit Settings(QWidget *parent = nullptr, Investigator* investigator = nullptr, QByteArray geometry = nullptr);
+    explicit Settings(QWidget *parent = nullptr, Investigator* investigator = nullptr, QByteArray geometry = nullptr, bool* lockUi = nullptr);
     ~Settings();
 
     void updateUi();
@@ -48,6 +48,7 @@ private slots:
 
 private:
     Ui::Settings *ui;
+    bool* m_lockUi{nullptr};
     Investigator* m_investigator;
 
 signals:

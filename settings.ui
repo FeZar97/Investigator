@@ -167,7 +167,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="investigatorDirLE">
+       <widget class="QLineEdit" name="tempDirLE">
         <property name="font">
          <font>
           <family>Courier New</family>
@@ -766,7 +766,7 @@
   <tabstop>watchDirLE</tabstop>
   <tabstop>watchDirButton</tabstop>
   <tabstop>clearWatchDirButton</tabstop>
-  <tabstop>investigatorDirLE</tabstop>
+  <tabstop>tempDirLE</tabstop>
   <tabstop>tempDirButton</tabstop>
   <tabstop>clearTempDirButton</tabstop>
   <tabstop>cleanDirLE</tabstop>
