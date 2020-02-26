@@ -247,7 +247,7 @@ void Investigator::stopWork() {
 void Investigator::parseReport(QString report) {
     m_lastReport = report;
 
-    emit saveReport(QString(m_lastReport), m_reportCnt++);
+    // emit saveReport(QString(m_lastReport), m_reportCnt++);
 
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
 
@@ -327,8 +327,6 @@ void Investigator::parseReport(QString report) {
             log(QString("Найден зараженный файл: %1.").arg(infectedFile.first), MSG_CATEGORY(CRITICAL + LOG_GUI));
             sendSyslogMessage(QString("Detected infected file: %1 %2").arg(infectedFile.first).arg(infectedFile.second), SYS_CRITICAL, SYS_USER);
 
-
-
             switch(m_infectedFileAction) {
 
                 case MOVE_TO_DIR:
@@ -379,7 +377,8 @@ void Investigator::parseReport(QString report) {
                                                                                                                         .arg(m_processedFilesSizeMb)
                                                                                                                         .arg(m_infectedFilesNb), SYS_INFO, SYS_USER);
     } else {
-        log(QString("Ошибка разбора отчета: отчет поврежден. Файлы будут перепроверены."), MSG_CATEGORY(INFO));
+        log(QString("Ошибка разбора отчета: отчет поврежден. Файлы будут перепроверены. Размер очереди изменен с %1 до %2 файлов.").arg(m_maxQueueSize).arg(m_maxQueueSize/2), MSG_CATEGORY(INFO));
+
         if(m_maxQueueSize > 10) {
             m_maxQueueSize /= 2;
         }
