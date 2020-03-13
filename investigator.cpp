@@ -88,57 +88,57 @@ bool Investigator::checkAvParams() {
     bool problem = false;
 
     if(m_watchDir.isEmpty()) {
-        log("Не выбран каталог для слежения!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Watching directory is not selected!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
     if(!QDir(m_watchDir).exists()) {
-        log("Выбранный каталог для слежения не существует!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Watching directory does not exist!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_investigatorDir.isEmpty()) {
-        log("Не выбран каталог для временных файлов программы!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Temporary directory is not selected!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
     if(!QDir(m_investigatorDir).exists()) {
-        log("Выбранный каталог для временных файлов программы не существует!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Temporary directory does not exist!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_cleanDir.isEmpty()) {
-        log("Не выбран каталог для чистых файлов!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Directory for clean files is not selected!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
     if(!QDir(m_cleanDir).exists()) {
-        log("Выбранный каталог для чистых файлов не существует!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Directory for clean files does not exist!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_dangerDir.isEmpty()) {
-        log("Не выбран каталог для зараженных файлов!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Directory for infected files is not selected!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
     if(!QDir(m_dangerDir).exists()) {
-        log("Выбранный каталог для зараженных файлов не существует!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Directory for infected files does not exist!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_avPath.isEmpty()) {
-        log("Не выбран файл АВС!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("AVS executable file is not selected!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
     if(!QFile(m_avPath).exists()) {
-        log("Выбранный файл АВС не существует!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("AVS executable file does not exist!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_isWorking) {
-        log("Слежение уже начато!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Watching has already begun!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
     if(m_isInProcess) {
-        log("Процесс АВС уже запущен!", MSG_CATEGORY(INFO + LOG_GUI));
+        log("AVS process has already begun!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
     }
 
@@ -184,15 +184,15 @@ void Investigator::onProcessFinished() {
 
         m_isInProcess = true;
 
-        log(QString("Перенос %1 файлов из inputDir(%2) в processDir(%3) с ограничением %4 файлов.").arg(filesNumber)
-                                                                                                   .arg(m_inputDir)
-                                                                                                   .arg(m_processDir)
-                                                                                                   .arg(m_maxQueueSize), MSG_CATEGORY(INFO + LOG_ROW));
+        log(QString("Transferring %1 files from inputDir(%2) into processDir(%3) with limit %4 files.").arg(filesNumber)
+                                                                                                       .arg(m_inputDir)
+                                                                                                       .arg(m_processDir)
+                                                                                                       .arg(m_maxQueueSize), MSG_CATEGORY(DEBUG + LOG_ROW));
         m_inProcessFileList.clear();
         m_inProcessFileList = QDir(m_inputDir).entryList(usingFilters);
 
         if(m_inProcessFileList.size()) {
-            log(QString("Проверяемые файлы: %1").arg(entryListToString(m_inProcessFileList)), MSG_CATEGORY(INFO));
+            log(QString("Checking files: %1").arg(entryListToString(m_inProcessFileList)), MSG_CATEGORY(DEBUG));
         }
 
         moveFiles(m_inputDir, m_processDir, m_maxQueueSize);
@@ -204,9 +204,8 @@ void Investigator::onProcessFinished() {
 
         // если каталог с файлами не пуст
         if(!QDir(m_processDir).isEmpty()) {
-            log("Запуск проверки...", MSG_CATEGORY(INFO + LOG_ROW));
+            log("Start checking...", MSG_CATEGORY(DEBUG + LOG_ROW));
             emit process(QDir::toNativeSeparators(m_avPath), QStringList() << QDir::toNativeSeparators(m_processDir));
-
         }
     }
 
@@ -221,14 +220,13 @@ void Investigator::collectStatistics() {
 }
 
 bool Investigator::beginWork() {
-
     if(checkAvParams()) {
         clearStatistic();
-        log(QString("Запущено слежение за каталогом %1.").arg(m_watchDir), MSG_CATEGORY(INFO + LOG_GUI));
+        log(QString("Start watching to directory %1.").arg(m_watchDir), MSG_CATEGORY(DEBUG + LOG_GUI));
         m_isWorking = true;
         return true;
     } else {
-        log(QString("Не удалось начать слежение за каталогом %1.").arg(m_watchDir), MSG_CATEGORY(INFO + LOG_GUI));
+        log(QString("Failed start watching to directory %1.").arg(m_watchDir), MSG_CATEGORY(DEBUG + LOG_GUI));
         return false;
     }
 }
@@ -239,7 +237,7 @@ void Investigator::stopWork() {
 
     collectStatistics();
 
-    log(QString("Работа программы приостановлена."), MSG_CATEGORY(INFO + LOG_GUI));
+    log(QString("Program is suspended."), MSG_CATEGORY(DEBUG + LOG_GUI));
 
     emit stopProcess();
 }
@@ -274,7 +272,7 @@ void Investigator::parseReport(QString report) {
             QString newVersion = QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4").arg(m_baseVersion).arg(m_m52coreVersion).arg(m_drwebCoreVersion).arg(m_kasperCoreVersion);
             if(m_avVersion != newVersion) {
                 m_avVersion = newVersion;
-                log(QString("Определена версия АВС: %1").arg(newVersion), INFO);
+                log(QString("AVS version: %1").arg(newVersion), DEBUG);
             }
         }
 
@@ -324,13 +322,12 @@ void Investigator::parseReport(QString report) {
         // обработка зараженных
         foreach(auto infectedFile, m_infectedFiles) {
 
-            log(QString("Найден зараженный файл: %1.").arg(infectedFile.first), MSG_CATEGORY(CRITICAL + LOG_GUI));
-            sendSyslogMessage(QString("Detected infected file: %1 %2").arg(infectedFile.first).arg(infectedFile.second), SYS_CRITICAL, SYS_USER);
+            log(QString("Detected infected file: %1.").arg(infectedFile.first), MSG_CATEGORY(LOG_GUI + INFO));
 
             switch(m_infectedFileAction) {
 
                 case MOVE_TO_DIR:
-                    log(QString("Перенос файла %1 в каталог для зараженных файлов(%2).").arg(infectedFile.first).arg(m_dangerDir), MSG_CATEGORY(INFO));
+                    log(QString("Transferring file %1 into directory for infected files(%2).").arg(infectedFile.first).arg(m_dangerDir), MSG_CATEGORY(DEBUG));
                     moveFile(infectedFile.first, m_processDir, m_dangerDir);
 
                     if(m_useExternalHandler) {
@@ -344,18 +341,18 @@ void Investigator::parseReport(QString report) {
 
                 case DELETE:
                     if(!QFile(m_processDir + "/" + infectedFile.first).remove())
-                        log(QString("Не удалось удалить зараженный файл %1.").arg(infectedFile.first), MSG_CATEGORY(CRITICAL + LOG_GUI));
+                        log(QString("Can't deleting infected file %1.").arg(infectedFile.first), MSG_CATEGORY(LOG_GUI + DEBUG));
                     else
-                        log(QString("Файл %1 удален.").arg(infectedFile.first), MSG_CATEGORY(INFO));
+                        log(QString("File %1 has been deleted.").arg(infectedFile.first), MSG_CATEGORY(DEBUG));
                     break;
             }
         }
 
         // перенос чистых
         QStringList clearFiles = QDir(m_processDir).entryList(usingFilters);
-        log(QString("Перенос %1 проверенных файлов в каталог для чистых файлов(%2): %3").arg(QDir(m_processDir).entryList(usingFilters).size())
-                                                                                        .arg(m_cleanDir)
-                                                                                        .arg(entryListToString(clearFiles)), MSG_CATEGORY(INFO));
+        log(QString("Transferring %1 checked files into clean directory(%2): %3").arg(QDir(m_processDir).entryList(usingFilters).size())
+                                                                             .arg(m_cleanDir)
+                                                                             .arg(entryListToString(clearFiles)), MSG_CATEGORY(DEBUG));
         // перенос только тех, которые отправлялись на проверку
         foreach(QString fileName, clearFiles) {
             if(m_inProcessFileList.contains(fileName)) {
@@ -368,16 +365,12 @@ void Investigator::parseReport(QString report) {
 
         collectStatistics();
 
-        log(QString("Время работы: %1, проверено %2 файлов объемом %3 Мб, найдено зараженных файлов: %4").arg(m_workTime)
-                                                                                                         .arg(m_processedFilesNb)
-                                                                                                         .arg(m_processedFilesSizeMb)
-                                                                                                         .arg(m_infectedFilesNb), MSG_CATEGORY(INFO));
-        sendSyslogMessage(QString("Work time: %1, cheked %2 file with total volume: %3 Mb, detected %4 infected files.").arg(m_workTimeEn)
-                                                                                                                        .arg(m_processedFilesNb)
-                                                                                                                        .arg(m_processedFilesSizeMb)
-                                                                                                                        .arg(m_infectedFilesNb), SYS_INFO, SYS_USER);
+        log(QString("Work time: %1, cheked %2 files with total volume: %3, detected %4 infected files.").arg(m_workTimeEn)
+                                                                                                        .arg(m_processedFilesNb)
+                                                                                                        .arg(volumeToString(m_processedFilesSizeMb))
+                                                                                                        .arg(m_infectedFilesNb), MSG_CATEGORY(INFO));
     } else {
-        log(QString("Ошибка разбора отчета: отчет поврежден. Файлы будут перепроверены. Размер очереди изменен с %1 до %2 файлов.").arg(m_maxQueueSize).arg(m_maxQueueSize/2), MSG_CATEGORY(INFO));
+        log(QString("Error with report parsing: report is broken. Files will be checked again. Queue size changed form %1 to %2 files.").arg(m_maxQueueSize).arg(m_maxQueueSize/2), MSG_CATEGORY(DEBUG));
 
         if(m_maxQueueSize > 10) {
             m_maxQueueSize /= 2;
@@ -390,14 +383,11 @@ void Investigator::parseReport(QString report) {
     onProcessFinished();
 }
 
-void Investigator::sendSyslogMessage(QString msg, SYSLOG_PRIORITIES pri, SYSLOG_FACILITIES fac) {
+void Investigator::sendSyslogMessage(QString msg, int pri) {
     if(m_useSyslog && syslogSocket && checkSyslogAddress()) {
-        msg.prepend(QString("<%1>%2 %3 ").arg(fac * 8 + pri).arg(QNetworkInterface::allAddresses().first().toString()).arg(currentDateTime()));
+        msg.prepend(QString("<%1>%2 %3 ").arg(pri).arg(QNetworkInterface::allAddresses().first().toString()).arg(currentDateTime()));
         QByteArray m_msg = msg.toUtf8();
         syslogSocket->writeDatagram(m_msg, m_msg.size(), QHostAddress(syslogAddress), 514);
-        log(QString("Отправка сообщения(%1) размером %2 байт на адрес SysLog: %3").arg(QString::fromUtf8(m_msg))
-                                                                              .arg(m_msg.size())
-                                                                              .arg(QHostAddress(syslogAddress).toString()), MSG_CATEGORY(INFO));
     }
 }
 
@@ -426,4 +416,14 @@ bool isContainedFile(QList<QPair<QString, QString>>& fileList, QString fileName)
         if(pair.first == fileName)
             return true;
     return false;
+}
+
+QString volumeToString(double volumeInMb) {
+    if(volumeInMb < (1 << 10)) {
+        return QString("%1 MB").arg(QString::number(volumeInMb, 'f', 2));
+    } else if (volumeInMb/(1 << 10) < (1 << 10)) {
+        return QString("%1 GB").arg(QString::number(volumeInMb/(1 << 10), 'f', 2));
+    } else {
+        return QString("%1 TB").arg(QString::number(volumeInMb/(1 << 20), 'f', 2));
+    }
 }

@@ -29,13 +29,16 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     m_investigator->m_useSyslog = m_settings.value("useSyslog", false).toBool();
     m_investigator->m_syslogAddress = m_settings.value("syslogAddress", "127.0.0.1:514").toString();
+    m_investigator->m_syslogPriority = MSG_CATEGORY(m_settings.value("syslogPriority", INFO).toInt());
+
+    qDebug() << QString("Restored value: %1").arg(m_investigator->m_syslogPriority);
 
     m_investigator->configureDirs();
     m_investigator->clearStatistic();
     m_investigator->checkSyslogAddress();
     m_investigator->moveToThread(&m_workThread);
 
-    m_distributor     = new Distributor(nullptr, m_investigator);
+    m_distributor = new Distributor(nullptr, m_investigator);
     m_distributor->moveToThread(&m_workThread);
 
     m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray(), &m_lockUi);
@@ -65,15 +68,14 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     m_workThread.start();
 
-    log("Программа запущена.", MSG_CATEGORY(INFO + LOG_GUI));
-    m_investigator->sendSyslogMessage("Program is starting", SYS_INFO, SYS_USER);
+    log("Program is starting.", MSG_CATEGORY(LOG_GUI + INFO));
 
     if(QFile(m_investigator->m_avPath).exists()) {
         m_investigator->m_isWorking = true;
         startProcess(m_investigator->m_avPath, QStringList() << "/?");
         m_investigator->m_isWorking = false;
     } else {
-        log("Не удалось определить версию АВС.", CRITICAL);
+        log("Can't determine AVS version.", MSG_CATEGORY(LOG_GUI + DEBUG));
     }
 
     m_investigator->collectStatistics();
@@ -110,13 +112,12 @@ Widget::~Widget() {
 
     m_settings.setValue("useSyslog",              m_investigator->m_useSyslog);
     m_settings.setValue("syslogAddress",          m_investigator->m_syslogAddress);
+    m_settings.setValue("syslogPriority",         m_investigator->m_syslogPriority);
 
-    m_investigator->sendSyslogMessage("Programm shutting down.", SYS_INFO, SYS_USER);
+    log("Programm shutting down.", MSG_CATEGORY(INFO));
 
     m_workThread.quit();
     m_workThread.wait();
-
-    log("Завершение работы программы.", INFO);
 
     delete m_settingsWindow;
     delete m_statisticWindow;
@@ -127,11 +128,13 @@ Widget::~Widget() {
 }
 
 void Widget::log(QString s, MSG_CATEGORY cat) {
-    if(cat & INFO)     qInfo() << s << "\r\n";
-    if(cat & DEBUG)    qDebug() << s << "\r\n";
-    if(cat & CRITICAL) qCritical() << s << "\r\n";
-    if(cat & LOG_ROW)  m_investigator->m_processInfo = s;
-    if(cat & LOG_GUI)  ui->logPTE->appendPlainText(currentDateTime() + " " + s);
+    if(cat & LOG_ROW) m_investigator->m_processInfo = s;
+    if(cat & LOG_GUI) ui->logPTE->appendPlainText(currentDateTime() + " " + s);
+    if(cat & INFO)    qInfo() << s << "\r\n";
+    if(cat & DEBUG)   qDebug() << s << "\r\n";
+    if((cat & 0x3) <= m_investigator->m_syslogPriority && (cat & 0x3) <= DEBUG)
+        m_investigator->sendSyslogMessage(s);
+
     // если программа не запущена, то надо принудительно обновить интерфейс
     if(!m_investigator->m_isWorking) updateUi();
 }
@@ -157,7 +160,6 @@ void Widget::startProcess(QString path, QStringList args) {
     if(m_investigator->m_isWorking) {
         m_investigator->m_lastProcessStartTime = QDateTime::currentDateTime();
         m_process.start(path, args);
-        log("Выполнение проверки...", MSG_CATEGORY(INFO + LOG_ROW));
     }
 }
 
@@ -182,11 +184,11 @@ void Widget::saveReport(QString report, unsigned long long reportIdx) {
 }
 
 void Widget::startExternalHandler(QString path, QStringList args) {
-    log(QString("Вызов внешнего обработчика %1 с аргументами: %2").arg(path).arg(entryListToString(args)), MSG_CATEGORY(INFO));
+    log(QString("Execute external handler '%1' with params: %2").arg(path).arg(entryListToString(args)), MSG_CATEGORY(DEBUG));
     if(QFile(path).exists()) {
         QProcess::execute(path, args);
     } else {
-        log(QString("Внешний обработчик не найден!"), MSG_CATEGORY(INFO));
+        log(QString("Can't find external handler!"), MSG_CATEGORY(DEBUG));
     }
 }
 
@@ -212,7 +214,7 @@ void Widget::on_stopButton_clicked() {
                             QString("Вы действительно хотите остановить слежение за каталогом?"),
                             QString("Да"), QString("Нет"), QString(),
                             1) == 0) {
-        log(QString("Слежение за каталогом %1 остановлено.").arg(m_investigator->m_watchDir), MSG_CATEGORY(INFO + LOG_GUI));
+        log(QString("Watching to directory %1 stopped.").arg(m_investigator->m_watchDir), MSG_CATEGORY(DEBUG + LOG_GUI));
         emit stopWork();
     }
 }
@@ -226,7 +228,7 @@ void Widget::on_statisticButton_clicked() {
 }
 
 void Widget::on_clearButton_clicked() {
-    log("Окно отображения лога очищено.", INFO);
+    log("Log cleared.", INFO);
     ui->logPTE->clear();
 }
 

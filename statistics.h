@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QtMath>
+#include <QMessageBox>
 
 #include "investigator.h"
 

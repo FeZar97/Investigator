@@ -106,6 +106,10 @@
         <property name="text">
          <string/>
         </property>
+        <property name="icon">
+         <iconset resource="img.qrc">
+          <normaloff>:/img/LOCK.jpg</normaloff>:/img/LOCK.jpg</iconset>
+        </property>
        </widget>
       </item>
       <item>

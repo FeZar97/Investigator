@@ -35,10 +35,10 @@ void Distributor::onWatchDirChange(const QString &path) {
 
     if(QDir(m_investigator->m_watchDir).entryList(usingFilters).size()) {
         QStringList filesInDir = QDir(m_investigator->m_watchDir).entryList(usingFilters);
-        log(QString("Перенос %1 файлов из watchDir(%2) в inputDir(%3): %4").arg(QDir(m_investigator->m_watchDir).entryList(usingFilters).size())
-                                                                           .arg(m_investigator->m_watchDir)
-                                                                           .arg(m_investigator->m_inputDir)
-                                                                           .arg(entryListToString(filesInDir)), MSG_CATEGORY(INFO));
+        log(QString("Transferring %1 files from watchDir(%2) into inputDir(%3): %4").arg(QDir(m_investigator->m_watchDir).entryList(usingFilters).size())
+                                                                                    .arg(m_investigator->m_watchDir)
+                                                                                    .arg(m_investigator->m_inputDir)
+                                                                                    .arg(entryListToString(filesInDir)), MSG_CATEGORY(DEBUG));
         moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir, ALL_FILES);
     }
 

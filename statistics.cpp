@@ -32,13 +32,12 @@ void Statistics::updateUi() {
 
     m_model.setHorizontalHeaderLabels(QStringList() << "M-52");
     m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов"          << "Просканировано файлов"
-                                                  << "Объем\nпросканированных файлов (МБ)"   << "Средняя скорость\nсканирования (МБ/с)"
+                                                  << "Объем\nпросканированных файлов"        << "Средняя скорость\nсканирования (МБ/с)"
                                                   << "Текущая скорость\nсканирования (МБ/с)" << "Файлов в обработке"
                                                   << "Файлов в очереди"                      << "Версия АВС");
 
     ui->tableView->setModel(&m_model);
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    //ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableView->setSelectionMode(QAbstractItemView::NoSelection);
 
@@ -67,7 +66,7 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(1,0), m_investigator->m_processedFilesNb, Qt::DisplayRole);
 
     // объем просканированных файлов
-    m_model.setData(m_model.index(2,0), QString::number(m_investigator->m_processedFilesSizeMb, 'f', 2), Qt::DisplayRole);
+    m_model.setData(m_model.index(2,0), volumeToString(m_investigator->m_processedFilesSizeMb), Qt::DisplayRole);
 
     // средняя скорость сканирования
     m_model.setData(m_model.index(3,0), QString::number(m_investigator->m_averageProcessSpeed, 'f', 2), Qt::DisplayRole);
@@ -97,5 +96,11 @@ void Statistics::updateUi() {
 }
 
 void Statistics::on_clearButton_clicked() {
-    m_investigator->clearStatistic();
+    if(QMessageBox::warning(this,
+                            QString("Подтвердите действие"),
+                            QString("Вы действительно хотите сбросить накопленную статистику?"),
+                            QString("Да"), QString("Нет"), QString(),
+                            1) == 0) {
+        m_investigator->clearStatistic();
+    }
 }

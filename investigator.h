@@ -21,7 +21,7 @@
 
 #define     MAJOR_VERSION         1
 #define     MINOR_VERSION         5
-#define     PATCH_VERSION         25.1
+#define     PATCH_VERSION         3.12
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -37,19 +37,24 @@ enum ACTION_TYPE {
 enum MSG_CATEGORY {
     INFO     = 0x01,
     DEBUG    = 0x02,
-    CRITICAL = 0x04,
-    LOG_GUI  = 0x08,
-    LOG_ROW  = 0x10,
-    SYSLOG   = 0x20
+    LOG_GUI  = 0x04,
+    LOG_ROW  = 0x08
 };
 
-enum SYSLOG_PRIORITIES {
+/*
+enum SYSLOG_SEVERITY {
     SYS_EMERG, SYS_ALERT, SYS_CRITICAL, SYS_ERROR, SYS_WARNING, SYS_NOTICE, SYS_INFO, SYS_DEBUG
 };
 
 enum SYSLOG_FACILITIES {
     SYS_KERN = 0, SYS_USER = 1, SYS_EMERGENCY = 14
 };
+
+enum SYSLOG_PRIORITY {
+    ONLY_VIRUS = SYS_CRITICAL << 3 + SYS_USER,
+    ALL_EVENTS =    SYS_DEBUG << 3 + SYS_USER
+};
+*/
 
 const static QString dateTimePattern = "yyyy-MM-dd hh:mm:ss";
 const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
@@ -61,6 +66,7 @@ QString entryListToString(QStringList &list);
 QString currentDateTime();
 double dirSizeMb(QString dirName);
 bool isContainedFile(QList<QPair<QString, QString>> &fileList, QString fileName);
+QString volumeToString(double volumeInMb);
 
 class Investigator : public QObject
 {
@@ -107,6 +113,7 @@ public:
 
     bool m_useSyslog{false}; // флаг логгирования в сислог
     QString m_syslogAddress; // адрес syslogd
+    MSG_CATEGORY m_syslogPriority; // нижняя граница приоритета сообщений, которые следует отправлять в сислог
 
     QString m_workTime{""}; // время работы в формате "d дней hh ч. mm мин. ss сек"
     QString m_workTimeEn{""}; // время работы в формате "d days hh h. mm min. ss sec"
@@ -164,7 +171,7 @@ public:
     void parseReport(QString report);
 
     /* send syslog message */
-    void sendSyslogMessage(QString msg, SYSLOG_PRIORITIES pri, SYSLOG_FACILITIES fac);
+    void sendSyslogMessage(QString msg = "", int pri = 99);
 
     /* сброс временных пееременных для метода parseReport */
     void clearParserTemps();

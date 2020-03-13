@@ -21,10 +21,10 @@ Settings::~Settings() {
 void Settings::on_watchDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для слежения"), m_investigator->m_watchDir);
     if(dir.isEmpty()) {
-        log("Не найден каталог для слежения.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find watching directory.", MSG_CATEGORY(LOG_GUI + DEBUG));
     } else {
         m_investigator->m_watchDir = dir;
-        log(QString("Выбран новый каталог для слежения: %1").arg(dir), MSG_CATEGORY(INFO));
+        log(QString("Changed watch dir: %1").arg(dir), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -35,11 +35,11 @@ void Settings::on_tempDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для временных файлов программы"), m_investigator->m_investigatorDir);
 
     if(dir.isEmpty()) {
-        log("Не найден каталог для временных файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find temp directory.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_investigatorDir = dir;
         m_investigator->configureDirs();
-        log(QString("Выбран новый каталог для временных файлов программы: %1").arg(dir), MSG_CATEGORY(INFO));
+        log(QString("Changed temp directory: %1").arg(dir), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -49,10 +49,10 @@ void Settings::on_cleanDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для чистых файлов"), m_investigator->m_cleanDir);
 
     if(dir.isEmpty()) {
-        log("Не найден каталог для чистых файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find directory for clean files.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_cleanDir = dir;
-        log(QString("Выбран новый каталог для чистых файлов: %1").arg(dir), MSG_CATEGORY(INFO));
+        log(QString("Changed directory for clean files: %1").arg(dir), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -61,10 +61,10 @@ void Settings::on_cleanDirButton_clicked() {
 void Settings::on_dangerousDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для зараженных файлов"), m_investigator->m_dangerDir);
     if(m_investigator->m_dangerDir.isEmpty()) {
-        log("Не найден каталог для зараженных файлов.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find directory for infected files.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_dangerDir = dir;
-        log(QString("Выбран новый каталог для зараженных файлов: %1").arg(dir), MSG_CATEGORY(INFO));
+        log(QString("Changed directory for infected files: %1").arg(dir), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -74,10 +74,10 @@ void Settings::on_avFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса"), m_investigator->m_avPath, tr("*.exe"));
 
     if(!QFile(filePath).exists()) {
-        log("Не найден исполняемый файл АВС.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find AVS executable file.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_avPath = filePath;
-        log(QString("Выбран новый исполняемый файл АВС: %1").arg(filePath), MSG_CATEGORY(INFO));
+        log(QString("Changed executable AVS file: %1").arg(filePath), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -113,6 +113,8 @@ void Settings::updateUi() {
     ui->externalHandlerFileButton->setEnabled(!*m_lockUi);
     ui->syslogCB->setEnabled(!*m_lockUi);
     ui->syslogAddressLE->setEnabled(!*m_lockUi);
+    ui->syslogInformationLabel->setEnabled(!*m_lockUi);
+    ui->syslogLevelCB->setEnabled(!*m_lockUi);
 
     // ---
     ui->watchDirLE->setText(m_investigator->m_watchDir);
@@ -133,8 +135,8 @@ void Settings::updateUi() {
     ui->externalHandlerFileButton->setEnabled(m_investigator->m_useExternalHandler);
 
     ui->syslogCB->setChecked(m_investigator->m_useSyslog);
-    ui->syslogAddressLE->setEnabled(m_investigator->m_useSyslog);
     ui->syslogAddressLE->setText(m_investigator->m_syslogAddress);
+    ui->syslogLevelCB->setCurrentIndex(m_investigator->m_syslogPriority - 1);
 
     // --- STYLESHEETS ---
     ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
@@ -180,7 +182,7 @@ void Settings::on_clearWatchDirButton_clicked() {
                             QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_watchDir),
                             QMessageBox::Yes | QMessageBox::No,
                             QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Очистка каталога для слежения: %1.").arg(m_investigator->m_watchDir), MSG_CATEGORY(INFO + LOG_ROW));
+        log(QString("Cleaning watching directory."), MSG_CATEGORY(DEBUG + LOG_ROW));
         emit clearDir(m_investigator->m_watchDir);
     }
 }
@@ -192,7 +194,7 @@ void Settings::on_clearTempDirButton_clicked() {
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
 
-        log(QString("Очистка временных каталогов программы."), MSG_CATEGORY(INFO + LOG_ROW));
+        log(QString("Cleaning temp directory."), MSG_CATEGORY(DEBUG + LOG_ROW));
         emit clearDir(m_investigator->m_inputDir);
         emit clearDir(m_investigator->m_processDir);
     }
@@ -204,7 +206,7 @@ void Settings::on_clearCleanDirButton_clicked() {
                              QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_cleanDir),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Очистка каталога для чистых файлов: %1.").arg(m_investigator->m_cleanDir), MSG_CATEGORY(INFO + LOG_ROW));
+        log(QString("Cleaning directory for clean files."), MSG_CATEGORY(DEBUG + LOG_ROW));
         emit clearDir(m_investigator->m_cleanDir);
     }
 }
@@ -215,7 +217,7 @@ void Settings::on_clearDangerDirButton_clicked() {
                              QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_dangerDir),
                              QMessageBox::Yes | QMessageBox::No,
                              QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Очистка каталога для зараженных файлов: %1.").arg(m_investigator->m_cleanDir), MSG_CATEGORY(INFO + LOG_ROW));
+        log(QString("Cleaning directory for infected files."), MSG_CATEGORY(DEBUG + LOG_ROW));
         emit clearDir(m_investigator->m_dangerDir);
     }
 }
@@ -229,7 +231,7 @@ void Settings::on_infectActionCB_currentIndexChanged(int actionIdx) {
         m_investigator->m_useExternalHandler = ui->externalHandlerFileCB->isChecked();
         ui->externalHandlerFileCB->setEnabled(true);
     }
-    log(QString("Изменена обработка зараженных файлов: %1.").arg(m_investigator->m_infectedFileAction), MSG_CATEGORY(INFO));
+    log(QString("Changed action type with infected files: %1.").arg(m_investigator->m_infectedFileAction), MSG_CATEGORY(DEBUG));
     updateUi();
 }
 
@@ -237,10 +239,10 @@ void Settings::on_externalHandlerFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор внешнего обработчика"), m_investigator->m_externalHandlerPath, tr("*.*"));
 
     if(!QFile(filePath).exists()) {
-        log("Не найден файл внешнего обработчика.", MSG_CATEGORY(INFO + LOG_GUI));
+        log("Can't find external handler for infected files.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_externalHandlerPath = filePath;
-        log(QString("Изменен путь к внешнему обработчику зараженных файлов: %1.").arg(filePath), MSG_CATEGORY(INFO));
+        log(QString("Changed path to extrnal handler: %1.").arg(filePath), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -248,19 +250,26 @@ void Settings::on_externalHandlerFileButton_clicked() {
 
 void Settings::on_externalHandlerFileCB_clicked(bool checked) {
     m_investigator->m_useExternalHandler = checked;
-    log(QString("Смена состояния флага использования внешнего обработчика: %1.").arg(checked), MSG_CATEGORY(INFO));
+    log(QString("Change state of using external handler for infected files: %1.").arg(checked), MSG_CATEGORY(DEBUG));
     updateUi();
 }
 
 void Settings::on_syslogCB_clicked(bool checked) {
     m_investigator->m_useSyslog = checked;
     m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
-    log(QString("Смена состояния флага использования syslog: %1.").arg(checked), MSG_CATEGORY(INFO));
+    log(QString("Change state of syslog using: %1.").arg(checked), MSG_CATEGORY(DEBUG));
     updateUi();
 }
 
-void Settings::on_syslogAddressLE_textChanged(const QString &newAddr) {
-    m_investigator->m_syslogAddress = newAddr;
-    log(QString("Изменен URL демона syslog: %1.").arg(newAddr), MSG_CATEGORY(INFO));
+void Settings::on_syslogAddressLE_textChanged(const QString &addres) {
+    m_investigator->m_syslogAddress = addres;
+    log(QString("Changed address of syslog demon: %1.").arg(addres), MSG_CATEGORY(DEBUG));
+    updateUi();
+}
+
+void Settings::on_syslogLevelCB_currentIndexChanged(int level) {
+    level += 1;
+    m_investigator->m_syslogPriority = MSG_CATEGORY(level);
+    log(QString("Syslog priority level has been changed: %1.").arg(level), MSG_CATEGORY(DEBUG));
     updateUi();
 }

@@ -44,7 +44,8 @@ private slots:
     void on_externalHandlerFileCB_clicked(bool checked);
 
     void on_syslogCB_clicked(bool checked);
-    void on_syslogAddressLE_textChanged(const QString &arg1);
+    void on_syslogAddressLE_textChanged(const QString &addres);
+    void on_syslogLevelCB_currentIndexChanged(int level);
 
 private:
     Ui::Settings *ui;

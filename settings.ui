@@ -739,9 +739,39 @@
         <property name="text">
          <string>127.0.0.1:514</string>
         </property>
-        <property name="clearButtonEnabled">
-         <bool>false</bool>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="syslogInformationLabel">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
         </property>
+        <property name="text">
+         <string>Уровень информирования:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="syslogLevelCB">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <item>
+         <property name="text">
+          <string>обнаруженные вирусы</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>полное логирование</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>

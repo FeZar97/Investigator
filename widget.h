@@ -22,7 +22,7 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget() override;
 
-    void log(QString s, MSG_CATEGORY cat);
+    void log(QString s = "", MSG_CATEGORY cat = INFO);
     void updateUi();
     void startProcess(QString path, QStringList args);
     void parseResultOfProcess();
