@@ -19,9 +19,9 @@
 
 #include "stylehelper.h"
 
-#define     MAJOR_VERSION         1
-#define     MINOR_VERSION         5
-#define     PATCH_VERSION         3.12
+#define     MAJOR_VERSION         "1"
+#define     MINOR_VERSION         "5"
+#define     PATCH_VERSION         "3.31"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -40,21 +40,6 @@ enum MSG_CATEGORY {
     LOG_GUI  = 0x04,
     LOG_ROW  = 0x08
 };
-
-/*
-enum SYSLOG_SEVERITY {
-    SYS_EMERG, SYS_ALERT, SYS_CRITICAL, SYS_ERROR, SYS_WARNING, SYS_NOTICE, SYS_INFO, SYS_DEBUG
-};
-
-enum SYSLOG_FACILITIES {
-    SYS_KERN = 0, SYS_USER = 1, SYS_EMERGENCY = 14
-};
-
-enum SYSLOG_PRIORITY {
-    ONLY_VIRUS = SYS_CRITICAL << 3 + SYS_USER,
-    ALL_EVENTS =    SYS_DEBUG << 3 + SYS_USER
-};
-*/
 
 const static QString dateTimePattern = "yyyy-MM-dd hh:mm:ss";
 const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
@@ -107,6 +92,7 @@ public:
     QList<QPair<QString,QString>> m_infectedFiles; // зараженные файлы, выявленные в процессе проверки
 
     ACTION_TYPE m_infectedFileAction{MOVE_TO_DIR}; // действие с зараженными файлами
+    bool m_saveAvsReports; // флаг сохранения отчетов АВС
 
     bool m_useExternalHandler{false}; // флаг использования внещнего обработчика
     QString m_externalHandlerPath{""}; // путь к внешнему обработчику
@@ -176,6 +162,8 @@ public:
     /* сброс временных пееременных для метода parseReport */
     void clearParserTemps();
 
+    QString getReportFileName(QString baseName = "");
+
 signals:
     /* эмитится каждый раз при изменении статистики */
     void updateUi();
@@ -189,8 +177,7 @@ signals:
     /* вывод информации */
     void log(QString s, MSG_CATEGORY cat);
 
-    /* сохранение отчета АВС */
-    void saveReport(QString report, unsigned long long idx);
+    void saveReport(QString report = "", QString baseName = "");
 
     /* вызов внешнего обработчика */
     void startExternalHandler(QString path, QStringList args);

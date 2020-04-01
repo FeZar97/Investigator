@@ -26,7 +26,7 @@ public:
     void updateUi();
     void startProcess(QString path, QStringList args);
     void parseResultOfProcess();
-    void saveReport(QString report, unsigned long long reportIdx);
+    void saveReport(QString report = "", QString baseName = "");
     void startExternalHandler(QString path, QStringList args);
     void closeEvent(QCloseEvent *event) override;
 

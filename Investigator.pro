@@ -5,7 +5,7 @@ QT += core gui widgets network
 TARGET = Investigator
 TEMPLATE = app
 
-VERSION = 1.5.02.18
+VERSION = 1.5.03.31
 
 QMAKE_TARGET_COMPANY     = FeZar97
 QMAKE_TARGET_PRODUCT     = Investigator

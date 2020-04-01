@@ -47,6 +47,8 @@ private slots:
     void on_syslogAddressLE_textChanged(const QString &addres);
     void on_syslogLevelCB_currentIndexChanged(int level);
 
+    void on_saveAVSReportsCB_clicked(bool checked);
+
 private:
     Ui::Settings *ui;
     bool* m_lockUi{nullptr};

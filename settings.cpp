@@ -88,23 +88,20 @@ void Settings::updateUi() {
     // ---
     ui->watchDirLE->setEnabled(!*m_lockUi);
     ui->watchDirButton->setEnabled(!*m_lockUi);
-    ui->clearWatchDirButton->setEnabled(!*m_lockUi);
 
     ui->tempDirLE->setEnabled(!*m_lockUi);
     ui->tempDirButton->setEnabled(!*m_lockUi);
-    ui->clearTempDirButton->setEnabled(!*m_lockUi);
 
     ui->cleanDirLE->setEnabled(!*m_lockUi);
     ui->cleanDirButton->setEnabled(!*m_lockUi);
-    ui->clearCleanDirButton->setEnabled(!*m_lockUi);
 
     ui->dangerousDirLE->setEnabled(!*m_lockUi);
     ui->dangerousDirButton->setEnabled(!*m_lockUi);
-    ui->clearDangerDirButton->setEnabled(!*m_lockUi);
-
     ui->avFileLE->setEnabled(!*m_lockUi);
     ui->avFileButton->setEnabled(!*m_lockUi);
     ui->infectActionCB->setEnabled(!*m_lockUi);
+    ui->saveAVSReportsLabel->setEnabled(!*m_lockUi);
+    ui->saveAVSReportsCB->setEnabled(!*m_lockUi);
     ui->avMaxQueueSizeSB->setEnabled(!*m_lockUi);
     ui->avMaxQueueVolSB->setEnabled(!*m_lockUi);
     ui->avMaxQueueVolUnitCB->setEnabled(!*m_lockUi);
@@ -128,6 +125,7 @@ void Settings::updateUi() {
     ui->avMaxQueueVolUnitCB->setCurrentIndex(m_investigator->m_maxQueueVolUnit);
 
     ui->infectActionCB->setCurrentIndex(m_investigator->m_infectedFileAction);
+    ui->saveAVSReportsCB->setChecked(m_investigator->m_saveAvsReports);
 
     ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
     ui->externalHandlerFileLE->setText(m_investigator->m_externalHandlerPath);
@@ -271,5 +269,11 @@ void Settings::on_syslogLevelCB_currentIndexChanged(int level) {
     level += 1;
     m_investigator->m_syslogPriority = MSG_CATEGORY(level);
     log(QString("Syslog priority level has been changed: %1.").arg(level), MSG_CATEGORY(DEBUG));
+    updateUi();
+}
+
+void Settings::on_saveAVSReportsCB_clicked(bool saveState) {
+    m_investigator->m_saveAvsReports = saveState;
+    log(QString("AVS reports saving flag has been changed: %1.").arg(saveState), MSG_CATEGORY(DEBUG));
     updateUi();
 }

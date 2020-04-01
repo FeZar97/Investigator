@@ -245,7 +245,9 @@ void Investigator::stopWork() {
 void Investigator::parseReport(QString report) {
     m_lastReport = report;
 
-    // emit saveReport(QString(m_lastReport), m_reportCnt++);
+    log(QString("Start report pearsing"), DEBUG);
+    if(m_saveAvsReports)
+        emit saveReport(QString(m_lastReport));
 
     if(m_lastReport.contains("Сканирование объектов: ") && m_lastReport.contains("Сканирование завершено")) {
 
@@ -291,6 +293,9 @@ void Investigator::parseReport(QString report) {
 
         // если есть зараженные файлы
         if(m_reportLines.size() > 13) {
+
+            emit saveReport(QString(m_lastReport), QTime::currentTime().toString("hh-mm-ss"));
+
             for(int i = 6; i < m_reportLines.size() - 7; i++) {
                 // если часть строки репорта содержит путь к папке проверки, то в этой строке инфа о зараженном файле
                 if(m_reportLines[i].contains(QDir::toNativeSeparators(m_processDir)) && m_reportLines[i].contains("M-52:")) {
@@ -305,13 +310,16 @@ void Investigator::parseReport(QString report) {
 
                     // извлечение информации о вирусе
                     m_tempSplitList = m_reportLines[i].split("инфицирован ");
-                    if(m_tempSplitList.size()) m_tempVirusInfo = m_tempSplitList[1];
-                    m_tempVirusInfo.remove(" - Файл пропущен");
-                    m_tempVirusInfo.truncate(m_tempVirusInfo.lastIndexOf(")") + 1);
+                    if(m_tempSplitList.size()) {
+                        m_tempVirusInfo = m_tempSplitList[1];
 
-                    // в список зараженных файлов файл добавляется только в том случае, если его там еще нет
-                    if(!isContainedFile(m_infectedFiles, m_tempFileName)) {
-                        m_infectedFiles.push_back(QPair<QString,QString>{m_tempFileName, m_tempVirusInfo});
+                        m_tempVirusInfo.remove(" - Файл пропущен");
+                        m_tempVirusInfo.truncate(m_tempVirusInfo.lastIndexOf(")") + 1);
+
+                        // в список зараженных файлов файл добавляется только в том случае, если его там еще нет
+                        if(!isContainedFile(m_infectedFiles, m_tempFileName) && m_tempVirusInfo.length() > 3) {
+                            m_infectedFiles.push_back(QPair<QString,QString>{m_tempFileName, m_tempVirusInfo});
+                        }
                     }
                 }
             }
@@ -322,7 +330,7 @@ void Investigator::parseReport(QString report) {
         // обработка зараженных
         foreach(auto infectedFile, m_infectedFiles) {
 
-            log(QString("Detected infected file: %1.").arg(infectedFile.first), MSG_CATEGORY(LOG_GUI + INFO));
+            log(QString("Detected infected file: %1 %2.").arg(infectedFile.first).arg(infectedFile.second), MSG_CATEGORY(LOG_GUI + INFO));
 
             switch(m_infectedFileAction) {
 
@@ -398,6 +406,13 @@ void Investigator::clearParserTemps() {
     m_tempFileName.clear();
     m_tempVirusInfo.clear();
     m_lastProcessedFilesSizeMb = 0.;
+}
+
+QString Investigator::getReportFileName(QString baseName) {
+    return QString("%1report_%2_(%3).txt")
+            .arg(m_reportsDir + "/")
+            .arg(baseName.isEmpty() ? QString::number(m_reportCnt++) : baseName)
+            .arg(QDate::currentDate().toString("dd.MM.yy"));
 }
 
 QString entryListToString(QStringList &list) {

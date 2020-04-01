@@ -23,6 +23,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     m_investigator->m_maxQueueVolUnit = m_settings.value("avVolUnit", 0).toInt();
 
     m_investigator->m_infectedFileAction = ACTION_TYPE(m_settings.value("infectAction", 0).toInt());
+    m_investigator->m_saveAvsReports = m_settings.value("saveAVSReports", false).toBool();
 
     m_investigator->m_useExternalHandler = m_settings.value("useExternalHandler", false).toBool();
     m_investigator->m_externalHandlerPath = m_settings.value("externalHandlerPath", "").toString();
@@ -30,8 +31,6 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     m_investigator->m_useSyslog = m_settings.value("useSyslog", false).toBool();
     m_investigator->m_syslogAddress = m_settings.value("syslogAddress", "127.0.0.1:514").toString();
     m_investigator->m_syslogPriority = MSG_CATEGORY(m_settings.value("syslogPriority", INFO).toInt());
-
-    qDebug() << QString("Restored value: %1").arg(m_investigator->m_syslogPriority);
 
     m_investigator->configureDirs();
     m_investigator->clearStatistic();
@@ -106,6 +105,7 @@ Widget::~Widget() {
     m_settings.setValue("avVolUnit",              m_investigator->m_maxQueueVolUnit);
 
     m_settings.setValue("infectAction",           m_investigator->m_infectedFileAction);
+    m_settings.setValue("saveAVSReports",         m_investigator->m_saveAvsReports);
 
     m_settings.setValue("useExternalHandler",     m_investigator->m_useExternalHandler);
     m_settings.setValue("externalHandlerPath",    m_investigator->m_externalHandlerPath);
@@ -168,15 +168,12 @@ void Widget::parseResultOfProcess() {
     m_process.close();
 }
 
-void Widget::saveReport(QString report, unsigned long long reportIdx) {
+void Widget::saveReport(QString report, QString baseName) {
     if(!QDir(m_investigator->m_reportsDir).exists()) {
         QDir().mkdir(m_investigator->m_reportsDir);
     }
 
-    QFile outFile(QString("%1report_%2_(%3).txt")
-                  .arg(m_investigator->m_reportsDir + "/")
-                  .arg(reportIdx)
-                  .arg(QDate::currentDate().toString("dd.MM.yy")));
+    QFile outFile(m_investigator->getReportFileName(baseName));
     outFile.open(QIODevice::WriteOnly);
     QTextStream ts(&outFile);
     ts << report << endl;

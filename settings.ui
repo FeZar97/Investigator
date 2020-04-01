@@ -46,7 +46,7 @@
      <number>2</number>
     </property>
     <item>
-     <layout class="QHBoxLayout" name="firstRowLayout" stretch="0,0,0,0">
+     <layout class="QHBoxLayout" name="firstRowLayout" stretch="0,0,0">
       <property name="spacing">
        <number>5</number>
       </property>
@@ -124,23 +124,6 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QPushButton" name="clearWatchDirButton">
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
@@ -201,23 +184,6 @@
         <property name="icon">
          <iconset resource="img.qrc">
           <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="clearTempDirButton">
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
         </property>
        </widget>
       </item>
@@ -284,23 +250,6 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QPushButton" name="clearCleanDirButton">
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
@@ -361,23 +310,6 @@
         <property name="icon">
          <iconset resource="img.qrc">
           <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="clearDangerDirButton">
-        <property name="maximumSize">
-         <size>
-          <width>23</width>
-          <height>23</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/CLEARDIR.png</normaloff>:/img/CLEARDIR.png</iconset>
         </property>
        </widget>
       </item>
@@ -502,7 +434,7 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_5">
+       <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -513,6 +445,26 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="saveAVSReportsLabel">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Сохранять отчеты АВС:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="saveAVSReportsCB">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -795,16 +747,12 @@
  <tabstops>
   <tabstop>watchDirLE</tabstop>
   <tabstop>watchDirButton</tabstop>
-  <tabstop>clearWatchDirButton</tabstop>
   <tabstop>tempDirLE</tabstop>
   <tabstop>tempDirButton</tabstop>
-  <tabstop>clearTempDirButton</tabstop>
   <tabstop>cleanDirLE</tabstop>
   <tabstop>cleanDirButton</tabstop>
-  <tabstop>clearCleanDirButton</tabstop>
   <tabstop>dangerousDirLE</tabstop>
   <tabstop>dangerousDirButton</tabstop>
-  <tabstop>clearDangerDirButton</tabstop>
  </tabstops>
  <resources>
   <include location="img.qrc"/>
