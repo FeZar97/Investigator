@@ -1,5 +1,9 @@
 #include "widget.h"
 #include <QApplication>
+#include <QSettings>
+
+#include "httplistener.h"
+#include "httpjsonresponder.h"
 
 void messageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg) {
     QString txt;
@@ -49,9 +53,17 @@ int main(int argc, char *argv[]) {
    qInstallMessageHandler(messageHandler);
    qSetMessagePattern("%{type} %{if-category}%{category}: %{endif}%{function}: %{message}");
 
-   QApplication a(argc, argv);
+   QApplication app(argc, argv);
    Widget w;
+
+   QSettings* listenerSettings = new QSettings("C:/settings.ini", QSettings::IniFormat, &app);
+   listenerSettings->beginGroup("listener");
+
+   HttpJsonResponder* responder = new HttpJsonResponder(&app);
+   responder->setInvestigatorPtr(w.getInvestigatorPtr());
+   new HttpListener(listenerSettings, responder, &app); // Start the HTTP server
+
    w.show();
 
-   return a.exec();
+   return app.exec();
 }

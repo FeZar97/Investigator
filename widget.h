@@ -29,6 +29,7 @@ public:
     void saveReport(QString report = "", QString baseName = "");
     void startExternalHandler(QString path, QStringList args);
     void closeEvent(QCloseEvent *event) override;
+    Investigator* getInvestigatorPtr();
 
 private slots:
     void on_startButton_clicked();

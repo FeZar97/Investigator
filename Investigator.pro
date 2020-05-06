@@ -5,7 +5,7 @@ QT += core gui widgets network
 TARGET = Investigator
 TEMPLATE = app
 
-VERSION = 1.5.03.31
+VERSION = 1.6.05.06
 
 QMAKE_TARGET_COMPANY     = FeZar97
 QMAKE_TARGET_PRODUCT     = Investigator
@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS QT_MESSAGELOGCONTEXT
 CONFIG += c++11
 
 HEADERS +=  distributor.h \
+            httpjsonresponder.h \
             investigator.h \
             settings.h \
             statistics.h \
@@ -24,6 +25,7 @@ HEADERS +=  distributor.h \
             widget.h
 
 SOURCES += distributor.cpp \
+           httpjsonresponder.cpp \
            investigator.cpp \
            main.cpp \
            settings.cpp \
@@ -33,6 +35,8 @@ SOURCES += distributor.cpp \
 FORMS += settings.ui \
          statistics.ui \
          widget.ui
+
+include(../QtWebApp/QtWebApp/httpserver/httpserver.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

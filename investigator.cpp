@@ -415,6 +415,22 @@ QString Investigator::getReportFileName(QString baseName) {
             .arg(QDate::currentDate().toString("dd.MM.yy"));
 }
 
+QString Investigator::getWorkTime() {
+    return m_workTimeEn;
+}
+
+int Investigator::getInfectedFilesNb() {
+    return m_infectedFilesNb;
+}
+
+int Investigator::getProcessedFilesNb() {
+    return m_processedFilesNb;
+}
+
+long long Investigator::getProcessedFilesSizeMb() {
+    return m_processedFilesSizeMb;
+}
+
 QString entryListToString(QStringList &list) {
     QString res = "";
     if(list.size()) {

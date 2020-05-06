@@ -201,6 +201,10 @@ void Widget::closeEvent(QCloseEvent *event) {
     }
 }
 
+Investigator* Widget::getInvestigatorPtr() {
+    return m_investigator;
+}
+
 void Widget::on_startButton_clicked() {
     emit startWork();
 }

@@ -20,8 +20,8 @@
 #include "stylehelper.h"
 
 #define     MAJOR_VERSION         "1"
-#define     MINOR_VERSION         "5"
-#define     PATCH_VERSION         "4.1"
+#define     MINOR_VERSION         "6"
+#define     PATCH_VERSION         "5.6"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -163,6 +163,11 @@ public:
     void clearParserTemps();
 
     QString getReportFileName(QString baseName = "");
+
+    QString getWorkTime();
+    int getInfectedFilesNb();
+    int getProcessedFilesNb();
+    long long getProcessedFilesSizeMb();
 
 signals:
     /* эмитится каждый раз при изменении статистики */
