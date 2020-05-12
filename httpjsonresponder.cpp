@@ -1,15 +1,13 @@
 #include "httpjsonresponder.h"
 
-HttpJsonResponder::HttpJsonResponder(QObject* parent):
+HttpJsonResponder::HttpJsonResponder(QObject* parent, Investigator* investigatorPtr):
     HttpRequestHandler(parent),
-    m_investigator(nullptr) {
-}
-
-void HttpJsonResponder::setInvestigatorPtr(Investigator* investigatorPtr) {
-    m_investigator = investigatorPtr;
+    m_investigator(investigatorPtr) {
 }
 
 void HttpJsonResponder::service(HttpRequest& request, HttpResponse& response) {
+
+    Q_UNUSED(request)
 
     QJsonObject obj;
     if(m_investigator) {

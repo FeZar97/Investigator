@@ -12,6 +12,7 @@
 #include <QTextStream>
 #include <QPalette>
 #include <QDebug>
+#include <QSettings>
 #include <QHostAddress>
 #include <QUdpSocket>
 #include <QTextCodec>
@@ -26,6 +27,10 @@
 
 #define     INPUT_DIR_NAME        "input"
 #define     OUTPUT_DIR_NAME       "output"
+#define     CLEAN_DIR_NAME        "clean"
+#define     DANGER_DIR_NAME       "danger"
+#define     LOGS_DIR_NAME         "logs"
+#define     REPORTS_DIR_NAME      "reports"
 
 #define     ALL_FILES             -1
 
@@ -73,10 +78,9 @@ public:
 
     QString m_inputDir; // куда копируются файлы из m_watchDir
     QString m_processDir; // где проверяются файлы
-    QString m_reportsDir; // каталог репортов АВС
-
     QString m_cleanDir; // каталог для читых файлов
     QString m_dangerDir; // каталог для зараженных файлов
+    QString m_logsDir; // каталог логов
 
     QString m_processInfo; // информация для строки в окне статистики
     QString m_lastReport; // последний репорт
@@ -93,6 +97,7 @@ public:
 
     ACTION_TYPE m_infectedFileAction{MOVE_TO_DIR}; // действие с зараженными файлами
     bool m_saveAvsReports; // флаг сохранения отчетов АВС
+    QString m_reportsDir; // каталог сохранения отчетов АВС
 
     bool m_useExternalHandler{false}; // флаг использования внещнего обработчика
     QString m_externalHandlerPath{""}; // путь к внешнему обработчику
@@ -104,9 +109,14 @@ public:
     QString m_workTime{""}; // время работы в формате "d дней hh ч. mm мин. ss сек"
     QString m_workTimeEn{""}; // время работы в формате "d days hh h. mm min. ss sec"
 
-    QUdpSocket *syslogSocket; // сокет для syslog
-    QHostAddress syslogAddress; // адрес демона
-    quint16 syslogPort; // используемый порт
+    QUdpSocket *m_syslogSocket; // сокет для syslog
+    QHostAddress m_syslogIpAddress; // адрес демона
+    quint16 m_syslogPort; // используемый порт
+
+    bool m_useHttpServer{true}; // флаг использования http сервера
+    QString m_httpServerAddress; // адрес http
+    QHostAddress m_httpServerIp; // входной адрес для сервера
+    quint16 m_httpServerPort; // порт сервера
 
     int m_maxQueueSize{10}; // макс число файлов в очереди
     double m_maxQueueVolMb{128.}; // макс объем файлов в очереди в мегабайтах
@@ -126,6 +136,9 @@ public:
 
     /* проверка корректности url syslogd */
     bool checkSyslogAddress();
+
+    /* проверка корректности url http */
+    bool checkHttpAddress();
 
     /* проверка параметров программы на корректность */
     bool checkAvParams();

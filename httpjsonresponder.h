@@ -16,8 +16,7 @@ class HttpJsonResponder : public HttpRequestHandler
     Investigator* m_investigator;
 
 public:
-    HttpJsonResponder(QObject* parent = nullptr);
-    void setInvestigatorPtr(Investigator* investigatorPtr = nullptr);
+    HttpJsonResponder(QObject* parent = nullptr, Investigator* investigatorPtr = nullptr);
     void service(HttpRequest& request, HttpResponse& response);
 };
 

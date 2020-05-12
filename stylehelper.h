@@ -18,6 +18,13 @@ public:
                         background: #FFC0C0;\
                     };";
         }
+
+    static QString changedLEStylesheet() {
+                return "QLineEdit { \
+                            background: #FFFFE1;\
+                        };";
+            }
+
     static QString defaultLEStylesheet() {
             return "QLineEdit { \
                     };";

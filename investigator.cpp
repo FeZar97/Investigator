@@ -63,7 +63,7 @@ double dirSizeMb(QString dirName) {
 
 Investigator::Investigator(QObject *parent) : QObject(parent){
     qRegisterMetaType<MSG_CATEGORY>("MSG_CATEGORY");
-    syslogSocket = new QUdpSocket(this);
+    m_syslogSocket = new QUdpSocket(this);
 }
 
 bool Investigator::checkSyslogAddress() {
@@ -72,12 +72,29 @@ bool Investigator::checkSyslogAddress() {
 
     if(parts.size() != 2) return false;
 
-    syslogAddress = QHostAddress(parts[0]);
-    syslogPort = quint16(parts[1].toInt());
+    m_syslogIpAddress = QHostAddress(parts[0]);
+    m_syslogPort = quint16(parts[1].toInt());
 
     if(parts[0].isNull())
         return false;
-    if(syslogAddress.toString() + ":" + QString::number(syslogPort) == m_syslogAddress)
+    if(m_syslogIpAddress.toString() + ":" + QString::number(m_syslogPort) == m_syslogAddress)
+        return true;
+    else
+        return false;
+}
+
+bool Investigator::checkHttpAddress() {
+    QStringList parts = m_httpServerAddress.split(":");
+
+    if(parts.size() != 2) return false;
+
+    m_httpServerIp = parts[0].isEmpty() ? QHostAddress::Any : QHostAddress(parts[0]);
+    m_httpServerPort = quint16(parts[1].toInt());
+
+    if(parts[0].isNull())
+        return false;
+
+    if(m_httpServerIp.toString() + ":" + QString::number(m_httpServerPort) == m_httpServerAddress)
         return true;
     else
         return false;
@@ -166,13 +183,39 @@ void Investigator::clearStatistic() {
 }
 
 void Investigator::configureDirs() {
-    m_inputDir   = m_investigatorDir + "/" + INPUT_DIR_NAME;
-    m_processDir = m_investigatorDir + "/" + OUTPUT_DIR_NAME;
-    m_reportsDir = m_investigatorDir + "/" + "reports";
+    if(m_investigatorDir.isEmpty()) {
+        log(QString("Can not creating temporary dirs, because investigatorDir is not choosed."), MSG_CATEGORY(DEBUG + LOG_GUI));
+    } else {
+        if(m_inputDir.isEmpty()) {
+            m_inputDir   = m_investigatorDir + "/" + INPUT_DIR_NAME;
+            QDir().mkpath(m_inputDir);
+        }
 
-    QDir().mkpath(m_inputDir);
-    QDir().mkpath(m_processDir);
-    QDir().mkpath(m_reportsDir);
+        if(m_processDir.isEmpty()) {
+            m_processDir = m_investigatorDir + "/" + OUTPUT_DIR_NAME;
+            QDir().mkpath(m_processDir);
+        }
+
+        if(m_cleanDir.isEmpty()) {
+            m_cleanDir   = m_investigatorDir + "/" + CLEAN_DIR_NAME;
+            QDir().mkpath(m_cleanDir);
+        }
+
+        if(m_dangerDir.isEmpty()) {
+            m_dangerDir  = m_investigatorDir + "/" + DANGER_DIR_NAME;
+            QDir().mkpath(m_dangerDir);
+        }
+
+        if(m_logsDir.isEmpty()) {
+            m_logsDir    = m_investigatorDir + "/" + LOGS_DIR_NAME;
+            QDir().mkpath(m_logsDir);
+        }
+
+        if(m_reportsDir.isEmpty()) {
+            m_reportsDir = m_investigatorDir + "/" + REPORTS_DIR_NAME;
+            QDir().mkpath(m_reportsDir);
+        }
+    }
 }
 
 void Investigator::onProcessFinished() {
@@ -392,10 +435,10 @@ void Investigator::parseReport(QString report) {
 }
 
 void Investigator::sendSyslogMessage(QString msg, int pri) {
-    if(m_useSyslog && syslogSocket && checkSyslogAddress()) {
+    if(m_useSyslog && m_syslogSocket && checkSyslogAddress()) {
         msg.prepend(QString("<%1>%2 %3 ").arg(pri).arg(QNetworkInterface::allAddresses().first().toString()).arg(currentDateTime()));
         QByteArray m_msg = msg.toUtf8();
-        syslogSocket->writeDatagram(m_msg, m_msg.size(), QHostAddress(syslogAddress), 514);
+        m_syslogSocket->writeDatagram(m_msg, m_msg.size(), QHostAddress(m_syslogIpAddress), 514);
     }
 }
 

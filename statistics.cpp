@@ -8,7 +8,6 @@ Statistics::Statistics(QWidget *parent, Investigator* investigator, QByteArray g
     setLayout(ui->mainLayout);
     setWindowTitle("Статистика работы");
     restoreGeometry(geometry);
-    setVisible(true);
     resize(this->minimumSize());
 
     m_investigator = investigator;

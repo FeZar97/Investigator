@@ -13,34 +13,39 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     restoreGeometry(m_settings.value("geometry").toByteArray());
 
     m_investigator = new Investigator();
-    m_investigator->m_watchDir        = m_settings.value("watchDir", "C:/").toString();
-    m_investigator->m_investigatorDir = m_settings.value("investigatorDir", QDir::tempPath()).toString();
-    m_investigator->m_cleanDir        = m_settings.value("cleanDir", "C:/").toString();
-    m_investigator->m_dangerDir       = m_settings.value("dangerDir", "C:/").toString();
+
+    m_investigator->m_watchDir        = m_settings.value("watchDir", "").toString();
+    m_investigator->m_investigatorDir = m_settings.value("investigatorDir", "").toString();
+    m_investigator->m_cleanDir        = m_settings.value("cleanDir", "").toString();
+    m_investigator->m_dangerDir       = m_settings.value("dangerDir", "").toString();
+    m_investigator->m_logsDir         = m_settings.value("logsDir", "").toString();
+
     m_investigator->m_avPath          = m_settings.value("avFilePath", "C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe").toString();
+    m_investigator->m_infectedFileAction = ACTION_TYPE(m_settings.value("infectAction", 0).toInt());
     m_investigator->m_maxQueueSize    = m_settings.value("avMaxQueueSize", 10).toInt();
     m_investigator->m_maxQueueVolMb   = m_settings.value("avMaxQueueVol", 128.).toDouble();
     m_investigator->m_maxQueueVolUnit = m_settings.value("avVolUnit", 0).toInt();
-
-    m_investigator->m_infectedFileAction = ACTION_TYPE(m_settings.value("infectAction", 0).toInt());
-    m_investigator->m_saveAvsReports = m_settings.value("saveAVSReports", false).toBool();
-
+    m_investigator->m_saveAvsReports  = m_settings.value("saveAVSReports", false).toBool();
+    m_investigator->m_reportsDir      = m_settings.value("reportsDir", "").toString();
     m_investigator->m_useExternalHandler = m_settings.value("useExternalHandler", false).toBool();
     m_investigator->m_externalHandlerPath = m_settings.value("externalHandlerPath", "").toString();
 
     m_investigator->m_useSyslog = m_settings.value("useSyslog", false).toBool();
     m_investigator->m_syslogAddress = m_settings.value("syslogAddress", "127.0.0.1:514").toString();
     m_investigator->m_syslogPriority = MSG_CATEGORY(m_settings.value("syslogPriority", INFO).toInt());
+    m_investigator->m_useHttpServer = m_settings.value("useHttpServer", true).toBool();
+    m_investigator->m_httpServerAddress = m_settings.value("httpServerAddress", "0.0.0.0:8899").toString();
 
     m_investigator->configureDirs();
     m_investigator->clearStatistic();
     m_investigator->checkSyslogAddress();
+    m_investigator->checkHttpAddress();
     m_investigator->moveToThread(&m_workThread);
 
     m_distributor = new Distributor(nullptr, m_investigator);
     m_distributor->moveToThread(&m_workThread);
 
-    m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray(), &m_lockUi);
+    m_settingsWindow  = new Settings(this, m_investigator, m_settings.value("settingsWinGeometry").toByteArray(), &m_lockUi, m_settings.value("currentSettingsTab", 0).toInt());
     m_statisticWindow = new Statistics(this, m_investigator, m_settings.value("statisticWinGeometry").toByteArray(), &m_lockUi);
 
     connect(this,             &Widget::startWork,                  m_distributor,     &Distributor::startWatchDirEye);
@@ -63,6 +68,8 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     connect(m_investigator,   &Investigator::startExternalHandler, this,              &Widget::startExternalHandler);
 
+    connect(m_settingsWindow, &Settings::startHttpServer,          this,              &Widget::startHttpServer);
+
     connect(m_investigator,   &Investigator::stopProcess,          &m_process,        &QProcess::close);
 
     m_workThread.start();
@@ -78,6 +85,11 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     }
 
     m_investigator->collectStatistics();
+
+    startHttpServer();
+
+    m_settingsWindow->setVisible(true);
+    m_statisticWindow->setVisible(true);
 }
 
 Widget::~Widget() {
@@ -98,21 +110,25 @@ Widget::~Widget() {
     m_settings.setValue("investigatorDir",        m_investigator->m_investigatorDir);
     m_settings.setValue("cleanDir",               m_investigator->m_cleanDir);
     m_settings.setValue("dangerDir",              m_investigator->m_dangerDir);
+    m_settings.setValue("logsDir  ",              m_investigator->m_logsDir);
 
     m_settings.setValue("avFilePath",             m_investigator->m_avPath);
+    m_settings.setValue("infectAction",           m_investigator->m_infectedFileAction);
     m_settings.setValue("avMaxQueueSize",         m_investigator->m_maxQueueSize);
     m_settings.setValue("avMaxQueueVol",          m_investigator->m_maxQueueVolMb);
     m_settings.setValue("avVolUnit",              m_investigator->m_maxQueueVolUnit);
-
-    m_settings.setValue("infectAction",           m_investigator->m_infectedFileAction);
+    m_settings.setValue("reportsDir",             m_investigator->m_reportsDir);
     m_settings.setValue("saveAVSReports",         m_investigator->m_saveAvsReports);
-
     m_settings.setValue("useExternalHandler",     m_investigator->m_useExternalHandler);
     m_settings.setValue("externalHandlerPath",    m_investigator->m_externalHandlerPath);
 
     m_settings.setValue("useSyslog",              m_investigator->m_useSyslog);
     m_settings.setValue("syslogAddress",          m_investigator->m_syslogAddress);
     m_settings.setValue("syslogPriority",         m_investigator->m_syslogPriority);
+    m_settings.setValue("useHttpServer",          m_investigator->m_useHttpServer);
+    m_settings.setValue("httpServerAddress",      m_investigator->m_httpServerAddress);
+
+    m_settings.setValue("currentSettingsTab",     m_settingsWindow->m_currentTab);
 
     log("Programm shutting down.", MSG_CATEGORY(INFO));
 
@@ -201,8 +217,23 @@ void Widget::closeEvent(QCloseEvent *event) {
     }
 }
 
-Investigator* Widget::getInvestigatorPtr() {
-    return m_investigator;
+void Widget::startHttpServer() {
+
+    if(m_httpServer) {
+        m_httpServer->close();
+        delete m_httpServer;
+        m_httpServer = nullptr;
+        log(QString("Http serever stopped."), MSG_CATEGORY(DEBUG));
+    }
+
+    if(!m_investigator->m_useHttpServer)
+        return;
+
+    // Start the HTTP server
+    m_httpServer = new HttpListener(m_investigator->m_httpServerPort,
+                                    m_investigator->m_httpServerIp.toString(),
+                                    new HttpJsonResponder(this, m_investigator),
+                                    this);
 }
 
 void Widget::on_startButton_clicked() {

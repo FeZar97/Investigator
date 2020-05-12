@@ -9,6 +9,8 @@
 #include "settings.h"
 #include "statistics.h"
 #include "distributor.h"
+#include "httplistener.h"
+#include "httpjsonresponder.h"
 
 namespace Ui {
     class Widget;
@@ -29,7 +31,7 @@ public:
     void saveReport(QString report = "", QString baseName = "");
     void startExternalHandler(QString path, QStringList args);
     void closeEvent(QCloseEvent *event) override;
-    Investigator* getInvestigatorPtr();
+    void startHttpServer();
 
 private slots:
     void on_startButton_clicked();
@@ -54,6 +56,8 @@ private:
 
     Settings *m_settingsWindow;
     Statistics *m_statisticWindow;
+
+    HttpListener *m_httpServer{nullptr};
 
 signals:
     void parseReport(QString report);

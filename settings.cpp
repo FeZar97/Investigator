@@ -1,14 +1,19 @@
 #include "settings.h"
 #include "ui_settings.h"
 
-Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geometry, bool *lockUi): QDialog(parent), ui(new Ui::Settings), m_lockUi(lockUi) {
+Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geometry, bool *lockUi, int currentTabIdx): QDialog(parent), ui(new Ui::Settings), m_lockUi(lockUi) {
     ui->setupUi(this);
 
-    setLayout(ui->mainLayout);
     setWindowTitle("Настройки программы");
     restoreGeometry(geometry);
-    setVisible(true);
-    resize(this->minimumSize());
+
+    ui->directoryTab->setLayout(ui->directorySettingsLayout);
+    ui->avsTab->setLayout(ui->avsSettingsLayout);
+    ui->reactionTab->setLayout(ui->reactionSettingsLayout);
+    setMinimumSize(ui->settingsTabWidget->size());
+    setMaximumSize(ui->settingsTabWidget->size());
+
+    ui->settingsTabWidget->setCurrentIndex(currentTabIdx);
 
     m_investigator = investigator;
     updateUi();
@@ -60,11 +65,23 @@ void Settings::on_cleanDirButton_clicked() {
 
 void Settings::on_dangerousDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для зараженных файлов"), m_investigator->m_dangerDir);
-    if(m_investigator->m_dangerDir.isEmpty()) {
+    if(dir.isEmpty()) {
         log("Can't find directory for infected files.", MSG_CATEGORY(DEBUG + LOG_GUI));
     } else {
         m_investigator->m_dangerDir = dir;
         log(QString("Changed directory for infected files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+    }
+
+    updateUi();
+}
+
+void Settings::on_logsDirButton_clicked() {
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для сохранения логов"), m_investigator->m_logsDir);
+    if(dir.isEmpty()) {
+        log("Can't find directory for log files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+    } else {
+        m_investigator->m_logsDir = dir;
+        log(QString("Changed directory for log files: %1").arg(dir), MSG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -85,7 +102,8 @@ void Settings::on_avFileButton_clicked() {
 
 void Settings::updateUi() {
 
-    // ---
+// --- ENABLES ---
+    // --- DIRS PAGE ---
     ui->watchDirLE->setEnabled(!*m_lockUi);
     ui->watchDirButton->setEnabled(!*m_lockUi);
 
@@ -97,63 +115,94 @@ void Settings::updateUi() {
 
     ui->dangerousDirLE->setEnabled(!*m_lockUi);
     ui->dangerousDirButton->setEnabled(!*m_lockUi);
+
+    ui->logsDirLE->setEnabled(!*m_lockUi);
+    ui->logsDirButton->setEnabled(!*m_lockUi);
+
+    // --- AVS PAGE ---
     ui->avFileLE->setEnabled(!*m_lockUi);
     ui->avFileButton->setEnabled(!*m_lockUi);
+
     ui->infectActionCB->setEnabled(!*m_lockUi);
-    ui->saveAVSReportsLabel->setEnabled(!*m_lockUi);
-    ui->saveAVSReportsCB->setEnabled(!*m_lockUi);
+
     ui->avMaxQueueSizeSB->setEnabled(!*m_lockUi);
     ui->avMaxQueueVolSB->setEnabled(!*m_lockUi);
     ui->avMaxQueueVolUnitCB->setEnabled(!*m_lockUi);
+
+    ui->saveAVSReportsLabel->setEnabled(!*m_lockUi);
+    ui->saveAVSReportsCB->setEnabled(!*m_lockUi);
+
+    ui->reportsDirLE->setEnabled(!*m_lockUi);
+    ui->reportsDirButton->setEnabled(!*m_lockUi);
+
     ui->externalHandlerFileCB->setEnabled(!*m_lockUi);
     ui->externalHandlerFileLE->setEnabled(!*m_lockUi);
     ui->externalHandlerFileButton->setEnabled(!*m_lockUi);
+
+    // --- EVENTS PAGE ---
     ui->syslogCB->setEnabled(!*m_lockUi);
     ui->syslogAddressLE->setEnabled(!*m_lockUi);
     ui->syslogInformationLabel->setEnabled(!*m_lockUi);
     ui->syslogLevelCB->setEnabled(!*m_lockUi);
 
-    // ---
+    ui->httpServerCB->setEnabled(!*m_lockUi);
+    ui->httpServerAddressLE->setEnabled(!*m_lockUi);
+
+// --- VALUES ---
+    // --- DIRS PAGE ---
     ui->watchDirLE->setText(m_investigator->m_watchDir);
     ui->tempDirLE->setText(m_investigator->m_investigatorDir);
     ui->cleanDirLE->setText(m_investigator->m_cleanDir);
     ui->dangerousDirLE->setText(m_investigator->m_dangerDir);
+    ui->logsDirLE->setText(m_investigator->m_logsDir);
 
+    // --- AVS PAGE ---
     ui->avFileLE->setText(m_investigator->m_avPath);
+
+    ui->infectActionCB->setCurrentIndex(m_investigator->m_infectedFileAction);
+
     ui->avMaxQueueSizeSB->setValue(m_investigator->m_maxQueueSize);
     ui->avMaxQueueVolSB->setValue(m_investigator->m_maxQueueVolMb);
     ui->avMaxQueueVolUnitCB->setCurrentIndex(m_investigator->m_maxQueueVolUnit);
 
-    ui->infectActionCB->setCurrentIndex(m_investigator->m_infectedFileAction);
     ui->saveAVSReportsCB->setChecked(m_investigator->m_saveAvsReports);
+    ui->reportsDirLE->setText(m_investigator->m_reportsDir);
+    ui->reportsDirLabel->setEnabled(m_investigator->m_saveAvsReports);
+    ui->reportsDirLE->setEnabled(m_investigator->m_saveAvsReports);
+    ui->reportsDirButton->setEnabled(m_investigator->m_saveAvsReports);
 
     ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
     ui->externalHandlerFileLE->setText(m_investigator->m_externalHandlerPath);
     ui->externalHandlerFileLE->setEnabled(m_investigator->m_useExternalHandler);
     ui->externalHandlerFileButton->setEnabled(m_investigator->m_useExternalHandler);
 
+    // --- EVENTS PAGE ---
     ui->syslogCB->setChecked(m_investigator->m_useSyslog);
+    ui->syslogAddressLE->setEnabled(m_investigator->m_useSyslog);
+    ui->syslogLevelCB->setEnabled(m_investigator->m_useSyslog);
     ui->syslogAddressLE->setText(m_investigator->m_syslogAddress);
     ui->syslogLevelCB->setCurrentIndex(m_investigator->m_syslogPriority - 1);
 
-    // --- STYLESHEETS ---
-    ui->watchDirLE->setStyleSheet(QDir(m_investigator->m_watchDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->tempDirLE->setStyleSheet(QDir(m_investigator->m_investigatorDir).exists()                  ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->cleanDirLE->setStyleSheet(QDir(m_investigator->m_cleanDir).exists()                        ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    ui->dangerousDirLE->setStyleSheet(QDir(m_investigator->m_dangerDir).exists()                   ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+    ui->httpServerCB->setChecked(m_investigator->m_useHttpServer);
+    ui->httpServerAddressLE->setText(m_investigator->m_httpServerAddress);
+    ui->httpServerAddressLE->setEnabled(m_investigator->m_useHttpServer);
 
-    ui->avFileLE->setStyleSheet(QFile(m_investigator->m_avPath).exists()                           ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
+// --- STYLESHEETS ---
+    // --- DIRS PAGE ---
+    ui->watchDirLE->setStyleSheet(getLEStyleSheet(QDir(m_investigator->m_watchDir).exists() && !m_investigator->m_watchDir.isEmpty()));
+    ui->tempDirLE->setStyleSheet(getLEStyleSheet(QDir(m_investigator->m_investigatorDir).exists() && !m_investigator->m_investigatorDir.isEmpty()));
+    ui->cleanDirLE->setStyleSheet(getLEStyleSheet(QDir(m_investigator->m_cleanDir).exists() && !m_investigator->m_cleanDir.isEmpty()));
+    ui->dangerousDirLE->setStyleSheet(getLEStyleSheet(QDir(m_investigator->m_dangerDir).exists() && !m_investigator->m_dangerDir.isEmpty()));
+    ui->logsDirLE->setStyleSheet(getLEStyleSheet(QDir(m_investigator->m_logsDir).exists() && !m_investigator->m_logsDir.isEmpty()));
 
-    if(m_investigator->m_useExternalHandler)
-        ui->externalHandlerFileLE->setStyleSheet(QFile(m_investigator->m_externalHandlerPath).exists() ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    else
-        ui->externalHandlerFileLE->setStyleSheet("");
+    // --- AVS PAGE ---
+    ui->avFileLE->setStyleSheet(getLEStyleSheet(QFile(m_investigator->m_avPath).exists()));
+    ui->reportsDirLE->setStyleSheet(m_investigator->m_saveAvsReports ? getLEStyleSheet(QDir(m_investigator->m_reportsDir).exists() && !m_investigator->m_reportsDir.isEmpty()) : "");
+    ui->externalHandlerFileLE->setStyleSheet(m_investigator->m_useExternalHandler ? getLEStyleSheet(QFile(m_investigator->m_externalHandlerPath).exists()) : "");
 
-    if(m_investigator->m_useSyslog)
-        ui->syslogAddressLE->setStyleSheet(m_investigator->checkSyslogAddress() ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet());
-    else
-        ui->syslogAddressLE->setStyleSheet("");
-
+    // --- EVENTS PAGE ---
+    ui->syslogAddressLE->setStyleSheet(m_investigator->m_useSyslog ? getLEStyleSheet(m_investigator->checkSyslogAddress()) : "");
+    ui->httpServerAddressLE->setStyleSheet(m_investigator->m_useHttpServer ? getLEStyleSheet(m_investigator->checkHttpAddress()) : "");
 }
 
 int Settings::getVolUnits() {
@@ -172,52 +221,6 @@ void Settings::on_avMaxQueueVolSB_valueChanged(double maxQueueVolMb) {
 void Settings::on_avMaxQueueVolUnitCB_currentIndexChanged(int unitIdx) {
     m_investigator->m_maxQueueVolUnit = unitIdx;
     emit s_updateUi();
-}
-
-void Settings::on_clearWatchDirButton_clicked() {
-    if(QMessageBox::warning(this,
-                            tr("Подтвердите действие"),
-                            QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_watchDir),
-                            QMessageBox::Yes | QMessageBox::No,
-                            QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Cleaning watching directory."), MSG_CATEGORY(DEBUG + LOG_ROW));
-        emit clearDir(m_investigator->m_watchDir);
-    }
-}
-
-void Settings::on_clearTempDirButton_clicked() {
-    if( QMessageBox::warning(this,
-                             tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить все временные каталоги программы?"),
-                             QMessageBox::Yes | QMessageBox::No,
-                             QMessageBox::Yes) == QMessageBox::Yes) {
-
-        log(QString("Cleaning temp directory."), MSG_CATEGORY(DEBUG + LOG_ROW));
-        emit clearDir(m_investigator->m_inputDir);
-        emit clearDir(m_investigator->m_processDir);
-    }
-}
-
-void Settings::on_clearCleanDirButton_clicked() {
-    if( QMessageBox::warning(this,
-                             tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_cleanDir),
-                             QMessageBox::Yes | QMessageBox::No,
-                             QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Cleaning directory for clean files."), MSG_CATEGORY(DEBUG + LOG_ROW));
-        emit clearDir(m_investigator->m_cleanDir);
-    }
-}
-
-void Settings::on_clearDangerDirButton_clicked() {
-    if(QMessageBox::warning(this,
-                             tr("Подтвердите действие"),
-                             QString("Вы действительно хотите очистить каталог %1 ?").arg(m_investigator->m_dangerDir),
-                             QMessageBox::Yes | QMessageBox::No,
-                             QMessageBox::Yes) == QMessageBox::Yes) {
-        log(QString("Cleaning directory for infected files."), MSG_CATEGORY(DEBUG + LOG_ROW));
-        emit clearDir(m_investigator->m_dangerDir);
-    }
 }
 
 void Settings::on_infectActionCB_currentIndexChanged(int actionIdx) {
@@ -252,16 +255,30 @@ void Settings::on_externalHandlerFileCB_clicked(bool checked) {
     updateUi();
 }
 
+void Settings::on_saveAVSReportsCB_clicked(bool saveState) {
+    m_investigator->m_saveAvsReports = saveState;
+    log(QString("AVS reports saving flag has been changed: %1.").arg(saveState), MSG_CATEGORY(DEBUG));
+    updateUi();
+}
+
+void Settings::on_reportsDirButton_clicked() {
+    QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для сохранения отчетов АВС"), m_investigator->m_reportsDir);
+        if(dir.isEmpty()) {
+            log("Can't find directory for report files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        } else {
+            m_investigator->m_reportsDir = dir;
+            log(QString("Changed directory for report files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        }
+
+        updateUi();
+}
+
+// --- SYSLOG ---
+
 void Settings::on_syslogCB_clicked(bool checked) {
     m_investigator->m_useSyslog = checked;
     m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
     log(QString("Change state of syslog using: %1.").arg(checked), MSG_CATEGORY(DEBUG));
-    updateUi();
-}
-
-void Settings::on_syslogAddressLE_textChanged(const QString &addres) {
-    m_investigator->m_syslogAddress = addres;
-    log(QString("Changed address of syslog demon: %1.").arg(addres), MSG_CATEGORY(DEBUG));
     updateUi();
 }
 
@@ -272,8 +289,43 @@ void Settings::on_syslogLevelCB_currentIndexChanged(int level) {
     updateUi();
 }
 
-void Settings::on_saveAVSReportsCB_clicked(bool saveState) {
-    m_investigator->m_saveAvsReports = saveState;
-    log(QString("AVS reports saving flag has been changed: %1.").arg(saveState), MSG_CATEGORY(DEBUG));
+void Settings::on_syslogAddressLE_editingFinished() {
+    m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
+    log(QString("Changed address of syslog demon: %1.").arg(m_investigator->m_syslogAddress), MSG_CATEGORY(DEBUG));
     updateUi();
+}
+
+void Settings::on_syslogAddressLE_textChanged(const QString &newAddress) {
+    Q_UNUSED(newAddress)
+    ui->syslogAddressLE->setStyleSheet(Stylehelper::changedLEStylesheet());
+}
+
+// --- HTTP SERVER ---
+
+void Settings::on_httpServerCB_clicked(bool checked) {
+    m_investigator->m_useHttpServer = checked;
+    m_investigator->m_httpServerAddress = ui->httpServerAddressLE->text();
+    log(QString("Change state of http using: %1.").arg(checked), MSG_CATEGORY(DEBUG));
+    emit startHttpServer();
+    updateUi();
+}
+
+void Settings::on_httpServerAddressLE_editingFinished() {
+    m_investigator->m_httpServerAddress = ui->httpServerAddressLE->text();
+    log(QString("Changed address of http address: %1.").arg(m_investigator->m_httpServerAddress), MSG_CATEGORY(DEBUG));
+    emit startHttpServer();
+    updateUi();
+}
+
+void Settings::on_httpServerAddressLE_textChanged(const QString &newAddress) {
+    Q_UNUSED(newAddress)
+    ui->httpServerAddressLE->setStyleSheet(Stylehelper::changedLEStylesheet());
+}
+
+QString Settings::getLEStyleSheet(bool isCorrect) {
+    return isCorrect ? Stylehelper::defaultLEStylesheet() : Stylehelper::incorrectLEStylesheet();
+}
+
+void Settings::on_settingsTabWidget_currentChanged(int index) {
+    m_currentTab = index;
 }
