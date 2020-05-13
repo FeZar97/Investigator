@@ -11,10 +11,15 @@ void HttpJsonResponder::service(HttpRequest& request, HttpResponse& response) {
 
     QJsonObject obj;
     if(m_investigator) {
-        obj.insert("workTime", m_investigator->getWorkTime());
-        obj.insert("infectedObj", m_investigator->getInfectedFilesNb());
-        obj.insert("totalObj", m_investigator->getProcessedFilesNb());
-        obj.insert("totalVolMb", volumeToString(m_investigator->getProcessedFilesSizeMb()));
+        obj.insert("avsBaseVersion",    m_investigator->m_baseVersion);
+        obj.insert("m52coreVersion",    m_investigator->m_m52coreVersion);
+        obj.insert("drwebCoreVersion",  m_investigator->m_drwebCoreVersion);
+        obj.insert("kasperCoreVersion", m_investigator->m_kasperCoreVersion);
+        obj.insert("totalVolInByte",    (long long)(m_investigator->m_processedFilesSizeMb * 8));
+        obj.insert("infectedObjNb",     m_investigator->getInfectedFilesNb());
+        obj.insert("totalObjNb",        m_investigator->getProcessedFilesNb());
+        obj.insert("workTimeInSec",     m_investigator->m_workTimeInSec);
+        obj.insert("spoVersion",        VERSION);
     } else {
         obj.insert("error", "ptr to investigator has been not defined");
     }

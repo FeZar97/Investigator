@@ -5,10 +5,10 @@ Statistics::Statistics(QWidget *parent, Investigator* investigator, QByteArray g
 
     ui->setupUi(this);
 
-    setLayout(ui->mainLayout);
     setWindowTitle("Статистика работы");
     restoreGeometry(geometry);
-    resize(this->minimumSize());
+
+    setLayout(ui->mainLayout);
 
     m_investigator = investigator;
     m_workTimer.setInterval(500);
@@ -51,10 +51,11 @@ void Statistics::updateUi() {
         }
     }
 
+    m_investigator->m_workTimeInSec = QTime(m_investigator->m_startTime.time()).secsTo(m_investigator->getEndTime().time());
     m_investigator->m_workTime = QString("%1 дней ").arg( days ) +
-                                 QTime(0,0,0,0).addSecs(QTime(m_investigator->m_startTime.time()).secsTo(m_investigator->getEndTime().time())).toString("hh ч. mm мин. ss сек.");
+                                 QTime(0,0,0,0).addSecs(m_investigator->m_workTimeInSec).toString("hh ч. mm мин. ss сек.");
     m_investigator->m_workTimeEn = QString("%1 days ").arg( days ) +
-                                 QTime(0,0,0,0).addSecs(QTime(m_investigator->m_startTime.time()).secsTo(m_investigator->getEndTime().time())).toString("hh 'h.' mm 'min.' ss 'sec.'");
+                                 QTime(0,0,0,0).addSecs(m_investigator->m_workTimeInSec).toString("hh 'h.' mm 'min.' ss 'sec.'");
 
     ui->workTimeInfoLabel->setText(m_investigator->m_workTime);
 
@@ -91,6 +92,7 @@ void Statistics::updateUi() {
                      )
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
+
     ui->tableView->resizeRowsToContents();
 }
 

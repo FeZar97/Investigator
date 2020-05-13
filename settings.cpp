@@ -10,6 +10,7 @@ Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geome
     ui->directoryTab->setLayout(ui->directorySettingsLayout);
     ui->avsTab->setLayout(ui->avsSettingsLayout);
     ui->reactionTab->setLayout(ui->reactionSettingsLayout);
+
     setMinimumSize(ui->settingsTabWidget->size());
     setMaximumSize(ui->settingsTabWidget->size());
 
@@ -129,24 +130,21 @@ void Settings::updateUi() {
     ui->avMaxQueueVolSB->setEnabled(!*m_lockUi);
     ui->avMaxQueueVolUnitCB->setEnabled(!*m_lockUi);
 
-    ui->saveAVSReportsLabel->setEnabled(!*m_lockUi);
     ui->saveAVSReportsCB->setEnabled(!*m_lockUi);
-
-    ui->reportsDirLE->setEnabled(!*m_lockUi);
-    ui->reportsDirButton->setEnabled(!*m_lockUi);
+    ui->reportsDirLE->setEnabled(!*m_lockUi && m_investigator->m_saveAvsReports);
+    ui->reportsDirButton->setEnabled(!*m_lockUi && m_investigator->m_saveAvsReports);
 
     ui->externalHandlerFileCB->setEnabled(!*m_lockUi);
-    ui->externalHandlerFileLE->setEnabled(!*m_lockUi);
-    ui->externalHandlerFileButton->setEnabled(!*m_lockUi);
+    ui->externalHandlerFileLE->setEnabled(!*m_lockUi && m_investigator->m_useExternalHandler);
+    ui->externalHandlerFileButton->setEnabled(!*m_lockUi && m_investigator->m_useExternalHandler);
 
     // --- EVENTS PAGE ---
     ui->syslogCB->setEnabled(!*m_lockUi);
-    ui->syslogAddressLE->setEnabled(!*m_lockUi);
-    ui->syslogInformationLabel->setEnabled(!*m_lockUi);
-    ui->syslogLevelCB->setEnabled(!*m_lockUi);
+    ui->syslogAddressLE->setEnabled(!*m_lockUi && m_investigator->m_useSyslog);
+    ui->syslogLevelCB->setEnabled(!*m_lockUi && m_investigator->m_useSyslog);
 
     ui->httpServerCB->setEnabled(!*m_lockUi);
-    ui->httpServerAddressLE->setEnabled(!*m_lockUi);
+    ui->httpServerAddressLE->setEnabled(!*m_lockUi && m_investigator->m_useHttpServer);
 
 // --- VALUES ---
     // --- DIRS PAGE ---
@@ -167,25 +165,17 @@ void Settings::updateUi() {
 
     ui->saveAVSReportsCB->setChecked(m_investigator->m_saveAvsReports);
     ui->reportsDirLE->setText(m_investigator->m_reportsDir);
-    ui->reportsDirLabel->setEnabled(m_investigator->m_saveAvsReports);
-    ui->reportsDirLE->setEnabled(m_investigator->m_saveAvsReports);
-    ui->reportsDirButton->setEnabled(m_investigator->m_saveAvsReports);
 
     ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
     ui->externalHandlerFileLE->setText(m_investigator->m_externalHandlerPath);
-    ui->externalHandlerFileLE->setEnabled(m_investigator->m_useExternalHandler);
-    ui->externalHandlerFileButton->setEnabled(m_investigator->m_useExternalHandler);
 
     // --- EVENTS PAGE ---
     ui->syslogCB->setChecked(m_investigator->m_useSyslog);
-    ui->syslogAddressLE->setEnabled(m_investigator->m_useSyslog);
-    ui->syslogLevelCB->setEnabled(m_investigator->m_useSyslog);
     ui->syslogAddressLE->setText(m_investigator->m_syslogAddress);
     ui->syslogLevelCB->setCurrentIndex(m_investigator->m_syslogPriority - 1);
 
     ui->httpServerCB->setChecked(m_investigator->m_useHttpServer);
     ui->httpServerAddressLE->setText(m_investigator->m_httpServerAddress);
-    ui->httpServerAddressLE->setEnabled(m_investigator->m_useHttpServer);
 
 // --- STYLESHEETS ---
     // --- DIRS PAGE ---

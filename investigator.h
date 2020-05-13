@@ -22,7 +22,7 @@
 
 #define     MAJOR_VERSION         "1"
 #define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.6"
+#define     PATCH_VERSION         "5.13"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"
@@ -106,6 +106,7 @@ public:
     QString m_syslogAddress; // адрес syslogd
     MSG_CATEGORY m_syslogPriority; // нижняя граница приоритета сообщений, которые следует отправлять в сислог
 
+    long long m_workTimeInSec{-1}; // время работы в секундах
     QString m_workTime{""}; // время работы в формате "d дней hh ч. mm мин. ss сек"
     QString m_workTimeEn{""}; // время работы в формате "d days hh h. mm min. ss sec"
 
