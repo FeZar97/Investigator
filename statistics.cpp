@@ -51,7 +51,7 @@ void Statistics::updateUi() {
         }
     }
 
-    m_investigator->m_workTimeInSec = QTime(m_investigator->m_startTime.time()).secsTo(m_investigator->getEndTime().time());
+    m_investigator->m_workTimeInSec = QDateTime(m_investigator->m_startTime).secsTo(m_investigator->getEndTime());
     m_investigator->m_workTime = QString("%1 дней ").arg( days ) +
                                  QTime(0,0,0,0).addSecs(m_investigator->m_workTimeInSec).toString("hh ч. mm мин. ss сек.");
     m_investigator->m_workTimeEn = QString("%1 days ").arg( days ) +
@@ -81,7 +81,15 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(6,0), m_investigator->m_inQueueFilesNb, Qt::DisplayRole);
 
     // версии АВС
-    m_model.setData(m_model.index(7,0), m_investigator->m_avVersion, Qt::DisplayRole);
+    m_model.setData(m_model.index(7,0), QString("Версия баз: %1;\n"
+                                                "Ядро М-52: %2;\n"
+                                                "Ядро DrWeb: %3;\n"
+                                                "Ядро Kaspersky: %4;")
+                                                .arg(m_investigator->m_baseVersion)
+                                                .arg(m_investigator->m_m52coreVersion)
+                                                .arg(m_investigator->m_drwebCoreVersion)
+                                                .arg(m_investigator->m_kasperCoreVersion)
+                                                , Qt::DisplayRole);
 
     m_model.item(6,0)->setBackground(
                 (
@@ -92,8 +100,6 @@ void Statistics::updateUi() {
                      )
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
-
-    ui->tableView->resizeRowsToContents();
 }
 
 void Statistics::on_clearButton_clicked() {

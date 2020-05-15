@@ -31,6 +31,7 @@ void Settings::on_watchDirButton_clicked() {
     } else {
         m_investigator->m_watchDir = dir;
         log(QString("Changed watch dir: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        emit restartWatching();
     }
 
     updateUi();

@@ -6,6 +6,7 @@
 #include <QMessageBox>
 
 #include "investigator.h"
+#include "docreportcreator.h"
 
 namespace Ui {
     class Settings;
@@ -64,6 +65,7 @@ private:
 
 signals:
     void log(QString s, MSG_CATEGORY cat);
+    void restartWatching();
     void clearDir(QString dirPath);
     void s_updateUi();
     void startHttpServer();

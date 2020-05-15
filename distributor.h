@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QFileSystemWatcher>
+#include <QMessageBox>
 
 #include "investigator.h"
 

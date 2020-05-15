@@ -149,11 +149,6 @@ bool Investigator::checkAvParams() {
         problem = true;
     }
 
-    if(m_isWorking) {
-        log("Watching has already begun!", MSG_CATEGORY(DEBUG + LOG_GUI));
-        problem = true;
-    }
-
     if(m_isInProcess) {
         log("AVS process has already begun!", MSG_CATEGORY(DEBUG + LOG_GUI));
         problem = true;
@@ -456,6 +451,23 @@ QString Investigator::getReportFileName(QString baseName) {
             .arg(m_reportsDir + "/")
             .arg(baseName.isEmpty() ? QString::number(m_reportCnt++) : baseName)
             .arg(QDate::currentDate().toString("dd.MM.yy"));
+}
+
+bool Investigator::existWorkDirs() {
+    return QDir(m_watchDir).exists() &&
+           QDir(m_investigatorDir).exists() &&
+           QDir(m_inputDir).exists() &&
+           QDir(m_processDir).exists() &&
+           QDir(m_cleanDir).exists() &&
+           QDir(m_dangerDir).exists() &&
+           QDir(m_logsDir).exists() &&
+           ( (m_saveAvsReports && QDir(m_reportsDir).exists()) || (!m_saveAvsReports) );
+}
+
+bool Investigator::existExecutedFiles() {
+    return QFile().exists(m_avPath) &&
+           ( (m_useExternalHandler && QFile(m_externalHandlerPath).exists()) || (!m_useExternalHandler) );
+
 }
 
 QString Investigator::getWorkTime() {

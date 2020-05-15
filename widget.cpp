@@ -9,7 +9,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     ui->setupUi(this);
 
     setLayout(ui->mainLayout);
-    setWindowTitle(QString("Investigator ") + VERSION);
+    setWindowTitle(QString("Investigator %1 #%2").arg(VERSION).arg(PATCH_IDENTIFICATOR));
     restoreGeometry(m_settings.value("geometry").toByteArray());
 
     m_investigator = new Investigator();
@@ -34,7 +34,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     m_investigator->m_syslogAddress = m_settings.value("syslogAddress", "127.0.0.1:514").toString();
     m_investigator->m_syslogPriority = MSG_CATEGORY(m_settings.value("syslogPriority", INFO).toInt());
     m_investigator->m_useHttpServer = m_settings.value("useHttpServer", true).toBool();
-    m_investigator->m_httpServerAddress = m_settings.value("httpServerAddress", "0.0.0.0:8899").toString();
+    m_investigator->m_httpServerAddress = m_settings.value("httpServerAddress", "0.0.0.0:"+QString::number(8898)).toString();
 
     m_investigator->configureDirs();
     m_investigator->clearStatistic();
@@ -59,6 +59,7 @@ Widget::Widget(QWidget *parent): QWidget(parent),
     connect(m_settingsWindow, &Settings::log,                      this,              &Widget::log);
     connect(m_distributor,    &Distributor::log,                   this,              &Widget::log);
 
+    connect(m_settingsWindow, &Settings::restartWatching,          m_distributor,     &Distributor::startWatchDirEye);
     connect(m_settingsWindow, &Settings::clearDir,                 m_distributor,     &Distributor::clearDir);
 
     connect(m_investigator,   &Investigator::process,              this,              &Widget::startProcess);
@@ -237,7 +238,15 @@ void Widget::startHttpServer() {
 }
 
 void Widget::on_startButton_clicked() {
-    emit startWork();
+
+    if(m_investigator->existWorkDirs() && m_investigator->existExecutedFiles()) {
+        emit startWork();
+    } else {
+        QMessageBox::critical(this,
+                             QString("Ошибка!"),
+                             QString("В настройках программы существуют неуказанные пути."),
+                             QString("Ок"));
+    }
 }
 
 void Widget::on_stopButton_clicked() {

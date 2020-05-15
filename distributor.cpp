@@ -9,14 +9,15 @@ Distributor::Distributor(QObject *parent, Investigator* investigator) : QObject(
 Distributor::~Distributor() {}
 
 void Distributor::startWatchDirEye() {
-    if(m_investigator->m_isWorking)
-        stopWatchDirEye();
+
+    if(!m_watchDirEye.directories().isEmpty()) {
+        m_watchDirEye.removePaths(m_watchDirEye.directories());
+    }
 
     if(m_investigator->beginWork()) {
         m_watchDirEye.addPath(m_investigator->m_watchDir);
         onWatchDirChange("");
     }
-
     emit updateUi();
 }
 
@@ -39,7 +40,7 @@ void Distributor::onWatchDirChange(const QString &path) {
                                                                                     .arg(m_investigator->m_watchDir)
                                                                                     .arg(m_investigator->m_inputDir)
                                                                                     .arg(entryListToString(filesInDir)), MSG_CATEGORY(DEBUG));
-        moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir, ALL_FILES);
+        moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir, MAX_FILES_TO_MOVE);
     }
 
     m_investigator->collectStatistics();

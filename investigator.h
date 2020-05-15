@@ -22,8 +22,9 @@
 
 #define     MAJOR_VERSION         "1"
 #define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.13"
+#define     PATCH_VERSION         "5.14"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
+#define     PATCH_IDENTIFICATOR   "3"
 
 #define     INPUT_DIR_NAME        "input"
 #define     OUTPUT_DIR_NAME       "output"
@@ -32,7 +33,10 @@
 #define     LOGS_DIR_NAME         "logs"
 #define     REPORTS_DIR_NAME      "reports"
 
+#define     HTTP_PORT             8898
+
 #define     ALL_FILES             -1
+#define     MAX_FILES_TO_MOVE     20
 
 enum ACTION_TYPE {
     MOVE_TO_DIR,
@@ -70,7 +74,7 @@ public:
     QDateTime m_endTime{QDateTime::currentDateTime()}; // время окончания работы (в процессе работы постоянно обновляется)
 
     QString m_avPath; // путь к исполняемому файлу
-    QString m_baseVersion{""}, m_m52coreVersion, m_drwebCoreVersion, m_kasperCoreVersion; // версии баз
+    QString m_baseVersion{""}, m_m52coreVersion{""}, m_drwebCoreVersion{""}, m_kasperCoreVersion{""}; // версии баз
     QString m_avVersion{"Не удалось определить версию продукта."}; // все версии
 
     QString m_watchDir; // каталог за которой следим
@@ -119,9 +123,9 @@ public:
     QHostAddress m_httpServerIp; // входной адрес для сервера
     quint16 m_httpServerPort; // порт сервера
 
-    int m_maxQueueSize{10}; // макс число файлов в очереди
-    double m_maxQueueVolMb{128.}; // макс объем файлов в очереди в мегабайтах
-    int m_maxQueueVolUnit{0}; // единицы измерения объема
+    int m_maxQueueSize{20}; // макс число файлов в очереди
+    double m_maxQueueVolMb{2.}; // макс объем файлов в очереди в мегабайтах
+    int m_maxQueueVolUnit{1}; // единицы измерения объема
 
     int m_infectedFilesNb{0}; // кол-во найденных зараженных файлов
     int m_inProgressFilesNb{0}; // кол-во файлов в обработке
@@ -177,6 +181,12 @@ public:
     void clearParserTemps();
 
     QString getReportFileName(QString baseName = "");
+
+    /* проверка существования рабочих каталогов */
+    bool existWorkDirs();
+
+    /* проверка существования используемых исполняемых файлов */
+    bool existExecutedFiles();
 
     QString getWorkTime();
     int getInfectedFilesNb();

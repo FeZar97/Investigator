@@ -909,7 +909,7 @@
        <x>2</x>
        <y>4</y>
        <width>657</width>
-       <height>81</height>
+       <height>104</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="reactionSettingsLayout">
@@ -966,7 +966,7 @@
            </font>
           </property>
           <property name="text">
-           <string>127.0.0.1:514</string>
+           <string/>
           </property>
          </widget>
         </item>
@@ -1069,7 +1069,7 @@
            </font>
           </property>
           <property name="text">
-           <string>0.0.0.0:8899</string>
+           <string/>
           </property>
          </widget>
         </item>
