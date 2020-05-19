@@ -1,24 +1,23 @@
 # Project created by QtCreator 2019-09-17T09:15:03
 
-QT += core gui widgets network axcontainer
+QT += core gui widgets network
 
 TARGET = Investigator
 TEMPLATE = app
 
-VERSION = 1.6.05.06
-PATCH_IDENTIFICATOR = 1
+VERSION = 1.6
 
 QMAKE_TARGET_COMPANY     = FeZar97
 QMAKE_TARGET_PRODUCT     = Investigator
 QMAKE_TARGET_DESCRIPTION = Investigator
 QMAKE_TARGET_COPYRIGHT   = FeZar97
 
-DEFINES += QT_DEPRECATED_WARNINGS QT_MESSAGELOGCONTEXT
+DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
 HEADERS +=  distributor.h \
-            docreportcreator.h \
+            defs.h \
             httpjsonresponder.h \
             investigator.h \
             settings.h \
@@ -27,7 +26,6 @@ HEADERS +=  distributor.h \
             widget.h
 
 SOURCES += distributor.cpp \
-           docreportcreator.cpp \
            httpjsonresponder.cpp \
            investigator.cpp \
            main.cpp \

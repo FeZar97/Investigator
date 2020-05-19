@@ -1,11 +1,9 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
-#include <QDialog>
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QtMath>
-#include <QMessageBox>
 
 #include "investigator.h"
 

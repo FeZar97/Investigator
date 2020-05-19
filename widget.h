@@ -2,9 +2,10 @@
 #define WIDGET_H
 
 #include <QWidget>
-#include <QIcon>
-#include <QMenu>
 #include <QSettings>
+#include <QProcess>
+#include <QThread>
+#include <QDebug>
 
 #include "settings.h"
 #include "statistics.h"
@@ -24,9 +25,9 @@ public:
     explicit Widget(QWidget *parent = nullptr);
     ~Widget() override;
 
-    void log(QString s = "", MSG_CATEGORY cat = INFO);
+    void log(QString s = "", LOG_CATEGORY cat = DEBUG);
     void updateUi();
-    void startProcess(QString path, QStringList args);
+    void executeProcess(QString path, QStringList args);
     void parseResultOfProcess();
     void saveReport(QString report = "", QString baseName = "");
     void startExternalHandler(QString path, QStringList args);
@@ -57,7 +58,20 @@ private:
     Settings *m_settingsWindow;
     Statistics *m_statisticWindow;
 
+    QDateTime m_logFileOpenTime;
+
+    // http сервер
     HttpListener *m_httpServer{nullptr};
+
+    // настройки программы
+    void restoreSettings();
+    void saveSettings();
+
+    // сигнально-слотовые соединения
+    void connectObjects();
+
+    // первночалаьное сканирование для получения версий баз
+    void getInitialAvsScan();
 
 signals:
     void parseReport(QString report);

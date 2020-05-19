@@ -17,6 +17,7 @@ Settings::Settings(QWidget *parent, Investigator* investigator, QByteArray geome
     ui->settingsTabWidget->setCurrentIndex(currentTabIdx);
 
     m_investigator = investigator;
+
     updateUi();
 }
 
@@ -26,12 +27,13 @@ Settings::~Settings() {
 
 void Settings::on_watchDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для слежения"), m_investigator->m_watchDir);
-    if(dir.isEmpty()) {
-        log("Can't find watching directory.", MSG_CATEGORY(LOG_GUI + DEBUG));
+    if(!QDir(dir).exists()) {
+        log("Can't find watching directory.", LOG_CATEGORY(GUI + DEBUG));
     } else {
         m_investigator->m_watchDir = dir;
-        log(QString("Changed watch dir: %1").arg(dir), MSG_CATEGORY(DEBUG));
-        emit restartWatching();
+        log(QString("Changed watch dir: %1").arg(dir), LOG_CATEGORY(DEBUG));
+        if(m_investigator->m_isWorking)
+            emit restartWatching();
     }
 
     updateUi();
@@ -42,11 +44,11 @@ void Settings::on_tempDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для временных файлов программы"), m_investigator->m_investigatorDir);
 
     if(dir.isEmpty()) {
-        log("Can't find temp directory.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find temp directory.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_investigatorDir = dir;
         m_investigator->configureDirs();
-        log(QString("Changed temp directory: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        log(QString("Changed temp directory: %1").arg(dir), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -56,10 +58,10 @@ void Settings::on_cleanDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для чистых файлов"), m_investigator->m_cleanDir);
 
     if(dir.isEmpty()) {
-        log("Can't find directory for clean files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find directory for clean files.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_cleanDir = dir;
-        log(QString("Changed directory for clean files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        log(QString("Changed directory for clean files: %1").arg(dir), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -68,10 +70,10 @@ void Settings::on_cleanDirButton_clicked() {
 void Settings::on_dangerousDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для зараженных файлов"), m_investigator->m_dangerDir);
     if(dir.isEmpty()) {
-        log("Can't find directory for infected files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find directory for infected files.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_dangerDir = dir;
-        log(QString("Changed directory for infected files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        log(QString("Changed directory for infected files: %1").arg(dir), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -80,10 +82,10 @@ void Settings::on_dangerousDirButton_clicked() {
 void Settings::on_logsDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для сохранения логов"), m_investigator->m_logsDir);
     if(dir.isEmpty()) {
-        log("Can't find directory for log files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find directory for log files.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_logsDir = dir;
-        log(QString("Changed directory for log files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+        log(QString("Changed directory for log files: %1").arg(dir), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -93,10 +95,10 @@ void Settings::on_avFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса"), m_investigator->m_avPath, tr("*.exe"));
 
     if(!QFile(filePath).exists()) {
-        log("Can't find AVS executable file.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find AVS executable file.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_avPath = filePath;
-        log(QString("Changed executable AVS file: %1").arg(filePath), MSG_CATEGORY(DEBUG));
+        log(QString("Changed executable AVS file: %1").arg(filePath), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -104,6 +106,8 @@ void Settings::on_avFileButton_clicked() {
 
 void Settings::updateUi() {
 
+    ui->syslogCB->blockSignals(true);
+    ui->syslogLevelCB->blockSignals(true);
 // --- ENABLES ---
     // --- DIRS PAGE ---
     ui->watchDirLE->setEnabled(!*m_lockUi);
@@ -161,7 +165,7 @@ void Settings::updateUi() {
     ui->infectActionCB->setCurrentIndex(m_investigator->m_infectedFileAction);
 
     ui->avMaxQueueSizeSB->setValue(m_investigator->m_maxQueueSize);
-    ui->avMaxQueueVolSB->setValue(m_investigator->m_maxQueueVolMb);
+    ui->avMaxQueueVolSB->setValue(m_investigator->m_maxQueueVol);
     ui->avMaxQueueVolUnitCB->setCurrentIndex(m_investigator->m_maxQueueVolUnit);
 
     ui->saveAVSReportsCB->setChecked(m_investigator->m_saveAvsReports);
@@ -194,6 +198,9 @@ void Settings::updateUi() {
     // --- EVENTS PAGE ---
     ui->syslogAddressLE->setStyleSheet(m_investigator->m_useSyslog ? getLEStyleSheet(m_investigator->checkSyslogAddress()) : "");
     ui->httpServerAddressLE->setStyleSheet(m_investigator->m_useHttpServer ? getLEStyleSheet(m_investigator->checkHttpAddress()) : "");
+
+    ui->syslogCB->blockSignals(false);
+    ui->syslogLevelCB->blockSignals(false);
 }
 
 int Settings::getVolUnits() {
@@ -204,8 +211,8 @@ void Settings::on_avMaxQueueSizeSB_valueChanged(int size) {
     m_investigator->m_maxQueueSize = size;
 }
 
-void Settings::on_avMaxQueueVolSB_valueChanged(double maxQueueVolMb) {
-    m_investigator->m_maxQueueVolMb = maxQueueVolMb;
+void Settings::on_avMaxQueueVolSB_valueChanged(double maxQueueVol) {
+    m_investigator->m_maxQueueVol = maxQueueVol;
     emit s_updateUi();
 }
 
@@ -223,7 +230,7 @@ void Settings::on_infectActionCB_currentIndexChanged(int actionIdx) {
         m_investigator->m_useExternalHandler = ui->externalHandlerFileCB->isChecked();
         ui->externalHandlerFileCB->setEnabled(true);
     }
-    log(QString("Changed action type with infected files: %1.").arg(m_investigator->m_infectedFileAction), MSG_CATEGORY(DEBUG));
+    log(QString("Changed action type with infected files: %1.").arg(m_investigator->m_infectedFileAction), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
@@ -231,10 +238,10 @@ void Settings::on_externalHandlerFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор внешнего обработчика"), m_investigator->m_externalHandlerPath, tr("*.*"));
 
     if(!QFile(filePath).exists()) {
-        log("Can't find external handler for infected files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+        log("Can't find external handler for infected files.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_externalHandlerPath = filePath;
-        log(QString("Changed path to extrnal handler: %1.").arg(filePath), MSG_CATEGORY(DEBUG));
+        log(QString("Changed path to extrnal handler: %1.").arg(filePath), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();
@@ -242,23 +249,23 @@ void Settings::on_externalHandlerFileButton_clicked() {
 
 void Settings::on_externalHandlerFileCB_clicked(bool checked) {
     m_investigator->m_useExternalHandler = checked;
-    log(QString("Change state of using external handler for infected files: %1.").arg(checked), MSG_CATEGORY(DEBUG));
+    log(QString("Change state of using external handler for infected files: %1.").arg(checked), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
 void Settings::on_saveAVSReportsCB_clicked(bool saveState) {
     m_investigator->m_saveAvsReports = saveState;
-    log(QString("AVS reports saving flag has been changed: %1.").arg(saveState), MSG_CATEGORY(DEBUG));
+    log(QString("AVS reports saving flag has been changed: %1.").arg(saveState), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
 void Settings::on_reportsDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для сохранения отчетов АВС"), m_investigator->m_reportsDir);
         if(dir.isEmpty()) {
-            log("Can't find directory for report files.", MSG_CATEGORY(DEBUG + LOG_GUI));
+            log("Can't find directory for report files.", LOG_CATEGORY(DEBUG + GUI));
         } else {
             m_investigator->m_reportsDir = dir;
-            log(QString("Changed directory for report files: %1").arg(dir), MSG_CATEGORY(DEBUG));
+            log(QString("Changed directory for report files: %1").arg(dir), LOG_CATEGORY(DEBUG));
         }
 
         updateUi();
@@ -269,20 +276,19 @@ void Settings::on_reportsDirButton_clicked() {
 void Settings::on_syslogCB_clicked(bool checked) {
     m_investigator->m_useSyslog = checked;
     m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
-    log(QString("Change state of syslog using: %1.").arg(checked), MSG_CATEGORY(DEBUG));
+    log(QString("Change state of syslog using: %1.").arg(checked), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
 void Settings::on_syslogLevelCB_currentIndexChanged(int level) {
-    level += 1;
-    m_investigator->m_syslogPriority = MSG_CATEGORY(level);
-    log(QString("Syslog priority level has been changed: %1.").arg(level), MSG_CATEGORY(DEBUG));
+    m_investigator->m_syslogPriority = ( (m_investigator->m_syslogPriority == DEBUG) ? GUI : DEBUG );
+    log(QString("Syslog priority level has been changed: %1.").arg(level), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
 void Settings::on_syslogAddressLE_editingFinished() {
     m_investigator->m_syslogAddress = ui->syslogAddressLE->text();
-    log(QString("Changed address of syslog demon: %1.").arg(m_investigator->m_syslogAddress), MSG_CATEGORY(DEBUG));
+    log(QString("Changed address of syslog demon: %1.").arg(m_investigator->m_syslogAddress), LOG_CATEGORY(DEBUG));
     updateUi();
 }
 
@@ -296,14 +302,14 @@ void Settings::on_syslogAddressLE_textChanged(const QString &newAddress) {
 void Settings::on_httpServerCB_clicked(bool checked) {
     m_investigator->m_useHttpServer = checked;
     m_investigator->m_httpServerAddress = ui->httpServerAddressLE->text();
-    log(QString("Change state of http using: %1.").arg(checked), MSG_CATEGORY(DEBUG));
+    log(QString("Change state of http using: %1.").arg(checked), LOG_CATEGORY(DEBUG));
     emit startHttpServer();
     updateUi();
 }
 
 void Settings::on_httpServerAddressLE_editingFinished() {
     m_investigator->m_httpServerAddress = ui->httpServerAddressLE->text();
-    log(QString("Changed address of http address: %1.").arg(m_investigator->m_httpServerAddress), MSG_CATEGORY(DEBUG));
+    log(QString("Changed address of http address: %1.").arg(m_investigator->m_httpServerAddress), LOG_CATEGORY(DEBUG));
     emit startHttpServer();
     updateUi();
 }

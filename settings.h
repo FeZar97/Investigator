@@ -1,12 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <QDialog>
-#include <QFileDialog>
-#include <QMessageBox>
-
 #include "investigator.h"
-#include "docreportcreator.h"
 
 namespace Ui {
     class Settings;
@@ -34,7 +29,7 @@ private slots:
 
     void on_avFileButton_clicked();
     void on_avMaxQueueSizeSB_valueChanged(int size);
-    void on_avMaxQueueVolSB_valueChanged(double maxQueueVolMb);
+    void on_avMaxQueueVolSB_valueChanged(double maxQueueVol);
     void on_avMaxQueueVolUnitCB_currentIndexChanged(int unitIdx);
 
     void on_infectActionCB_currentIndexChanged(int actionIdx);
@@ -64,7 +59,7 @@ private:
     QString getLEStyleSheet(bool isCorrect);
 
 signals:
-    void log(QString s, MSG_CATEGORY cat);
+    void log(QString s, LOG_CATEGORY cat);
     void restartWatching();
     void clearDir(QString dirPath);
     void s_updateUi();

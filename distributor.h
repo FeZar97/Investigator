@@ -1,9 +1,7 @@
 #ifndef DISTRIBUTOR_H
 #define DISTRIBUTOR_H
 
-#include <QObject>
 #include <QFileSystemWatcher>
-#include <QMessageBox>
 
 #include "investigator.h"
 
@@ -27,7 +25,7 @@ public:
 
 signals:
     void updateUi();
-    void log(QString s, MSG_CATEGORY cat);
+    void log(QString s, LOG_CATEGORY cat);
 };
 
 #endif // DISTRIBUTOR_H

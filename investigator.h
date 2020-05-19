@@ -1,93 +1,39 @@
 #ifndef INVESTIGATOR_H
 #define INVESTIGATOR_H
 
-#include <QObject>
-#include <QDateTime>
-#include <QTimeZone>
-#include <QDir>
-#include <QProcess>
-#include <QThread>
-#include <QFile>
-#include <QFileInfo>
-#include <QTextStream>
-#include <QPalette>
-#include <QDebug>
-#include <QSettings>
 #include <QHostAddress>
 #include <QUdpSocket>
-#include <QTextCodec>
 #include <QNetworkInterface>
 
+#include "defs.h"
 #include "stylehelper.h"
-
-#define     MAJOR_VERSION         "1"
-#define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.14"
-#define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
-#define     PATCH_IDENTIFICATOR   "3"
-
-#define     INPUT_DIR_NAME        "input"
-#define     OUTPUT_DIR_NAME       "output"
-#define     CLEAN_DIR_NAME        "clean"
-#define     DANGER_DIR_NAME       "danger"
-#define     LOGS_DIR_NAME         "logs"
-#define     REPORTS_DIR_NAME      "reports"
-
-#define     HTTP_PORT             8898
-
-#define     ALL_FILES             -1
-#define     MAX_FILES_TO_MOVE     20
-
-enum ACTION_TYPE {
-    MOVE_TO_DIR,
-    DELETE
-};
-
-enum MSG_CATEGORY {
-    INFO     = 0x01,
-    DEBUG    = 0x02,
-    LOG_GUI  = 0x04,
-    LOG_ROW  = 0x08
-};
-
-const static QString dateTimePattern = "yyyy-MM-dd hh:mm:ss";
-const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
-
-void moveFiles(QString sourceDir, QString destinationDir, int limit);
-void moveFile(QString fileName, QString sourceDir, QString destinationDir);
-void clearDir(QString dirName);
-QString entryListToString(QStringList &list);
-QString currentDateTime();
-double dirSizeMb(QString dirName);
-bool isContainedFile(QList<QPair<QString, QString>> &fileList, QString fileName);
-QString volumeToString(double volumeInMb);
 
 class Investigator : public QObject
 {
     Q_OBJECT
 
 public:
-    bool m_isWorking{false};
-    bool m_isInProcess{false};
+    bool m_isWorking{false}; // флаг запущенного мониторинга
+    bool m_isInProcess{false}; // флаг хз чего
 
     QDateTime m_startTime{QDateTime::currentDateTime()}; // время запуска программы
     QDateTime m_endTime{QDateTime::currentDateTime()}; // время окончания работы (в процессе работы постоянно обновляется)
 
-    QString m_avPath; // путь к исполняемому файлу
+    QString m_avPath{"C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe"}; // путь к исполняемому файлу
     QString m_baseVersion{""}, m_m52coreVersion{""}, m_drwebCoreVersion{""}, m_kasperCoreVersion{""}; // версии баз
     QString m_avVersion{"Не удалось определить версию продукта."}; // все версии
 
-    QString m_watchDir; // каталог за которой следим
-    QString m_investigatorDir; // каталог для временных файлов программы
+    QString m_watchDir{""}; // каталог за которой следим
+    QString m_investigatorDir{""}; // каталог для временных файлов программы
 
-    QString m_inputDir; // куда копируются файлы из m_watchDir
-    QString m_processDir; // где проверяются файлы
-    QString m_cleanDir; // каталог для читых файлов
-    QString m_dangerDir; // каталог для зараженных файлов
-    QString m_logsDir; // каталог логов
+    QString m_inputDir{""}; // куда копируются файлы из m_watchDir
+    QString m_processDir{""}; // где проверяются файлы
+    QString m_cleanDir{""}; // каталог для читых файлов
+    QString m_dangerDir{""}; // каталог для зараженных файлов
+    QString m_logsDir{""}; // каталог логов
 
-    QString m_processInfo; // информация для строки в окне статистики
-    QString m_lastReport; // последний репорт
+    QString m_processInfo{""}; // информация для строки в окне статистики
+    QString m_lastReport{""}; // последний репорт
     unsigned long long m_reportCnt{0}; // счетчик репортов
 
     QStringList m_tempSplitList, m_reportLines; // для метода parseReport
@@ -100,15 +46,15 @@ public:
     QList<QPair<QString,QString>> m_infectedFiles; // зараженные файлы, выявленные в процессе проверки
 
     ACTION_TYPE m_infectedFileAction{MOVE_TO_DIR}; // действие с зараженными файлами
-    bool m_saveAvsReports; // флаг сохранения отчетов АВС
-    QString m_reportsDir; // каталог сохранения отчетов АВС
+    bool m_saveAvsReports{false}; // флаг сохранения отчетов АВС
+    QString m_reportsDir{""}; // каталог сохранения отчетов АВС
 
     bool m_useExternalHandler{false}; // флаг использования внещнего обработчика
     QString m_externalHandlerPath{""}; // путь к внешнему обработчику
 
-    bool m_useSyslog{false}; // флаг логгирования в сислог
-    QString m_syslogAddress; // адрес syslogd
-    MSG_CATEGORY m_syslogPriority; // нижняя граница приоритета сообщений, которые следует отправлять в сислог
+    bool m_useSyslog{true}; // флаг логгирования в сислог
+    QString m_syslogAddress{""}; // адрес syslogd
+    LOG_CATEGORY m_syslogPriority{GUI}; // нижняя граница приоритета сообщений, которые следует отправлять в сислог
 
     long long m_workTimeInSec{-1}; // время работы в секундах
     QString m_workTime{""}; // время работы в формате "d дней hh ч. mm мин. ss сек"
@@ -117,6 +63,8 @@ public:
     QUdpSocket *m_syslogSocket; // сокет для syslog
     QHostAddress m_syslogIpAddress; // адрес демона
     quint16 m_syslogPort; // используемый порт
+    int m_syslogInfoUpdatePeriodInSecs{60}; // период отправки инфы о программе в сислог
+    QDateTime m_lastSyslogInfoUpdate{QDateTime::currentDateTime()}; // временная метка последнего апдейта ушедшего в сислог
 
     bool m_useHttpServer{true}; // флаг использования http сервера
     QString m_httpServerAddress; // адрес http
@@ -124,7 +72,7 @@ public:
     quint16 m_httpServerPort; // порт сервера
 
     int m_maxQueueSize{20}; // макс число файлов в очереди
-    double m_maxQueueVolMb{2.}; // макс объем файлов в очереди в мегабайтах
+    double m_maxQueueVol{2.}; // макс объем файлов в очереди в ПОПУГАЯХ
     int m_maxQueueVolUnit{1}; // единицы измерения объема
 
     int m_infectedFilesNb{0}; // кол-во найденных зараженных файлов
@@ -136,6 +84,8 @@ public:
     double m_currentProcessSpeed{0.}; // текущая скорость проверки
     int m_inQueueFilesNb{0}; // количество файлов в очереди
     double m_inQueueFileSizeMb{0}; // размер файлов в очереди
+
+    long long m_scanningErrorFilesNb{0}; // ошибки сканирования
 
     explicit Investigator(QObject *parent = nullptr);
 
@@ -154,7 +104,7 @@ public:
     QDateTime getEndTime();
 
     /* очистка статистики */
-    void clearStatistic();
+    void clearStatistic(bool force = false);
 
     /* настройка путей до временных каталогов в соответствии с выбранным каталогом программы */
     void configureDirs();
@@ -182,11 +132,7 @@ public:
 
     QString getReportFileName(QString baseName = "");
 
-    /* проверка существования рабочих каталогов */
-    bool existWorkDirs();
-
-    /* проверка существования используемых исполняемых файлов */
-    bool existExecutedFiles();
+    QString getCurrentStatistic();
 
     QString getWorkTime();
     int getInfectedFilesNb();
@@ -204,7 +150,7 @@ signals:
     void stopProcess();
 
     /* вывод информации */
-    void log(QString s, MSG_CATEGORY cat);
+    void log(QString s, LOG_CATEGORY cat);
 
     void saveReport(QString report = "", QString baseName = "");
 

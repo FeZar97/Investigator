@@ -1,7 +1,6 @@
 #ifndef HTTPJSONRESPONDER_H
 #define HTTPJSONRESPONDER_H
 
-#include <QString>
 #include <QJsonObject>
 #include <QJsonDocument>
 

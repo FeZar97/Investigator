@@ -94,6 +94,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Каталог, через который осуществляется передача файлов извне</string>
+          </property>
           <property name="text">
            <string>Входной каталог:</string>
           </property>
@@ -108,6 +111,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь до входного каталого</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -139,6 +145,9 @@
             <width>0</width>
             <height>0</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Выбор входного каталога</string>
           </property>
           <property name="text">
            <string/>
@@ -175,6 +184,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Каталога для временных файлов программы </string>
+          </property>
           <property name="text">
            <string>Каталог для временных файлов:</string>
           </property>
@@ -189,6 +201,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь до каталога для временных файлов программы</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -208,6 +223,9 @@
             <width>23</width>
             <height>23</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Выбор каталога для временных файлов программы</string>
           </property>
           <property name="text">
            <string/>
@@ -244,6 +262,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Каталог, в который кладутся файлы прошедшие проверку средствами АВС и не представляющие угрозы</string>
+          </property>
           <property name="text">
            <string>Каталог для чистых файлов:</string>
           </property>
@@ -258,6 +279,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь до каталога для чистых файлов</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -277,6 +301,9 @@
             <width>23</width>
             <height>23</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Выбор каталога для чистых файлов</string>
           </property>
           <property name="text">
            <string/>
@@ -313,6 +340,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Каталог для зараженых файлов </string>
+          </property>
           <property name="text">
            <string>Каталог для зараженных файлов:</string>
           </property>
@@ -327,6 +357,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь до каталога для зараженных файлов</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -346,6 +379,9 @@
             <width>23</width>
             <height>23</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Выбор каталога для зараженных файлов</string>
           </property>
           <property name="text">
            <string/>
@@ -397,6 +433,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Полный путь до каталога для логов программы</string>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -415,6 +454,9 @@
             <width>23</width>
             <height>23</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Выбор каталога для логов программы</string>
           </property>
           <property name="text">
            <string/>
@@ -468,6 +510,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Полный путь к исполняемому файлу АВС</string>
+          </property>
           <property name="text">
            <string>Путь к АВС:</string>
           </property>
@@ -485,6 +530,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь к исполняемому файлу АВС</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -512,6 +560,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Выбор исполняемого файла АВС</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -544,6 +595,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Действие, выполняемое при обнаружении зараженного файла</string>
+          </property>
           <property name="text">
            <string>Действие с зараженными файлами:</string>
           </property>
@@ -558,6 +612,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Действие, выполняемое при обнаружении зараженного файла</string>
           </property>
           <property name="sizeAdjustPolicy">
            <enum>QComboBox::AdjustToContents</enum>
@@ -613,6 +670,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Порог очереди файлов во входной директории</string>
+          </property>
           <property name="text">
            <string>Пороги очередей:</string>
           </property>
@@ -630,6 +690,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Порог по кол-ву файлов</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -663,6 +726,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Порог по объему файлов</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -737,6 +803,9 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Включение/отключение сохранения отчетов АВС без какого либо форматирования (as is)</string>
+          </property>
           <property name="text">
            <string>Сохранять отчеты АВС:</string>
           </property>
@@ -744,6 +813,9 @@
         </item>
         <item>
          <widget class="QCheckBox" name="saveAVSReportsCB">
+          <property name="toolTip">
+           <string>Флаг включения/отключения сохранения отчетов АВС без какого либо форматирования (as is)</string>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -756,6 +828,9 @@
             <family>Courier New</family>
             <pointsize>10</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Каталог для сохранения отчетов АВС</string>
           </property>
           <property name="text">
            <string>Каталог:</string>
@@ -771,6 +846,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Каталог для сохранения отчетов АВС</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -798,6 +876,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Выбор каталога для сохранения отчетов АВС</string>
           </property>
           <property name="text">
            <string/>
@@ -832,6 +913,9 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Использование внешнего обработчика позволяет вызывать внешний исполняемый файл при обнаружении инфицированного файла и передавать в качестве аргументов вызова &quot;полный путь до инфицированного файла&quot; &quot;тип заражения&quot; &quot;версия баз АВС&quot;</string>
+          </property>
           <property name="text">
            <string>Использовать внешний обработчик:</string>
           </property>
@@ -847,6 +931,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Флаг использования внешнего обработчика инфицированных файлов</string>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -861,6 +948,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Полный путь до исполняемого файла внешнего обработчика зараженных файлов</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -888,6 +978,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Выбрать внешний обработчик для зараженных файлов</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -935,6 +1028,9 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Данный параметр позволяет отправлять на внешний syslog сервер информационные сообщения</string>
+          </property>
           <property name="text">
            <string>Syslog:</string>
           </property>
@@ -949,6 +1045,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Флаг включения/отключения отсылки информационных сообщений на syslog сервер</string>
           </property>
           <property name="text">
            <string/>
@@ -965,6 +1064,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Адрес и порт внешнего syslog сервера</string>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -977,6 +1079,9 @@
             <family>Courier New</family>
             <pointsize>10</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Уровень логов, отпарвляемых на syslog сервер</string>
           </property>
           <property name="text">
            <string>Уровень информирования:</string>
@@ -991,14 +1096,17 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
           <item>
            <property name="text">
-            <string>обнаруженные вирусы</string>
+            <string>полное логирование</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>полное логирование</string>
+            <string>обнаруженные вирусы</string>
            </property>
           </item>
          </widget>
@@ -1040,8 +1148,11 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Включение(отключение) локального http сервера, позволяющего отправлять накопленную статистику в виде JSON.</string>
+          </property>
           <property name="text">
-           <string>Http сервер:</string>
+           <string>Локальный Http сервер:</string>
           </property>
          </widget>
         </item>
@@ -1052,6 +1163,9 @@
             <family>Courier New</family>
             <pointsize>10</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Флаг включения/выключения http сервера</string>
           </property>
           <property name="text">
            <string/>
@@ -1067,6 +1181,9 @@
             <weight>50</weight>
             <bold>false</bold>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Адрес и порт, которые будет &quot;слушать&quot; http сервер</string>
           </property>
           <property name="text">
            <string/>

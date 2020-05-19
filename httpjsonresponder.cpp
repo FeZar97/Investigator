@@ -20,6 +20,9 @@ void HttpJsonResponder::service(HttpRequest& request, HttpResponse& response) {
         obj.insert("totalObjNb",        m_investigator->getProcessedFilesNb());
         obj.insert("workTimeInSec",     m_investigator->m_workTimeInSec);
         obj.insert("spoVersion",        VERSION + "_" + PATCH_IDENTIFICATOR);
+        obj.insert("queueFilesNb",      m_investigator->m_inQueueFilesNb);
+        obj.insert("queueVolInBytes",   ((__int64)(m_investigator->m_inQueueFileSizeMb * 1024 * 1024)));
+        obj.insert("errorScanning",     m_investigator->m_scanningErrorFilesNb);
     } else {
         obj.insert("error", "ptr to investigator has been not defined");
     }

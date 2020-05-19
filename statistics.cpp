@@ -30,7 +30,7 @@ void Statistics::updateUi() {
     ui->InfoLabel->setText(m_investigator->m_processInfo);
 
     m_model.setHorizontalHeaderLabels(QStringList() << "M-52");
-    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов"          << "Просканировано файлов"
+    m_model.setVerticalHeaderLabels(QStringList() << "Обнаружено зараженных файлов"          << "Ошибки сканирования"                   << "Просканировано файлов"
                                                   << "Объем\nпросканированных файлов"        << "Средняя скорость\nсканирования (МБ/с)"
                                                   << "Текущая скорость\nсканирования (МБ/с)" << "Файлов в обработке"
                                                   << "Файлов в очереди"                      << "Версия АВС");
@@ -62,26 +62,29 @@ void Statistics::updateUi() {
     // обнаружено зараженных файлов
     m_model.setData(m_model.index(0,0), m_investigator->m_infectedFilesNb, Qt::DisplayRole);
 
+    // ошибки сканирования
+    m_model.setData(m_model.index(1,0), m_investigator->m_scanningErrorFilesNb, Qt::DisplayRole);
+
     // просканировано файлов
-    m_model.setData(m_model.index(1,0), m_investigator->m_processedFilesNb, Qt::DisplayRole);
+    m_model.setData(m_model.index(2,0), m_investigator->m_processedFilesNb, Qt::DisplayRole);
 
     // объем просканированных файлов
-    m_model.setData(m_model.index(2,0), volumeToString(m_investigator->m_processedFilesSizeMb), Qt::DisplayRole);
+    m_model.setData(m_model.index(3,0), volumeToString(m_investigator->m_processedFilesSizeMb), Qt::DisplayRole);
 
     // средняя скорость сканирования
-    m_model.setData(m_model.index(3,0), QString::number(m_investigator->m_averageProcessSpeed, 'f', 2), Qt::DisplayRole);
+    m_model.setData(m_model.index(4,0), QString::number(m_investigator->m_averageProcessSpeed, 'f', 2), Qt::DisplayRole);
 
     // текущая скорость сканирования
-    m_model.setData(m_model.index(4,0), QString::number(m_investigator->m_currentProcessSpeed, 'f', 2), Qt::DisplayRole);
+    m_model.setData(m_model.index(5,0), QString::number(m_investigator->m_currentProcessSpeed, 'f', 2), Qt::DisplayRole);
 
     // файлов в обработке
-    m_model.setData(m_model.index(5,0), m_investigator->m_inProgressFilesNb, Qt::DisplayRole);
+    m_model.setData(m_model.index(6,0), m_investigator->m_inProgressFilesNb, Qt::DisplayRole);
 
     // файлов в очереди
-    m_model.setData(m_model.index(6,0), m_investigator->m_inQueueFilesNb, Qt::DisplayRole);
+    m_model.setData(m_model.index(7,0), m_investigator->m_inQueueFilesNb, Qt::DisplayRole);
 
     // версии АВС
-    m_model.setData(m_model.index(7,0), QString("Версия баз: %1;\n"
+    m_model.setData(m_model.index(8,0), QString("Версия баз: %1;\n"
                                                 "Ядро М-52: %2;\n"
                                                 "Ядро DrWeb: %3;\n"
                                                 "Ядро Kaspersky: %4;")
@@ -91,15 +94,24 @@ void Statistics::updateUi() {
                                                 .arg(m_investigator->m_kasperCoreVersion)
                                                 , Qt::DisplayRole);
 
-    m_model.item(6,0)->setBackground(
+    m_model.item(7,0)->setBackground(
                 (
                      (
                         (m_investigator->m_inQueueFilesNb >= m_investigator->m_maxQueueSize)
                       ||
-                        (m_investigator->m_inQueueFileSizeMb > m_investigator->m_maxQueueVolMb * (m_investigator->m_maxQueueVolUnit ? 1024 : 1) )
+                        (m_investigator->m_inQueueFileSizeMb > m_investigator->m_maxQueueVol * (m_investigator->m_maxQueueVolUnit ? 1024 : 1) )
                      )
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
+    ui->tableView->resizeRowsToContents();
+
+    // обновление инфы в сислоге каждые m_syslogInfoUpdatePeriodInSecs секунд
+    QDateTime cdt = QDateTime::currentDateTime();
+    if(m_investigator->m_lastSyslogInfoUpdate.secsTo(cdt) > m_investigator->m_syslogInfoUpdatePeriodInSecs) {
+        m_investigator->m_lastSyslogInfoUpdate = cdt;
+        m_investigator->sendSyslogMessage(m_investigator->getCurrentStatistic());
+    }
+
 }
 
 void Statistics::on_clearButton_clicked() {
@@ -108,6 +120,6 @@ void Statistics::on_clearButton_clicked() {
                             QString("Вы действительно хотите сбросить накопленную статистику?"),
                             QString("Да"), QString("Нет"), QString(),
                             1) == 0) {
-        m_investigator->clearStatistic();
+        m_investigator->clearStatistic(true);
     }
 }
