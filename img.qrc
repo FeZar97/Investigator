@@ -10,5 +10,6 @@
         <file>img/CLEARDIR.png</file>
         <file>img/LOCK.jpg</file>
         <file>img/UNLOCK.jpg</file>
+        <file>img/SPLASHSCREEN.png</file>
     </qresource>
 </RCC>

@@ -19,8 +19,8 @@
 
 #define     MAJOR_VERSION         "1"
 #define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.20"
-#define     PATCH_IDENTIFICATOR   "15"
+#define     PATCH_VERSION         "5.21"
+#define     PATCH_IDENTIFICATOR   "1"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
 #define     INPUT_DIR_NAME        "input"

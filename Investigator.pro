@@ -47,3 +47,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 RESOURCES += img.qrc
 
 win32: RC_ICONS = $$PWD/img/INVESTIGATOR.ico
+
+DISTFILES +=

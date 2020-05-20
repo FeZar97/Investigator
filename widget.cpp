@@ -207,10 +207,10 @@ void Widget::startHttpServer() {
         return;
 
     // Start the HTTP server
-    m_httpServer = new HttpListener(m_investigator->m_httpServerPort,
-                                    m_investigator->m_httpServerIp.toString(),
-                                    new HttpJsonResponder(this, m_investigator),
-                                    this);
+    // m_httpServer = new HttpListener(m_investigator->m_httpServerPort,
+    //                                 m_investigator->m_httpServerIp.toString(),
+    //                                 new HttpJsonResponder(this, m_investigator),
+    //                                 this);
     log(QString("Http сервер запущен."), LOG_CATEGORY(DEBUG));
 }
 
