@@ -10,48 +10,36 @@ Distributor::~Distributor() {}
 
 void Distributor::startWatchDirEye() {
 
+    // удаление тех путей который уже были в watcher
     if(!m_watchDirEye.directories().isEmpty()) {
         m_watchDirEye.removePaths(m_watchDirEye.directories());
     }
 
-    if(m_investigator->beginWork()) {
-        m_watchDirEye.addPath(m_investigator->m_watchDir);
-        onWatchDirChange("");
-    }
-    emit updateUi();
+    m_watchDirEye.addPath(m_investigator->m_watchDir);
+
+    // запуск слежения
+    onWatchDirChange("");
 }
 
+// остановка слежения
 void Distributor::stopWatchDirEye() {
-    m_investigator->stopWork();
-
     if(!m_watchDirEye.directories().isEmpty()) {
         m_watchDirEye.removePaths(m_watchDirEye.directories());
     }
-
-    emit updateUi();
 }
 
 void Distributor::onWatchDirChange(const QString &path) {
     Q_UNUSED(path)
 
-    if(QDir(m_investigator->m_watchDir).entryList(usingFilters).size()) {
-        QStringList filesInDir = QDir(m_investigator->m_watchDir).entryList(usingFilters);
-        log(QString("Transferring %1 files from watchDir(%2) into inputDir(%3): %4").arg(QDir(m_investigator->m_watchDir).entryList(usingFilters).size())
-                                                                                    .arg(m_investigator->m_watchDir)
-                                                                                    .arg(m_investigator->m_inputDir)
-                                                                                    .arg(entryListToString(filesInDir)), LOG_CATEGORY(DEBUG));
+    // если есть что переносить
+    while(QDir(m_investigator->m_watchDir).entryList(usingFilters).size()) {
         moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir, MAX_FILES_TO_MOVE);
     }
 
-    m_investigator->collectStatistics();
-
-    if(m_investigator->m_isWorking)
-        m_investigator->onProcessFinished();
+    // попытка начать проверку файлов
+    emit tryProcess();
 }
 
-void Distributor::clearDir(QString dirPath) {
-    foreach(QFileInfo fileInfo, QDir(dirPath).entryInfoList(usingFilters)) {
-        QFile::remove(fileInfo.absoluteFilePath());
-    }
-    m_investigator->collectStatistics();
+void Distributor::distributorMoveFiles(QString sourceDir, QString destinationDir, int limit) {
+    moveFiles(sourceDir, destinationDir, limit);
 }

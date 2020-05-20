@@ -61,7 +61,6 @@ private:
 signals:
     void log(QString s, LOG_CATEGORY cat);
     void restartWatching();
-    void clearDir(QString dirPath);
     void s_updateUi();
     void startHttpServer();
 };

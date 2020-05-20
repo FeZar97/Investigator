@@ -53,12 +53,16 @@ private:
 
     Investigator *m_investigator;
     Distributor *m_distributor;
+
     QThread m_workThread;
+    QThread m_distributionThread;
 
     Settings *m_settingsWindow;
     Statistics *m_statisticWindow;
 
     QDateTime m_logFileOpenTime;
+
+    QTimer minuteTimer;
 
     // http сервер
     HttpListener *m_httpServer{nullptr};
@@ -73,10 +77,15 @@ private:
     // первночалаьное сканирование для получения версий баз
     void getInitialAvsScan();
 
+    // перенос старых файлов из временной директории во входную директорию
+    void moveOldFilesToInputDir();
+
+    void minuteUpdate();
+
 signals:
     void parseReport(QString report);
-    void startWork();
-    void stopWork();
+    void startWatchDirEye();
+    void stopWatchDirEye();
 };
 
 #endif // WIDGET_H

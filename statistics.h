@@ -30,6 +30,9 @@ private:
     Investigator* m_investigator;
     QStandardItemModel m_model;
     QTimer m_workTimer;
+
+signals:
+    void saveSettings();
 };
 
 #endif // STATISTICS_H

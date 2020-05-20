@@ -63,8 +63,6 @@ public:
     QUdpSocket *m_syslogSocket; // сокет для syslog
     QHostAddress m_syslogIpAddress; // адрес демона
     quint16 m_syslogPort; // используемый порт
-    int m_syslogInfoUpdatePeriodInSecs{60}; // период отправки инфы о программе в сислог
-    QDateTime m_lastSyslogInfoUpdate{QDateTime::currentDateTime()}; // временная метка последнего апдейта ушедшего в сислог
 
     bool m_useHttpServer{true}; // флаг использования http сервера
     QString m_httpServerAddress; // адрес http
@@ -114,12 +112,6 @@ public:
 
     /* сбор статистики */
     void collectStatistics();
-
-    /* запуск работы */
-    bool beginWork();
-
-    /* остановка работы */
-    void stopWork();
 
     /* разбор отчета */
     void parseReport(QString report);

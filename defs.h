@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
+#include <qmath.h>
 #include <QMenu>
 #include <QMessageBox>
 #include <QObject>
@@ -18,7 +19,7 @@
 
 #define     MAJOR_VERSION         "1"
 #define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.19"
+#define     PATCH_VERSION         "5.20"
 #define     PATCH_IDENTIFICATOR   "15"
 #define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
 
@@ -101,7 +102,8 @@ inline void moveFile(QString fileName, QString sourceDir, QString destinationDir
                       destinationDir + "/" + fileName);
 
         /// [1]
-        if(startMoveTime.msecsTo(QDateTime::currentDateTime()) >  10 * 1000 || QFile(destinationDir + fileName).exists()) {
+        if(startMoveTime.msecsTo(QDateTime::currentDateTime()) >  5 * 1000 ||
+           QFile(destinationDir + fileName).exists()) {
             break;
         }
     }

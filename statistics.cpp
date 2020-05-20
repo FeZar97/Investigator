@@ -104,14 +104,6 @@ void Statistics::updateUi() {
                  ) ? QBrush(Qt::red) : QBrush(Qt::transparent)
                 );
     ui->tableView->resizeRowsToContents();
-
-    // обновление инфы в сислоге каждые m_syslogInfoUpdatePeriodInSecs секунд
-    QDateTime cdt = QDateTime::currentDateTime();
-    if(m_investigator->m_lastSyslogInfoUpdate.secsTo(cdt) > m_investigator->m_syslogInfoUpdatePeriodInSecs) {
-        m_investigator->m_lastSyslogInfoUpdate = cdt;
-        m_investigator->sendSyslogMessage(m_investigator->getCurrentStatistic());
-    }
-
 }
 
 void Statistics::on_clearButton_clicked() {

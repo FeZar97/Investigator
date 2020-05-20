@@ -12,9 +12,11 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD size;
-    size.X = 64;
-    size.Y = 512;
+    size.X = 128;
+    size.Y = 1536;
     SetConsoleScreenBufferSize(hOut, size);
+
+    minuteTimer.setInterval(60000);
 
     setLayout(ui->mainLayout);
     setWindowTitle(QString("Investigator %1 #%2").arg(VERSION).arg(PATCH_IDENTIFICATOR));
@@ -30,29 +32,35 @@ Widget::Widget(QWidget *parent): QWidget(parent),
 
     // перенос объектов в потоки
     m_investigator->moveToThread(&m_workThread);
-    m_distributor->moveToThread(&m_workThread);
+    m_distributor->moveToThread(&m_distributionThread);
+
+    // старт потоков
     m_workThread.start();
+    m_distributionThread.start();
 
     startHttpServer();
+
+    log("Программа запущена.", LOG_CATEGORY(GUI + DEBUG));
 
     getInitialAvsScan();
 
     m_settingsWindow->setVisible(true);
     m_statisticWindow->setVisible(true);
-
-    log("Program started.", LOG_CATEGORY(GUI + DEBUG));
 }
 
 Widget::~Widget() {
 
-    if(m_investigator->m_isInProcess)
-        m_process.waitForFinished();
-
-    m_distributor->stopWatchDirEye();
-
     saveSettings();
 
-    log("Programm shutting down.", LOG_CATEGORY(DEBUG));
+    if(m_investigator->m_isInProcess)
+        m_process.kill();
+
+    emit stopWatchDirEye();
+
+    log("Программа завершила работу.", LOG_CATEGORY(DEBUG));
+
+    m_distributionThread.quit();
+    m_distributionThread.wait();
 
     m_workThread.quit();
     m_workThread.wait();
@@ -67,6 +75,7 @@ Widget::~Widget() {
 
 /* логирование */
 void Widget::log(QString s, LOG_CATEGORY cat) {
+
     if(cat & DEBUG_ROW) {
         m_investigator->m_processInfo = s;
     }
@@ -115,7 +124,9 @@ void Widget::log(QString s, LOG_CATEGORY cat) {
     }
 
     // если программа не запущена, то надо принудительно обновить интерфейс
-    if(!m_investigator->m_isWorking) updateUi();
+    if(!m_investigator->m_isWorking) {
+        updateUi();
+    }
 }
 
 /* обновление GUI */
@@ -133,13 +144,16 @@ void Widget::updateUi() {
 void Widget::executeProcess(QString path, QStringList args) {
     if(m_investigator->m_isWorking) {
         m_investigator->m_lastProcessStartTime = QDateTime::currentDateTime();
+        log("Процесс проверки...", LOG_CATEGORY(DEBUG_ROW + DEBUG));
         m_process.start(path, args);
-        log("Процесс проверки...", LOG_CATEGORY(DEBUG_ROW));
     }
 }
 
 void Widget::parseResultOfProcess() {
-    emit parseReport(m_win1251Codec->toUnicode(m_process.readAllStandardOutput()));
+    // вначале прочитать из stdOut, потом уже закрывать процесс
+    QString report = m_win1251Codec->toUnicode(m_process.readAllStandardOutput());
+    emit parseReport(report);
+
     m_process.close();
 }
 
@@ -158,11 +172,11 @@ void Widget::saveReport(QString report, QString baseName) {
 
 /* вызов внешнего обработчика path с аргументами args */
 void Widget::startExternalHandler(QString path, QStringList args) {
-    log(QString("Execute external handler '%1' with params: %2").arg(path).arg(entryListToString(args)), LOG_CATEGORY(DEBUG));
+    log(QString("Вызов внешнего обработчика '%1' с параметрами: %2").arg(path).arg(entryListToString(args)), LOG_CATEGORY(DEBUG));
     if(QFile(path).exists()) {
         QProcess::execute(path, args);
     } else {
-        log(QString("Can't find external handler!"), LOG_CATEGORY(DEBUG));
+        log(QString("Не удалось найти файл внешнего обработчика."), LOG_CATEGORY(DEBUG));
     }
 }
 
@@ -186,7 +200,7 @@ void Widget::startHttpServer() {
         m_httpServer->close();
         delete m_httpServer;
         m_httpServer = nullptr;
-        log(QString("Http server stopped."), LOG_CATEGORY(DEBUG));
+        log(QString("Http сервер остановлен."), LOG_CATEGORY(DEBUG));
     }
 
     if(!m_investigator->m_useHttpServer)
@@ -197,16 +211,26 @@ void Widget::startHttpServer() {
                                     m_investigator->m_httpServerIp.toString(),
                                     new HttpJsonResponder(this, m_investigator),
                                     this);
-    log(QString("Http server started."), LOG_CATEGORY(DEBUG));
+    log(QString("Http сервер запущен."), LOG_CATEGORY(DEBUG));
 }
 
 /* запуск слежения за каталогом для мониторинга */
 void Widget::on_startButton_clicked() {
-    log("Перенос старых файлов из директори для проверки во входную директорию...", DEBUG_ROW);
-    moveFiles(m_investigator->m_processDir, m_investigator->m_inputDir, m_investigator->m_maxQueueSize);
 
-    log("Начало слежения...", DEBUG_ROW);
-    m_distributor->startWatchDirEye();
+    // если настройки корректны, запуск работы
+    if(m_investigator->checkAvParams()) {
+        m_investigator->m_isWorking = true;
+        m_investigator->clearStatistic();
+
+        // если есть старые непроверенные файлы
+        moveOldFilesToInputDir();
+
+        log(QString("Запущено слежение за директорией %1.").arg(m_investigator->m_watchDir), LOG_CATEGORY(DEBUG + GUI));
+        emit startWatchDirEye();
+    } else {
+        log(QString("Не удалось начать слежение за директорией %1.").arg(m_investigator->m_watchDir), LOG_CATEGORY(DEBUG + GUI));
+        m_investigator->m_isWorking = false;
+    }
 }
 
 /* остановка слежения за каталогом для мониторинга */
@@ -216,11 +240,21 @@ void Widget::on_stopButton_clicked() {
                             QString("Вы действительно хотите остановить слежение за каталогом?"),
                             QString("Да"), QString("Нет"), QString(),
                             1) == 0) {
-        log(QString("Watching to directory %1 stopped.").arg(m_investigator->m_watchDir), LOG_CATEGORY(DEBUG + GUI));
-        log("Остановка слежения...", DEBUG_ROW);
-        m_process.close();
-        emit stopWork();
         saveSettings();
+
+        m_investigator->m_isWorking = false;
+
+        // m_process.close();
+        m_process.kill();
+        m_investigator->m_isInProcess = false;
+
+        m_investigator->m_endTime = QDateTime::currentDateTime();
+
+        emit stopWatchDirEye();
+
+        m_investigator->collectStatistics();
+
+        log(QString("Слежение за директорией %1 остановлено.").arg(m_investigator->m_watchDir), LOG_CATEGORY(DEBUG + GUI));
     }
 }
 
@@ -234,7 +268,7 @@ void Widget::on_statisticButton_clicked() {
 
 /* очистка лога в главном окне */
 void Widget::on_clearButton_clicked() {
-    log("Log cleared.", DEBUG);
+    log("Лог очищен.", DEBUG);
     ui->logPTE->clear();
 }
 
@@ -326,36 +360,43 @@ void Widget::saveSettings() {
 }
 
 void Widget::connectObjects() {
-    connect(this,             &Widget::startWork,                  m_distributor,     &Distributor::startWatchDirEye);
-    connect(this,             &Widget::stopWork,                   m_distributor,     &Distributor::stopWatchDirEye);
+    connect(this,              &Widget::startWatchDirEye,           m_distributor,     &Distributor::startWatchDirEye);
+    connect(this,              &Widget::stopWatchDirEye,            m_distributor,     &Distributor::stopWatchDirEye);
 
-    connect(m_distributor,    &Distributor::updateUi,              this,              &Widget::updateUi);
-    connect(m_investigator,   &Investigator::updateUi,             this,              &Widget::updateUi);
-    connect(m_settingsWindow, &Settings::s_updateUi,               this,              &Widget::updateUi);
+    connect(m_investigator,    &Investigator::updateUi,             this,              &Widget::updateUi);
+    connect(m_settingsWindow,  &Settings::s_updateUi,               this,              &Widget::updateUi);
 
-    connect(m_investigator,   &Investigator::log,                  this,              &Widget::log);
-    connect(m_settingsWindow, &Settings::log,                      this,              &Widget::log);
-    connect(m_distributor,    &Distributor::log,                   this,              &Widget::log);
+    connect(m_investigator,    &Investigator::log,                  this,              &Widget::log);
+    connect(m_settingsWindow,  &Settings::log,                      this,              &Widget::log);
+    connect(m_distributor,     &Distributor::log,                   this,              &Widget::log);
 
-    connect(m_settingsWindow, &Settings::restartWatching,          m_distributor,     &Distributor::startWatchDirEye);
-    connect(m_settingsWindow, &Settings::clearDir,                 m_distributor,     &Distributor::clearDir);
+    connect(m_statisticWindow, &Statistics::saveSettings,           this,              &Widget::saveSettings);
 
-    connect(m_investigator,   &Investigator::process,              this,              &Widget::executeProcess);
-    connect(&m_process,       &QProcess::readyReadStandardOutput,  this,              &Widget::parseResultOfProcess);
-    connect(m_investigator,   &Investigator::saveReport,           this,              &Widget::saveReport);
-    connect(this,             &Widget::parseReport,                m_investigator,    &Investigator::parseReport);
+    connect(m_settingsWindow,  &Settings::restartWatching,          m_distributor,     &Distributor::startWatchDirEye);
 
-    connect(m_investigator,   &Investigator::startExternalHandler, this,              &Widget::startExternalHandler);
+    connect(m_distributor,     &Distributor::tryProcess,            m_investigator,    &Investigator::onProcessFinished);
 
-    connect(m_settingsWindow, &Settings::startHttpServer,          this,              &Widget::startHttpServer);
+    connect(m_investigator,    &Investigator::process,              this,              &Widget::executeProcess);
+    connect(&m_process,        &QProcess::readyReadStandardOutput,  this,              &Widget::parseResultOfProcess);
+    connect(m_investigator,    &Investigator::saveReport,           this,              &Widget::saveReport);
+    connect(this,              &Widget::parseReport,                m_investigator,    &Investigator::parseReport);
 
-    connect(m_investigator,   &Investigator::stopProcess,          &m_process,        &QProcess::close);
+    connect(m_investigator,    &Investigator::startExternalHandler, this,              &Widget::startExternalHandler);
+
+    connect(m_settingsWindow,  &Settings::startHttpServer,          this,              &Widget::startHttpServer);
+
+    connect(m_investigator,    &Investigator::stopProcess,          &m_process,        &QProcess::close);
+
+    connect(&minuteTimer,      &QTimer::timeout,                    this,              &Widget::minuteUpdate);
 }
 
 /* первночалаьное сканирование для получения версий баз
  * используется фиктивный путь '/?' для сканирования пустого множества объектов */
 void Widget::getInitialAvsScan() {
+
+    // если исполняемый файл АВС существует
     if(QFile(m_investigator->m_avPath).exists()) {
+
         m_investigator->m_isWorking = true;
 
         // запуск процесса с аргментом '/?'
@@ -363,7 +404,19 @@ void Widget::getInitialAvsScan() {
 
         m_investigator->m_isWorking = false;
     } else {
-        log("Can't determine AVS version.", LOG_CATEGORY(GUI + DEBUG));
+        log("Не удалось определить версию АВС.", LOG_CATEGORY(GUI + DEBUG));
     }
-    m_investigator->collectStatistics();
+}
+
+void Widget::moveOldFilesToInputDir() {
+    if(QDir(m_investigator->m_processDir).entryList(usingFilters).size()) {
+        m_distributor->distributorMoveFiles(m_investigator->m_processDir, m_investigator->m_inputDir, MAX_FILES_TO_MOVE);
+    }
+}
+
+/* ежеминутные действия */
+void Widget::minuteUpdate() {
+    saveSettings();
+    m_investigator->sendSyslogMessage(m_investigator->getCurrentStatistic());
+    log(m_investigator->getCurrentStatistic(), DEBUG);
 }

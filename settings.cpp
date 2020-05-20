@@ -28,7 +28,7 @@ Settings::~Settings() {
 void Settings::on_watchDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для слежения"), m_investigator->m_watchDir);
     if(!QDir(dir).exists()) {
-        log("Can't find watching directory.", LOG_CATEGORY(GUI + DEBUG));
+        log("Не удалось найти директорию для слежения.", LOG_CATEGORY(GUI + DEBUG));
     } else {
         m_investigator->m_watchDir = dir;
         log(QString("Changed watch dir: %1").arg(dir), LOG_CATEGORY(DEBUG));
@@ -44,7 +44,7 @@ void Settings::on_tempDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для временных файлов программы"), m_investigator->m_investigatorDir);
 
     if(dir.isEmpty()) {
-        log("Can't find temp directory.", LOG_CATEGORY(DEBUG + GUI));
+        log("Не удалось найти временную директорию.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_investigatorDir = dir;
         m_investigator->configureDirs();
@@ -58,7 +58,7 @@ void Settings::on_cleanDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для чистых файлов"), m_investigator->m_cleanDir);
 
     if(dir.isEmpty()) {
-        log("Can't find directory for clean files.", LOG_CATEGORY(DEBUG + GUI));
+        log("Не удалось найти директорию для чистых файлов.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_cleanDir = dir;
         log(QString("Changed directory for clean files: %1").arg(dir), LOG_CATEGORY(DEBUG));
@@ -70,7 +70,7 @@ void Settings::on_cleanDirButton_clicked() {
 void Settings::on_dangerousDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для зараженных файлов"), m_investigator->m_dangerDir);
     if(dir.isEmpty()) {
-        log("Can't find directory for infected files.", LOG_CATEGORY(DEBUG + GUI));
+        log("Не удалось найти директорию для зараженных файлов.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_dangerDir = dir;
         log(QString("Changed directory for infected files: %1").arg(dir), LOG_CATEGORY(DEBUG));
@@ -82,7 +82,7 @@ void Settings::on_dangerousDirButton_clicked() {
 void Settings::on_logsDirButton_clicked() {
     QString dir = QFileDialog::getExistingDirectory(this, QString("Выбор каталога для сохранения логов"), m_investigator->m_logsDir);
     if(dir.isEmpty()) {
-        log("Can't find directory for log files.", LOG_CATEGORY(DEBUG + GUI));
+        log("Не удалось найти директорию для логов..", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_logsDir = dir;
         log(QString("Changed directory for log files: %1").arg(dir), LOG_CATEGORY(DEBUG));
@@ -95,7 +95,7 @@ void Settings::on_avFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор исполняемого файла антивируса"), m_investigator->m_avPath, tr("*.exe"));
 
     if(!QFile(filePath).exists()) {
-        log("Can't find AVS executable file.", LOG_CATEGORY(DEBUG + GUI));
+        log("Не удалось найти исполняемый файл АВС.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_avPath = filePath;
         log(QString("Changed executable AVS file: %1").arg(filePath), LOG_CATEGORY(DEBUG));
@@ -238,10 +238,10 @@ void Settings::on_externalHandlerFileButton_clicked() {
     QString filePath = QFileDialog::getOpenFileName(this, QString("Выбор внешнего обработчика"), m_investigator->m_externalHandlerPath, tr("*.*"));
 
     if(!QFile(filePath).exists()) {
-        log("Can't find external handler for infected files.", LOG_CATEGORY(DEBUG + GUI));
+        log("Внешний обработчик не найден.", LOG_CATEGORY(DEBUG + GUI));
     } else {
         m_investigator->m_externalHandlerPath = filePath;
-        log(QString("Changed path to extrnal handler: %1.").arg(filePath), LOG_CATEGORY(DEBUG));
+        log(QString("Изменен внешний обработчик: %1.").arg(filePath), LOG_CATEGORY(DEBUG));
     }
 
     updateUi();

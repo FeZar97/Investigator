@@ -21,11 +21,11 @@ public:
 
     void onWatchDirChange(const QString &path);
 
-    void clearDir(QString dirPath);
+    void distributorMoveFiles(QString sourceDir, QString destinationDir, int limit);
 
 signals:
-    void updateUi();
     void log(QString s, LOG_CATEGORY cat);
+    void tryProcess();
 };
 
 #endif // DISTRIBUTOR_H
