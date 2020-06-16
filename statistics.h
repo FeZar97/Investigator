@@ -2,8 +2,6 @@
 #define STATISTICS_H
 
 #include <QStandardItemModel>
-#include <QTimer>
-#include <QtMath>
 
 #include "investigator.h"
 
@@ -30,9 +28,6 @@ private:
     Investigator* m_investigator;
     QStandardItemModel m_model;
     QTimer m_workTimer;
-
-signals:
-    void saveSettings();
 };
 
 #endif // STATISTICS_H

@@ -11,8 +11,8 @@ Statistics::Statistics(QWidget *parent, Investigator* investigator, QByteArray g
     setLayout(ui->mainLayout);
 
     m_investigator = investigator;
-    m_workTimer.setInterval(500);
 
+    m_workTimer.setInterval(250);
     connect(&m_workTimer, &QTimer::timeout, this, &Statistics::updateUi);
     m_workTimer.start();
 
@@ -24,6 +24,8 @@ Statistics::~Statistics() {
 }
 
 void Statistics::updateUi() {
+
+    m_investigator->collectStatistics();
 
     ui->clearButton->setEnabled(!*m_lockUi);
 
@@ -81,7 +83,7 @@ void Statistics::updateUi() {
     m_model.setData(m_model.index(6,0), m_investigator->m_inProgressFilesNb, Qt::DisplayRole);
 
     // файлов в очереди
-    m_model.setData(m_model.index(7,0), m_investigator->m_inQueueFilesNb, Qt::DisplayRole);
+    m_model.setData(m_model.index(7,0), QString("%1(%2)").arg(m_investigator->m_inQueueFilesNb).arg(m_investigator->m_inWatchFilesNb), Qt::DisplayRole);
 
     // версии АВС
     m_model.setData(m_model.index(8,0), QString("Версия баз: %1;\n"
@@ -97,7 +99,7 @@ void Statistics::updateUi() {
     m_model.item(7,0)->setBackground(
                 (
                      (
-                        (m_investigator->m_inQueueFilesNb >= m_investigator->m_maxQueueSize)
+                        (m_investigator->m_inQueueFilesNb + m_investigator->m_inWatchFilesNb >= m_investigator->m_maxQueueSize)
                       ||
                         (m_investigator->m_inQueueFileSizeMb > m_investigator->m_maxQueueVol * (m_investigator->m_maxQueueVolUnit ? 1024 : 1) )
                      )

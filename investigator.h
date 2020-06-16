@@ -1,10 +1,6 @@
 #ifndef INVESTIGATOR_H
 #define INVESTIGATOR_H
 
-#include <QHostAddress>
-#include <QUdpSocket>
-#include <QNetworkInterface>
-
 #include "defs.h"
 #include "stylehelper.h"
 
@@ -14,7 +10,9 @@ class Investigator : public QObject
 
 public:
     bool m_isWorking{false}; // флаг запущенного мониторинга
-    bool m_isInProcess{false}; // флаг хз чего
+    bool m_isInProcess{false}; // флаг выполнения процесса М52
+
+    QTextCodec *m_win1251Codec; // кодек для конвертации отчета М52
 
     QDateTime m_startTime{QDateTime::currentDateTime()}; // время запуска программы
     QDateTime m_endTime{QDateTime::currentDateTime()}; // время окончания работы (в процессе работы постоянно обновляется)
@@ -35,12 +33,18 @@ public:
     QString m_processInfo{""}; // информация для строки в окне статистики
     QString m_lastReport{""}; // последний репорт
     unsigned long long m_reportCnt{0}; // счетчик репортов
+    QString m_lastAvsReportName{""}; // последний отчет сгенерированный АВС
 
-    QStringList m_tempSplitList, m_reportLines; // для метода parseReport
-    QString m_tempFileName, m_tempVirusInfo; // для метода parseReport
+    QStringList m_tempSplitList1, m_tempSplitList2, m_reportLines; // для метода parseReport
+    QString m_tempInfectedFileName{""}, m_tempVirusInfo{""}; // для метода parseReport
+    int m_tempScanningErrorsNb{0}, m_tempTotalScanningErrorsNb{0}; // для учета
     double m_lastProcessedFilesSizeMb{0}; // объем последней просканированной выборки файлов
     QDateTime m_lastProcessStartTime{QDateTime::currentDateTime()}; // время начала последней проверки
-    unsigned int m_lastProcessWorkTimeInSec{0}; // время обработки последней выборки
+    unsigned int m_lastProcessWorkTimeInMsec{0}; // время обработки последней выборки
+
+    QStringList m_lastProcessArgs; // параметры последнего запуска АВС
+
+    QMap<QString, int> m_infectionsMapVector[2]; // словарик вирусов для всех АВС
 
     QStringList m_inProcessFileList; // файлы в обработке
     QList<QPair<QString,QString>> m_infectedFiles; // зараженные файлы, выявленные в процессе проверки
@@ -75,15 +79,19 @@ public:
 
     int m_infectedFilesNb{0}; // кол-во найденных зараженных файлов
     int m_inProgressFilesNb{0}; // кол-во файлов в обработке
-    int m_processedFilesNb{0}; // кол-во обработаннызх файлов
+    int m_processedFilesNb{0}; // кол-во обработанных файлов
     double m_processedFilesSizeMb{0.}; // объем уже обработанных файлов
     double m_processedLastFilesSizeMb{0.}; // объем файлов последнего сканирования
-    double m_averageProcessSpeed{0.}; // средняя скорость проверки
     double m_currentProcessSpeed{0.}; // текущая скорость проверки
+    QVector<double> m_currentProcessSpeeds{0}; // вектор текущих скоростей для расчета средней скорости
+    int m_lastCurrentProcessSpeedIdx{0}; // индекс сохранения последней скорости
+    double m_averageProcessSpeed{0.}; // средняя скорость проверки
+    int m_inWatchFilesNb{0}; // кол-во файлов в обработке
     int m_inQueueFilesNb{0}; // количество файлов в очереди
     double m_inQueueFileSizeMb{0}; // размер файлов в очереди
 
-    long long m_scanningErrorFilesNb{0}; // ошибки сканирования
+    int m_passwordProtectedFilesNb{0}; // количество файлов защищенных паролем
+    long long m_scanningErrorFilesNb{0}; // ошибки сканирования единичных файлов
 
     explicit Investigator(QObject *parent = nullptr);
 
@@ -114,13 +122,13 @@ public:
     void collectStatistics();
 
     /* разбор отчета */
-    void parseReport(QString report);
+    void parseReport();
 
     /* send syslog message */
     void sendSyslogMessage(QString msg = "", int pri = 99);
 
     /* сброс временных пееременных для метода parseReport */
-    void clearParserTemps();
+    void clearTemps();
 
     QString getReportFileName(QString baseName = "");
 
@@ -131,18 +139,28 @@ public:
     int getProcessedFilesNb();
     long long getProcessedFilesSizeMb();
 
+    void investigatorMoveFiles(QString sourceDir, QString destinationDir, int limit);
+
+    void restartLastProcess();
+
+// --------- функции для парсинга отчета АВС ---------
+    void extractAVSVersions();
+    void collectStatisticAboutLastScan();
+    void processingInfectedFiles();
+    void processingPasswordProtected();
+    void processingScanError();
+    void processingCleanFiles();
+    void processingOtherFiles();
+
 signals:
     /* эмитится каждый раз при изменении статистики */
     void updateUi();
 
     /* вызов АВС с аргументами args, имеющего URI programPath */
-    void process(QString programPath, QStringList args);
-
-    /* остановка процесса АВС */
-    void stopProcess();
+    void startProcess(QString programPath, QStringList args);
 
     /* вывод информации */
-    void log(QString s, LOG_CATEGORY cat);
+    void log(LOG_CATEGORY cat, QString s);
 
     void saveReport(QString report = "", QString baseName = "");
 

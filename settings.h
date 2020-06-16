@@ -59,7 +59,7 @@ private:
     QString getLEStyleSheet(bool isCorrect);
 
 signals:
-    void log(QString s, LOG_CATEGORY cat);
+    void log(LOG_CATEGORY cat, QString s);
     void restartWatching();
     void s_updateUi();
     void startHttpServer();

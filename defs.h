@@ -4,41 +4,66 @@
 #include <QDateTime>
 #include <QDialog>
 #include <QDir>
-#include <QDebug>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QHostAddress>
 #include <QIcon>
 #include <qmath.h>
 #include <QMenu>
 #include <QMessageBox>
+#include <QNetworkInterface>
+#include <QUdpSocket>
 #include <QObject>
+#include <QRandomGenerator>
 #include <QTextCodec>
 #include <QTextStream>
+#include <QTimer>
 #include <QTimeZone>
+#include <QUdpSocket>
 
-#define     MAJOR_VERSION         "1"
-#define     MINOR_VERSION         "6"
-#define     PATCH_VERSION         "5.21"
-#define     PATCH_IDENTIFICATOR   "1"
-#define     VERSION               QString("v%1.%2.%3").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION)
+#include <QtMath>
 
-#define     INPUT_DIR_NAME        "input"
-#define     OUTPUT_DIR_NAME       "output"
-#define     CLEAN_DIR_NAME        "clean"
-#define     DANGER_DIR_NAME       "danger"
-#define     LOGS_DIR_NAME         "logs"
-#define     REPORTS_DIR_NAME      "reports"
+#include <QDebug>
 
-#define     LOG_FILE_REOPEN_TIME  5
+/// *** - ATTENTION
+///
+/// переделан учет инфицированных файлов:
+///     теперь статистика по инфицированным файлам обновляется
+///     только в том случае если зараженный файл был успешо
+///     перенесен в директорию для зараженных файлов
+///
+/// автоматическая смена версий
+///
+/// убраны лишние логи
+///
+/// заменен метод чтения всех данных из процесса
+///
+///
 
-#define     HTTP_PORT             8898
+#define     MAJOR_VERSION           "1"
+#define     MINOR_VERSION           "6"
+#define     PATCH_VERSION           "16"
+#define     PATCH_IDENTIFICATOR     "1"
+#define     VERSION                 QString("v%1.%2.%3 #%4").arg(MAJOR_VERSION).arg(MINOR_VERSION).arg(PATCH_VERSION).arg(PATCH_IDENTIFICATOR)
 
-#define     ALL_FILES             -1
-#define     MAX_FILES_TO_MOVE     20
+#define     INPUT_DIR_NAME          "input"
+#define     OUTPUT_DIR_NAME         "output"
+#define     CLEAN_DIR_NAME          "clean"
+#define     DANGER_DIR_NAME         "danger"
+#define     LOGS_DIR_NAME           "logs"
+#define     REPORTS_DIR_NAME        "reports"
+
+#define     LOG_FILE_REOPEN_TIME    5
+#define     SPEEDS_VECTOR_SIZE      20
+
+#define     HTTP_PORT               8898
+
+#define     ALL_FILES               -1
+#define     MAX_FILES_TO_MOVE       20
 
 const static QString dateTimePattern = "yyyy-MM-dd hh:mm:ss";
-const static QDir::Filters usingFilters = QDir::Files | QDir::Hidden;
+const static QDir::Filters usingFilters = QDir::Files;
 
 enum LOG_CATEGORY {
     NONE      = 0x00, // пустышка
@@ -89,24 +114,26 @@ inline void moveFiles(QString sourceDir, QString destinationDir, int limit) {
 
 /* перенос файла fileName из директории sourceDir в директорию destinationDir
  * если время переноса превышает [1], выполнение функции прерывается */
-inline void moveFile(QString fileName, QString sourceDir, QString destinationDir) {
+inline bool moveFile(QString fileName, QString sourceDir, QString destinationDir) {
     if(!QFile(sourceDir + "/" + fileName).exists()
             || !QDir(sourceDir).exists()
             || !QDir(destinationDir).exists())
-        return;
+        return false;
 
     QDateTime startMoveTime = QDateTime::currentDateTime();
 
     while((QDir(sourceDir).entryList()).contains(fileName)) {
-        QFile::rename(sourceDir      + "/" + fileName,
-                      destinationDir + "/" + fileName);
+        if(QFile::rename(sourceDir      + "/" + fileName,
+                      destinationDir + "/" + fileName))
+            return true;
 
         /// [1]
-        if(startMoveTime.msecsTo(QDateTime::currentDateTime()) >  5 * 1000 ||
+        if(startMoveTime.msecsTo(QDateTime::currentDateTime()) >  3 * 1000 ||
            QFile(destinationDir + fileName).exists()) {
             break;
         }
     }
+    return false;
 }
 
 /* текущее время и дата в формате dateTimePattern */

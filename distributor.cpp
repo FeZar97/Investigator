@@ -33,11 +33,11 @@ void Distributor::onWatchDirChange(const QString &path) {
 
     // если есть что переносить
     while(QDir(m_investigator->m_watchDir).entryList(usingFilters).size()) {
-        moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir, MAX_FILES_TO_MOVE);
+        moveFiles(m_investigator->m_watchDir, m_investigator->m_inputDir,
+                  qMin(QDir(m_investigator->m_watchDir).entryList(usingFilters).size(), MAX_FILES_TO_MOVE));
+        // попытка начать проверку файлов
+        emit tryProcess();
     }
-
-    // попытка начать проверку файлов
-    emit tryProcess();
 }
 
 void Distributor::distributorMoveFiles(QString sourceDir, QString destinationDir, int limit) {

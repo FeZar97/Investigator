@@ -24,7 +24,6 @@ public:
     void distributorMoveFiles(QString sourceDir, QString destinationDir, int limit);
 
 signals:
-    void log(QString s, LOG_CATEGORY cat);
     void tryProcess();
 };
 

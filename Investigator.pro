@@ -1,6 +1,6 @@
 # Project created by QtCreator 2019-09-17T09:15:03
 
-QT += core gui widgets network
+QT += core gui widgets network charts
 
 TARGET = Investigator
 TEMPLATE = app
@@ -19,6 +19,7 @@ CONFIG += c++11
 HEADERS +=  distributor.h \
             defs.h \
             httpjsonresponder.h \
+            httprequestmapper.h \
             investigator.h \
             settings.h \
             statistics.h \
@@ -27,6 +28,7 @@ HEADERS +=  distributor.h \
 
 SOURCES += distributor.cpp \
            httpjsonresponder.cpp \
+           httprequestmapper.cpp \
            investigator.cpp \
            main.cpp \
            settings.cpp \
