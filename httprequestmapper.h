@@ -1,23 +1,24 @@
 #ifndef HTTPREQUESTMAPPER_H
 #define HTTPREQUESTMAPPER_H
 
-#include "httpjsonresponder.h"
 #include "httprequesthandler.h"
+
+#include "httpjsonresponder.h"
+#include "httpsettingsresponder.h"
+
+#include "investigatororchestartor.h"
 
 using namespace stefanfrings;
 
 class HttpRequestMapper: public HttpRequestHandler {
     Q_OBJECT
 
-    Investigator *m_investigator;
-    void setInvestigator(Investigator* investigatorPtr = nullptr);
+    InvestigatorOrchestartor *m_investigator;
+    void setInvestigator(InvestigatorOrchestartor* orchestartorPtr = nullptr);
 
 public:
-    HttpRequestMapper(QObject* parent = 0, Investigator* investigatorPtr = nullptr);
+    HttpRequestMapper(QObject* parent = 0, InvestigatorOrchestartor* investigatorPtr = nullptr);
     void service(HttpRequest& request, HttpResponse& response);
-
-signals:
-    void turnOff(int code);
 };
 
 #endif // HTTPREQUESTMAPPER_H

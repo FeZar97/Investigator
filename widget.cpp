@@ -1,486 +1,307 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-Widget::Widget(QWidget *parent): QWidget(parent),
-                                 ui(new Ui::Widget),
-                                 m_settings("FeZar97", "Investigator") {
-
-    ui->setupUi(this);
-
-    setLayout(ui->mainLayout);
-    restoreGeometry(m_settings.value("geometry").toByteArray());
-
-    m_investigator    = new Investigator();
-    m_distributor     = new Distributor(nullptr, m_investigator);
-    m_settingsWindow  = new Settings(this,   m_investigator, m_settings.value("settingsWinGeometry").toByteArray(), &m_lockUi, m_settings.value("currentSettingsTab", 0).toInt());
-    m_statisticWindow = new Statistics(this, m_investigator, m_settings.value("statisticWinGeometry").toByteArray(), &m_lockUi);
-
-    restoreSettings();
-    connectObjects();
-    setWindowTitle(QString("Investigator %1").arg(VERSION));
-
-    m_investigator->moveToThread(&m_workThread);
-    m_distributor->moveToThread(&m_distributionThread);
-
-    m_workThread.start();
-    m_distributionThread.start();
-
-    startHttpServer();
-
-    log(LOG_CATEGORY(GUI + DEBUG), "Программа запущена.");
-
-    getInitialAvsScan();
-
-    updateUi();
-
-    m_settingsWindow->setVisible(true);
-    m_statisticWindow->setVisible(true);
-
-    minuteTimer.setInterval(60000);
-    minuteTimer.start();
+void Widget::createAboutWidget() {
+    m_aboutProgramWidget = new AboutProgramWidget(this, QString("The Investigator"),
+                                                  QString("Программа для потоковой антивирусной проверки файлов."
+                                                          "\n\nРазработчик: Федор Назаров (IP: 7721)"));
+    m_aboutProgramWidget->hide();
 }
 
-Widget::~Widget() {
-
-    saveSettings();
-
-    if(m_investigator->m_isInProcess)
-        m_process.kill();
-
-    emit stopWatchDirEye();
-
-    log(LOG_CATEGORY(DEBUG), "Программа завершила работу.");
-
-    m_distributionThread.quit();
-    m_distributionThread.wait();
-
-    m_workThread.quit();
-    m_workThread.wait();
-
-    delete m_settingsWindow;
-    delete m_statisticWindow;
-    delete m_distributor;
-    delete m_investigator;
-
-    delete ui;
-}
-
-/* логирование */
-void Widget::log(LOG_CATEGORY cat, QString s) {
-
-    if(cat & DEBUG_ROW) {
-        m_investigator->m_processInfo = s;
-    }
-
-    if(cat & GUI) {
-        ui->logPTE->appendPlainText(formattedCurrentDateTime() + " " + s);
-    }
-
-    if(cat & DEBUG) {
-        // если директории для логов нет, но есть временная папка, то пытаемся создать ее внутри временной папки программы
-        if( ( !QDir(m_investigator->m_logsDir).exists() ||
-              !m_investigator->m_logsDir.isEmpty()
-             ) && QDir(m_investigator->m_investigatorDir).exists()) {
-
-            // создание папки
-            if(m_investigator->m_logsDir.isEmpty()) {
-                m_investigator->m_logsDir    = m_investigator->m_investigatorDir + "/" + LOGS_DIR_NAME;
-                QDir().mkpath(m_investigator->m_logsDir);
+void Widget::createTrayIcon() {
+    m_trayIcon = new QSystemTrayIcon(this);
+    m_trayIcon->setIcon(QIcon(":/ICONS/INVESTIGATOR.ico"));
+    connect(m_trayIcon, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason) {
+        switch(reason) {
+            case QSystemTrayIcon::Trigger:
+            case QSystemTrayIcon::DoubleClick:
+            case QSystemTrayIcon::MiddleClick:
+                setVisible(true);
+                showNormal();
+                break;
+            default:
+                ;
             }
-
-            // сохранение отчета
-            QString txt = QString("%1 %2").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss")).arg(s),
-                    dirPath = m_investigator->m_logsDir + "/" + QDate().currentDate().toString("yy-MM-dd") + "/";
-            QDir().mkdir(dirPath);
-
-            QFile outFile(QString("%1KAP-log-%2-%3.log").arg(dirPath).arg(QDateTime::currentDateTime().toString("hh")).arg(VERSION));
-            if(!outFile.isOpen()) {
-                outFile.open(QIODevice::WriteOnly | QIODevice::Append);
-                m_logFileOpenTime = QDateTime::currentDateTime();
-            }
-
-            QTextStream ts(&outFile);
-            ts << txt << endl;
-
-            if(m_logFileOpenTime.secsTo(QDateTime().currentDateTime()) > LOG_FILE_REOPEN_TIME) {
-                outFile.close();
-            }
-        }
-    }
-
-    if(cat & m_investigator->m_syslogPriority) {
-        m_investigator->sendSyslogMessage(s);
-    }
-
-    // если программа не запущена, то надо принудительно обновить интерфейс
-    if(!m_investigator->m_isWorking) {
-        updateUi();
-    }
+    });
+    m_trayIcon->show();
+    m_trayIcon->setVisible(true);
 }
 
-/* обновление GUI */
-void Widget::updateUi() {
-    ui->startButton->setEnabled(!m_lockUi && !m_investigator->m_isWorking);
-    ui->stopButton->setEnabled(!m_lockUi  &&  m_investigator->m_isWorking);
-    ui->clearButton->setEnabled(!m_lockUi);
-    ui->lockButton->setIcon(m_lockUi ? QIcon(":/img/UNLOCK.jpg") : QIcon(":/img/LOCK.jpg"));
-
-    m_settingsWindow->updateUi();
-    m_statisticWindow->updateUi();
+void Widget::createInvestigator() {
+    m_investigator = new InvestigatorOrchestartor(nullptr);
+    m_investigator->moveToThread(&m_investigatorThread);
+    m_investigatorThread.start();
 }
 
-/* вызов процесса path с аргументами args */
-void Widget::executeProcess(QString path, QStringList args) {
-
-    m_investigator->m_lastProcessArgs = args;
-
-    if(m_investigator->m_isWorking) {
-
-        m_investigator->clearTemps();
-
-        log(LOG_CATEGORY(DEBUG + DEBUG_ROW), "Запуск процесса проверки...");
-
-        // если в директории есть файлы, то дается время на все файлы
-        // если файлов нет, то дается время на простаивание процесса
-        if(!QDir(m_investigator->m_processDir).entryList(usingFilters).size()) {
-            m_reportTimer.start(5 * 1000);
-        }
-
-        m_process.start(path, args);
-    }
+void Widget::createStatisticsWindow() {
+    m_statisticsWindow = new StatisticsWindow(this, m_investigator);
 }
 
-/* сохранение отчета АВС */
-void Widget::saveReport(QString report, QString baseName) {
-    if(!QDir(m_investigator->m_reportsDir).exists()) {
-        QDir().mkdir(m_investigator->m_reportsDir);
-    }
-
-    QFile outFile(m_investigator->getReportFileName(baseName));
-    outFile.open(QIODevice::WriteOnly);
-    QTextStream ts(&outFile);
-    ts << report << endl;
-    outFile.close();
+void Widget::createSettingsWindow() {
+    m_settingsWindow = new SettingsWindow(this, m_investigator, &m_isUiLocked);
 }
 
-/* вызов внешнего обработчика path с аргументами args */
-void Widget::startExternalHandler(QString path, QStringList args) {
-
-    log(LOG_CATEGORY(DEBUG),
-        QString("Вызов внешнего обработчика '%1' с параметрами: %2").arg(path).arg(entryListToString(args)));
-
-    if(QFile(path).exists()) {
-        QProcess::execute(path, args);
-    } else {
-        log(LOG_CATEGORY(DEBUG), QString("Не удалось найти файл внешнего обработчика."));
-    }
-}
-
-/* закрытие программы через кнопку */
-void Widget::closeEvent(QCloseEvent *event) {
-    Q_UNUSED(event)
-    event->ignore();
-    turnOff(QEvent::Close);
-}
-
-/* запуск http сервера */
 void Widget::startHttpServer() {
-
     if(m_httpServer) {
         m_httpServer->close();
         delete m_httpServer;
         m_httpServer = nullptr;
-        log(LOG_CATEGORY(DEBUG), QString("Http сервер остановлен."));
     }
-
-    if(!m_investigator->m_useHttpServer)
-        return;
 
     // Start the HTTP server
-    HttpRequestMapper *hrm = new HttpRequestMapper(this, m_investigator);
-    connect(hrm, &HttpRequestMapper::turnOff, this, &Widget::turnOff);
-    m_httpServer = new HttpListener(m_investigator->m_httpServerPort,
-                                    m_investigator->m_httpServerIp.toString(),
-                                    hrm,
-                                    this);
-
-    log(LOG_CATEGORY(DEBUG), QString("Http сервер запущен."));
+    HttpRequestMapper *hrm = new HttpRequestMapper(nullptr, m_investigator);
+    m_httpServer = new HttpListener(80, "0.0.0.0", hrm, nullptr);
 }
 
-void Widget::turnOff(int code) {
-
-    if(code == QEvent::Close) {
-        if(QMessageBox::warning(this,
-                                QString("Подтвердите действие"),
-                                QString("Вы действительно хотите завершить работу программы?"),
-                                QString("Да"), QString("Нет"), 0, 1) == 0) {
-            saveSettings();
-            exit(0);
-        }
-    } else {
-        saveSettings();
-        exit(0);
-    }
+void Widget::createSaveSettingsTimer() {
+    m_saveSettingsTimer = new QTimer();
+    connect(m_saveSettingsTimer, &QTimer::timeout, this, &Widget::saveSettings);
+    m_saveSettingsTimer->start(60 * 1000);
 }
 
-void Widget::processStarted() {
-    m_investigator->m_lastProcessStartTime = QDateTime::currentDateTime();
-    log(LOG_CATEGORY(DEBUG_ROW), QString("Процесс проверки запущен..."));
+void Widget::connectObjects() {
+    connect(ui->aboutLabel, &ClickableLabel::clicked, this, &Widget::onAboutClicked);
+
+    connect(this, &Widget::getInitialAvsScan,       m_investigator,         &InvestigatorOrchestartor::getInitialAvsScan);
+
+    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  m_statisticsWindow, &StatisticsWindow::updateUi);
+    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  [=](){
+        ui->workTimeInfoLabel->setText(m_investigator->workTimeToString());
+    });
+
+    connect(m_investigator,     &InvestigatorOrchestartor::uiLog,           this,               &Widget::uiLog);
+    connect(m_investigator,     &InvestigatorOrchestartor::updateUi,        this,               &Widget::updateUi);
+    connect(this,               &Widget::start,                             m_investigator,     &InvestigatorOrchestartor::startWork);
+    connect(this,               &Widget::stop,                              m_investigator,     &InvestigatorOrchestartor::stopWork);
+    connect(this,               &Widget::log,                               m_investigator,     &InvestigatorOrchestartor::log);
+
+    // перезапуск http сервера
+    connect(m_settingsWindow,   &SettingsWindow::restartHttpServer,         this,               &Widget::startHttpServer);
 }
 
-void Widget::restartProcess() {
-    if(m_investigator->m_isWorking) {
-        log(LOG_CATEGORY(DEBUG_ROW + DEBUG + GUI),
-            QString("Перезапуск процесса проверки."));
+// завершение работы программы
+void Widget::closeProgram() {
 
-        m_process.kill();
-        m_investigator->m_isInProcess = false;
+    saveSettings();
 
-        moveOldFilesToInputDir();
-        m_investigator->onProcessFinished();
-    }
+    emit log("Работа программы завершена.", Logger::UI + Logger::SYSLOG + Logger::FILE);
+    emit log("---------------------------", Logger::FILE);
+
+    m_trayIcon->hide();
+
+    m_investigator->stopWork();
+
+    m_investigatorThread.quit();
+    m_investigatorThread.wait();
 }
 
-void Widget::processErrorOccured(QProcess::ProcessError er) {
-    if(m_investigator->m_isWorking) {
-        log(LOG_CATEGORY(DEBUG_ROW + GUI + DEBUG), QString("Ошибка процесса проверки: %1").arg(er));
-    }
+Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings("FeZar97", "TheInvestigator") {
+    ui->setupUi(this);
+
+    setWindowTitle(QString("The Investigator %1").arg(Version));
+    setLayout(ui->mainLayout);
+    createTrayIcon();
+    createAboutWidget();
+    createSaveSettingsTimer();
+
+    createInvestigator();
+    createStatisticsWindow();
+    createSettingsWindow();
+
+    connectObjects();
+
+    startHttpServer();
+
+    restoreSettings();
+
+    emit getInitialAvsScan(m_settings.value("isInWork", false).toBool());
+
+    updateUi();
 }
 
-/* запуск слежения за каталогом для мониторинга */
-void Widget::on_startButton_clicked() {
-    // если настройки корректны, запуск работы
-    if(m_investigator->checkAvParams()) {
-        m_investigator->m_isWorking = true;
-        m_investigator->clearStatistic();
-        updateUi();
-
-        // если есть старые непроверенные файлы
-        log(LOG_CATEGORY(DEBUG_ROW), QString("Перенос из output в input"));
-        moveOldFilesToInputDir();
-
-        log(LOG_CATEGORY(DEBUG + DEBUG_ROW + GUI), QString("Слежение за директорией запущено"));
-        emit startWatchDirEye();
-
-        m_investigator->onProcessFinished();
-    } else {
-        log(LOG_CATEGORY(DEBUG + GUI),
-            QString("Не удалось начать слежение за директорией %1.").arg(m_investigator->m_watchDir));
-        m_investigator->m_isWorking = false;
-    }
+Widget::~Widget() {
+    closeProgram();
+    delete ui;
 }
 
-/* остановка слежения за каталогом для мониторинга */
-void Widget::on_stopButton_clicked() {
+void Widget::uiLog(QString message) {
+    ui->logTB->append(QString("%1 %2")
+                      .arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss"))
+                      .arg(message));
+}
+
+void Widget::closeEvent(QCloseEvent *event) {
+
+    saveSettings();
+
     if(QMessageBox::warning(this,
                             QString("Подтвердите действие"),
-                            QString("Вы действительно хотите остановить слежение за каталогом?"),
-                            QString("Да"), QString("Нет"), QString(),
-                            1) == 0) {
-        saveSettings();
-
-        m_reportTimer.stop();
-
-        m_investigator->m_isWorking = false;
-
-        m_process.kill();
-        m_investigator->m_isInProcess = false;
-
-        m_investigator->m_endTime = QDateTime::currentDateTime();
-
-        emit stopWatchDirEye();
-
-        m_investigator->collectStatistics();
-
-        log(LOG_CATEGORY(DEBUG + GUI),
-            QString("Слежение за директорией %1 остановлено.").arg(m_investigator->m_watchDir));
+                            QString("Вы действительно хотите завершить работу программы?"),
+                            QString("Да"), QString("Нет")) == 0) {
+        closeProgram();
+        exit(0);
+        event->accept();
+    } else {
+        event->ignore();
     }
+}
+
+void Widget::hideEvent(QHideEvent *event) {
+    setVisible(false);
+    m_trayIcon->showMessage("TheInvestigator",
+                            "Окно программы свернуто в трей",
+                            QIcon(":/ICONS/INVESTIGATOR.ico"),
+                            5000);
+    event->accept();
+}
+
+void Widget::on_startButton_clicked() {
+    ui->startButton->setEnabled(false);
+    emit start();
+}
+
+void Widget::on_stopButton_clicked() {
+    ui->stopButton->setEnabled(false);
+    emit stop();
+}
+
+void Widget::updateUi() {
+    ui->startButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan() && !m_investigator->isInWork());
+    ui->stopButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan() && m_investigator->isInWork());
+    ui->clearButton->setEnabled(!m_isUiLocked);
+
+    ui->lockUiButton->setIcon(QIcon(m_isUiLocked ? ":/ICONS/UNLOCK.ico" : ":/ICONS/LOCK.ico"));
+
+    m_statisticsWindow->updateUi();
+    m_settingsWindow->updateUi();
+}
+
+// восстановление настроек
+void Widget::restoreSettings() {
+    // настройки директорий
+    m_investigator->setSourceDir(m_settings.value("sourceDir",      "C:\\investigator\\input").toString());
+    m_investigator->setProcessDir(m_settings.value("processDir",    "C:\\investigator\\temp").toString());
+    m_investigator->setCleanDir(m_settings.value("cleanDir",        "C:\\investigator\\clean").toString());
+    m_investigator->setInfectedDir(m_settings.value("infectedDir",  "C:\\investigator\\danger").toString());
+
+    // настройки воркеров
+    m_investigator->setWorkersNb(m_settings.value("threadsNb",                      QThread::idealThreadCount()).toInt());
+    m_investigator->setThresholdFilesNb(m_settings.value("thresholdFilesNb",        100).toInt());
+    m_investigator->setThresholdFilesSize(m_settings.value("thresholdFilesSize",    100).toInt());
+    m_investigator->setThresholdFilesSizeUnit(m_settings.value("thresholdFilesSizeUnit", SizeConverter::MEGABYTE).toLongLong());
+
+    m_investigator->setAvsExecFileName(m_settings.value("avsPath", "C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe").toString());
+
+    m_investigator->setSyslogAddress(m_settings.value("syslogAddress", "0.0.0.0").toString());
+
+    // статистика общая
+    m_investigator->setTotalProcessedFilesNb(m_settings.value("totalProcessedFilesNb",      0).toLongLong());
+    m_investigator->setTotalProcessedFilesSize(m_settings.value("totalProcessedFilesSize",  0).toLongLong());
+    m_investigator->setTotalInfectedFilesNb(m_settings.value("totalInfectedFilesNb",        0).toLongLong());
+    m_investigator->setTotalPwdFilesNb(m_settings.value("totalPwdFilesNb",                  0).toLongLong());
+
+    // вкладка окна настроек
+    m_settingsWindow->setCurrentOpenTab(m_settings.value("settingsWinCurrentTab", 0).toInt());
+
+    // геометрия окна
+    restoreGeometry(m_settings.value("mainWinGeometry").toByteArray());
+    m_settingsWindow->restoreGeometry(m_settings.value("settingsWinGeometry").toByteArray());
+    m_statisticsWindow->restoreGeometry(m_settings.value("statisticsWinGeometry").toByteArray());
+
+    // видимость окон
+    m_settingsWindow->setVisible(m_settings.value("settingsWinVisible", false).toBool());
+    m_statisticsWindow->setVisible(m_settings.value("statisticsWinVisible", false).toBool());
+
+    // блокировка интерфейса
+    m_isUiLocked = m_settings.value("isUiLocked", false).toBool();
+
+    emit log("Программа запущена.", Logger::UI + Logger::SYSLOG + Logger::FILE);
+    emit log(QString("Настройки программы восстановлены."), Logger::FILE);
+}
+
+// сохранение настроек
+void Widget::saveSettings() {
+
+    emit log(m_investigator->workStatisticToString(), Logger::SYSLOG + Logger::FILE);
+
+    // настройки директорий
+    m_settings.setValue("sourceDir", m_investigator->sourceDir());
+    m_settings.setValue("processDir", m_investigator->processDir());
+    m_settings.setValue("infectedDir", m_investigator->infectedDir());
+    m_settings.setValue("cleanDir", m_investigator->cleanDir());
+
+    // настройки воркеров
+    m_settings.setValue("threadsNb", m_investigator->tempCurrentWorkersNb());
+    m_settings.setValue("thresholdFilesNb", m_investigator->thresholdFilesNb());
+    m_settings.setValue("thresholdFilesSize", m_investigator->thresholdFilesSize());
+    m_settings.setValue("thresholdFilesSizeUnit", m_investigator->thresholdFilesSizeUnit());
+    m_settings.setValue("avsPath", m_investigator->avsExecFileName());
+    m_settings.setValue("syslogAddress", m_investigator->syslogAddress());
+
+    // флаг работы
+    m_settings.setValue("isInWork", m_investigator->isInWork());
+
+    // статистика общая
+    m_settings.setValue("totalProcessedFilesNb", m_investigator->totalProcessedFilesNb());
+    m_settings.setValue("totalProcessedFilesSize", m_investigator->totalProcessedFilesSize());
+    m_settings.setValue("totalInfectedFilesNb", m_investigator->totalInfectedFilesNb());
+    m_settings.setValue("totalPwdFilesNb", m_investigator->totalPwdFilesNb());
+
+    // вкладка окна настроек
+    m_settings.setValue("settingsWinCurrentTab", m_settingsWindow->currentOpenTab());
+
+    // геометрия окна
+    m_settings.setValue("mainWinGeometry", saveGeometry());
+    m_settings.setValue("settingsWinGeometry", m_settingsWindow->saveGeometry());
+    m_settings.setValue("statisticsWinGeometry", m_statisticsWindow->saveGeometry());
+
+    // видимость окон
+    m_settings.setValue("settingsWinVisible", m_settingsWindow->isVisible());
+    m_settings.setValue("statisticsWinVisible", m_statisticsWindow->isVisible());
+
+    // блокировка интерфейса
+    m_settings.setValue("isUiLocked", m_isUiLocked);
+
+    emit log(QString("Настройки программы сохранены."), Logger::FILE);
+}
+
+// очистка
+void Widget::on_clearButton_clicked() {
+
+    int reply = QMessageBox::question(this, QString("Очистка"), QString("Выберите тип очистки:\n\t'Окно логов' - очистить окно вывода логов;\n\t'Полная очистка' - очистить логи и накопленную статистику."),
+                                          QString("Окно логов"), QString("Полная очистка"), QString("Отмена"));
+
+    if(reply == -1 || reply == 2) {
+        return;
+    } else if(reply == 1) {
+        m_investigator->dumpWorkTimer();
+        m_investigator->setTotalProcessedFilesNb(0);
+        m_investigator->setTotalProcessedFilesSize(0);
+        m_investigator->setTotalInfectedFilesNb(0);
+        m_investigator->setTotalPwdFilesNb(0);
+
+        emit log(QString("Выполнен сброс статистики."), Logger::FILE);
+    }
+
+    ui->logTB->clear();
+
+    updateUi();
+}
+
+// о программе
+void Widget::onAboutClicked() {
+    m_aboutProgramWidget->show();
 }
 
 void Widget::on_settingsButton_clicked() {
     m_settingsWindow->setVisible(!m_settingsWindow->isVisible());
 }
 
-void Widget::on_statisticButton_clicked() {
-    m_statisticWindow->setVisible(!m_statisticWindow->isVisible());
+void Widget::on_statisticsButton_clicked() {
+    m_statisticsWindow->setVisible(!m_statisticsWindow->isVisible());
 }
 
-/* очистка лога в главном окне */
-void Widget::on_clearButton_clicked() {
-    log(DEBUG, "Лог очищен.");
-    ui->logPTE->clear();
-}
-
-/* блокировка интерфейса */
-void Widget::on_lockButton_clicked() {
-    m_lockUi = !m_lockUi;
+void Widget::on_lockUiButton_clicked() {
+    m_isUiLocked = !m_isUiLocked;
     updateUi();
-}
-
-// -----------------------------------------------------------------------------------------------------------------------
-
-void Widget::restoreSettings() {
-
-    // настройки интерфейса
-    m_investigator->m_watchDir                 = m_settings.value("watchDir",        "").toString();
-    m_investigator->m_investigatorDir          = m_settings.value("investigatorDir", "").toString();
-    m_investigator->m_cleanDir                 = m_settings.value("cleanDir",        "").toString();
-    m_investigator->m_dangerDir                = m_settings.value("dangerDir",       "").toString();
-    m_investigator->m_logsDir                  = m_settings.value("logsDir",         "").toString();
-
-    m_investigator->m_avPath                   = m_settings.value("avFilePath", "C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe").toString();
-    m_investigator->m_infectedFileAction       = ACTION_TYPE(m_settings.value("infectAction", MOVE_TO_DIR).toInt());
-    m_investigator->m_maxQueueSize             = m_settings.value("avMaxQueueSize", 20).toInt();
-    m_investigator->m_maxQueueVol              = m_settings.value("avMaxQueueVol", 2).toDouble();
-    m_investigator->m_maxQueueVolUnit          = m_settings.value("avVolUnit", 1).toInt();
-    m_investigator->m_saveAvsReports           = m_settings.value("saveAVSReports", false).toBool();
-    m_investigator->m_reportsDir               = m_settings.value("reportsDir", "").toString();
-    m_investigator->m_useExternalHandler       = m_settings.value("useExternalHandler", false).toBool();
-    m_investigator->m_externalHandlerPath      = m_settings.value("externalHandlerPath", "").toString();
-
-    m_investigator->m_useSyslog                = m_settings.value("useSyslog", true).toBool();
-    m_investigator->m_syslogAddress            = m_settings.value("syslogAddress", "199.199.100.120:514").toString();
-    m_investigator->m_syslogPriority           = LOG_CATEGORY(m_settings.value("syslogPriority", GUI).toInt());
-    m_investigator->m_useHttpServer            = m_settings.value("useHttpServer", true).toBool();
-    m_investigator->m_httpServerAddress        = m_settings.value("httpServerAddress", "0.0.0.0:" + QString::number(HTTP_PORT)).toString();
-
-    // статистика прошлой сессии
-    m_investigator->m_infectedFilesNb          = m_settings.value("infectedFilesNb", 0).toInt();
-    m_investigator->m_scanningErrorFilesNb     = m_settings.value("scanningErrorFilesNb", 0).toInt();
-    m_investigator->m_processedFilesNb         = m_settings.value("processedFilesNb", 0).toInt();
-    m_investigator->m_processedFilesSizeMb     = m_settings.value("processedFilesSizeMb", 0).toDouble();
-    m_investigator->m_passwordProtectedFilesNb = m_settings.value("passwordProtectedFilesNb", 0).toInt();
-
-    // дополнительное конфигурирование после восстановления
-    m_investigator->configureDirs();
-    m_investigator->clearStatistic();
-    m_investigator->checkSyslogAddress();
-    m_investigator->checkHttpAddress();
-}
-
-void Widget::saveSettings() {
-
-    m_settings.setValue("patchVersion",             PATCH_VERSION);
-    m_settings.setValue("daysVersion",              m_daysVersion);
-
-    // настройки интерфейса
-    m_settings.setValue("geometry",                 saveGeometry());
-
-    m_settings.setValue("settingsWinGeometry",      m_settingsWindow->saveGeometry());
-    m_settings.setValue("statisticWinGeometry",     m_statisticWindow->saveGeometry());
-
-    m_settings.setValue("watchDir",                 m_investigator->m_watchDir);
-    m_settings.setValue("investigatorDir",          m_investigator->m_investigatorDir);
-    m_settings.setValue("cleanDir",                 m_investigator->m_cleanDir);
-    m_settings.setValue("dangerDir",                m_investigator->m_dangerDir);
-    m_settings.setValue("logsDir  ",                m_investigator->m_logsDir);
-
-    m_settings.setValue("avFilePath",               m_investigator->m_avPath);
-    m_settings.setValue("infectAction",             m_investigator->m_infectedFileAction);
-    m_settings.setValue("avMaxQueueSize",           m_investigator->m_maxQueueSize);
-    m_settings.setValue("avMaxQueueVol",            m_investigator->m_maxQueueVol);
-    m_settings.setValue("avVolUnit",                m_investigator->m_maxQueueVolUnit);
-    m_settings.setValue("reportsDir",               m_investigator->m_reportsDir);
-    m_settings.setValue("saveAVSReports",           m_investigator->m_saveAvsReports);
-    m_settings.setValue("useExternalHandler",       m_investigator->m_useExternalHandler);
-    m_settings.setValue("externalHandlerPath",      m_investigator->m_externalHandlerPath);
-
-    m_settings.setValue("useSyslog",                m_investigator->m_useSyslog);
-    m_settings.setValue("syslogAddress",            m_investigator->m_syslogAddress);
-    m_settings.setValue("syslogPriority",           m_investigator->m_syslogPriority);
-    m_settings.setValue("useHttpServer",            m_investigator->m_useHttpServer);
-    m_settings.setValue("httpServerAddress",        m_investigator->m_httpServerAddress);
-
-    m_settings.setValue("currentSettingsTab",       m_settingsWindow->m_currentTab);
-
-    // статистика текущей сессии
-    m_settings.setValue("infectedFilesNb",          m_investigator->m_infectedFilesNb);
-    m_settings.setValue("scanningErrorFilesNb",     m_investigator->m_scanningErrorFilesNb);
-    m_settings.setValue("processedFilesNb",         m_investigator->m_processedFilesNb);
-    m_settings.setValue("processedFilesSizeMb",     m_investigator->m_processedFilesSizeMb);
-    m_settings.setValue("passwordProtectedFilesNb", m_investigator->m_passwordProtectedFilesNb);
-}
-
-void Widget::connectObjects() {
-    connect(this,              &Widget::startWatchDirEye,           m_distributor,     &Distributor::startWatchDirEye);
-    connect(this,              &Widget::stopWatchDirEye,            m_distributor,     &Distributor::stopWatchDirEye);
-
-    connect(m_investigator,    &Investigator::updateUi,             this,              &Widget::updateUi);
-    connect(m_settingsWindow,  &Settings::s_updateUi,               this,              &Widget::updateUi);
-
-    connect(m_investigator,    &Investigator::log,                  this,              &Widget::log);
-    connect(m_settingsWindow,  &Settings::log,                      this,              &Widget::log);
-
-    connect(m_distributor,     &Distributor::tryProcess,            m_investigator,    &Investigator::onProcessFinished);
-    connect(m_settingsWindow,  &Settings::restartWatching,          m_distributor,     &Distributor::startWatchDirEye);
-
-    connect(m_investigator,    &Investigator::startProcess,         this,              &Widget::executeProcess);
-    connect(&m_process,        &QProcess::errorOccurred,            this,              &Widget::processErrorOccured);
-    connect(&m_process,        &QProcess::started,                  this,              &Widget::processStarted);
-    connect(&m_process,        QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [=](int exitCode, QProcess::ExitStatus exitStatus){
-        Q_UNUSED(exitCode)
-
-        if(exitStatus == QProcess::NormalExit) {
-            m_investigator->m_lastReport = m_investigator->m_win1251Codec->toUnicode(m_process.readAll());
-
-            if(m_investigator->m_lastReport.contains("Время сканирования") &&
-               m_investigator->m_lastReport.contains("Сканирование объектов: ")) {
-                emit parseReport();
-            } else {
-                log(LOG_CATEGORY(DEBUG_ROW + DEBUG + GUI), QString("Неполный отчет."));
-                restartProcess();
-            }
-        } else {
-            if(m_investigator->m_isWorking) {
-                log(LOG_CATEGORY(DEBUG_ROW + DEBUG + GUI), QString("Процесс аварийно завершил работу."));
-                restartProcess();
-            }
-        }
-    }
-    );
-
-    connect(m_investigator,    &Investigator::saveReport,           this,              &Widget::saveReport);
-    connect(this,              &Widget::parseReport,                m_investigator,    &Investigator::parseReport);
-
-    connect(m_investigator,    &Investigator::startExternalHandler, this,              &Widget::startExternalHandler);
-
-    connect(m_settingsWindow,  &Settings::startHttpServer,          this,              &Widget::startHttpServer);
-
-    connect(&minuteTimer,      &QTimer::timeout,                    this,              &Widget::minuteUpdate);
-
-    connect(this,              &Widget::investigatorMoveFiles,      m_investigator,    &Investigator::investigatorMoveFiles);
-}
-
-/* первночалаьное сканирование для получения версий баз
- * используется фиктивный путь '/?' для сканирования пустого множества объектов */
-void Widget::getInitialAvsScan() {
-
-    // если исполняемый файл АВС существует
-    if(QFile(m_investigator->m_avPath).exists()) {
-
-        m_investigator->m_isWorking = true;
-
-        // запуск процесса с аргментом '/?'
-        executeProcess(m_investigator->m_avPath, QStringList() << "/?");
-
-        m_investigator->m_isWorking = false;
-    } else {
-        log(LOG_CATEGORY(GUI + DEBUG), "Не удалось определить версию АВС.");
-    }
-
-    m_investigator->collectStatistics();
-
-    log(DEBUG_ROW, "");
-}
-
-void Widget::moveOldFilesToInputDir() {
-    emit investigatorMoveFiles(m_investigator->m_processDir, m_investigator->m_inputDir, ALL_FILES);
-}
-
-/* ежеминутные действия */
-void Widget::minuteUpdate() {
-    saveSettings();
-    m_investigator->sendSyslogMessage(m_investigator->getCurrentStatistic());
-    log(DEBUG, m_investigator->getCurrentStatistic());
 }

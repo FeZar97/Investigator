@@ -6,114 +6,52 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>919</width>
-    <height>292</height>
+    <width>875</width>
+    <height>333</height>
    </rect>
   </property>
-  <property name="font">
-   <font>
-    <family>Courier New</family>
-    <pointsize>10</pointsize>
-   </font>
-  </property>
   <property name="windowTitle">
-   <string>Investigator</string>
+   <string>Widget</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="img.qrc">
-    <normaloff>:/img/INVESTIGATOR.ico</normaloff>:/img/INVESTIGATOR.ico</iconset>
+   <iconset resource="res.qrc">
+    <normaloff>:/ICONS/INVESTIGATOR.ico</normaloff>:/ICONS/INVESTIGATOR.ico</iconset>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>3</x>
-     <y>3</y>
-     <width>913</width>
-     <height>281</height>
+     <x>6</x>
+     <y>8</y>
+     <width>861</width>
+     <height>317</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="mainLayout">
+   <layout class="QVBoxLayout" name="mainLayout" stretch="0,1,0">
     <property name="spacing">
      <number>3</number>
     </property>
+    <property name="sizeConstraint">
+     <enum>QLayout::SetDefaultConstraint</enum>
+    </property>
     <property name="leftMargin">
-     <number>4</number>
+     <number>6</number>
     </property>
     <property name="topMargin">
-     <number>4</number>
+     <number>6</number>
     </property>
     <property name="rightMargin">
-     <number>4</number>
+     <number>6</number>
     </property>
     <property name="bottomMargin">
-     <number>4</number>
+     <number>6</number>
     </property>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="topLayout" stretch="0,0,0,0,0,0">
+      <property name="spacing">
+       <number>3</number>
+      </property>
       <item>
-       <widget class="QPushButton" name="startButton">
-        <property name="text">
-         <string>Начать слежение</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="stopButton">
-        <property name="text">
-         <string>Остановить слежение</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>:/folder.png</normaloff>:/folder.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="settingsButton">
-        <property name="text">
-         <string>Настройки</string>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/SETTINGS.png</normaloff>:/img/SETTINGS.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="statisticButton">
-        <property name="text">
-         <string>Статистика</string>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/STATISTIC.png</normaloff>:/img/STATISTIC.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="clearButton">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/CLEAR.png</normaloff>:/img/CLEAR.png</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="lockButton">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="img.qrc">
-          <normaloff>:/img/LOCK.jpg</normaloff>:/img/LOCK.jpg</iconset>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
+       <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -125,27 +63,266 @@
         </property>
        </spacer>
       </item>
+      <item>
+       <widget class="QPushButton" name="statisticsButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Окно статистики</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/STATISTIC.ico</normaloff>:/ICONS/STATISTIC.ico</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="settingsButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Окно настроек</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/SETTINGS.ico</normaloff>:/ICONS/SETTINGS.ico</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="lockUiButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Блокировка интерфейса</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/LOCK.ico</normaloff>:/ICONS/LOCK.ico</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="startButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>Запуск сканирования</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/START.png</normaloff>:/ICONS/START.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stopButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>Остановка сканирования</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/STOP.png</normaloff>:/ICONS/STOP.png</iconset>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="logPTE">
+     <widget class="QTextBrowser" name="logTB">
       <property name="font">
        <font>
         <family>Courier New</family>
         <pointsize>10</pointsize>
        </font>
       </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
      </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="bottomLayout">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetNoConstraint</enum>
+      </property>
+      <item>
+       <widget class="ClickableLabel" name="aboutLabel">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>О программе</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_11">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::MinimumExpanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="workTimeInfoLabel">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>Время работы программы</string>
+        </property>
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>10</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="clearButton">
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Очистка</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/ICONS/CLEAR.png</normaloff>:/ICONS/CLEAR.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
  </widget>
- <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ClickableLabel</class>
+   <extends>QLabel</extends>
+   <header location="global">../FeZarSource/ClickableLabel.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
-  <include location="img.qrc"/>
+  <include location="res.qrc"/>
  </resources>
  <connections/>
 </ui>

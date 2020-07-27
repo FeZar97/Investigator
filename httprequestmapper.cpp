@@ -1,10 +1,10 @@
 #include "httprequestmapper.h"
 
-void HttpRequestMapper::setInvestigator(Investigator* investigatorPtr) {
+void HttpRequestMapper::setInvestigator(InvestigatorOrchestartor* investigatorPtr) {
     m_investigator = investigatorPtr;
 }
 
-HttpRequestMapper::HttpRequestMapper(QObject* parent, Investigator* investigatorPtr):
+HttpRequestMapper::HttpRequestMapper(QObject* parent, InvestigatorOrchestartor* investigatorPtr):
     HttpRequestHandler(parent) {
     setInvestigator(investigatorPtr);
 }
@@ -14,12 +14,12 @@ void HttpRequestMapper::service(HttpRequest& request, HttpResponse& response) {
 
     if(path == "/stat" || path == "/statistics" || path == "/stat.json") {
         HttpJsonResponder(this, m_investigator).service(request, response);
-    } else if (path=="/turnoff") {
-        emit turnOff(0);
-        response.setStatus(200, "OK");
-        response.write("Program is disabled.",true);
+    } if(path == "/getSettings") {
+        HttpSettingsResponder(this, m_investigator).service(request, response);
+    } if(path == "/setSettings") {
+        //HttpJsonResponder(this, m_investigator).service(request, response);
     } else {
-        response.setStatus(404,"Not found");
-        response.write("Incorrect URL.",true);
+        response.setStatus(404, "Not found");
+        response.write("Incorrect URL.", true);
     }
 }

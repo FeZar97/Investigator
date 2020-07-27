@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Settings</class>
- <widget class="QDialog" name="Settings">
+ <class>SettingsWindow</class>
+ <widget class="QDialog" name="SettingsWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>556</width>
-    <height>216</height>
+    <width>558</width>
+    <height>176</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -20,16 +20,16 @@
    <string>Dialog</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="img.qrc">
-    <normaloff>:/img/SETTINGS.png</normaloff>:/img/SETTINGS.png</iconset>
+   <iconset resource="res.qrc">
+    <normaloff>:/ICONS/SETTINGS.ico</normaloff>:/ICONS/SETTINGS.ico</iconset>
   </property>
   <widget class="QTabWidget" name="settingsTabWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>553</width>
-     <height>213</height>
+     <width>555</width>
+     <height>173</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -59,8 +59,8 @@
       <rect>
        <x>2</x>
        <y>4</y>
-       <width>559</width>
-       <height>187</height>
+       <width>543</width>
+       <height>205</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="directorySettingsLayout">
@@ -98,7 +98,7 @@
            <string>Каталог, через который осуществляется передача файлов извне</string>
           </property>
           <property name="text">
-           <string>Входной каталог:</string>
+           <string>Входная директория:</string>
           </property>
          </widget>
         </item>
@@ -130,14 +130,14 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="sizeIncrement">
@@ -153,8 +153,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
+           <iconset resource="res.qrc">
+            <normaloff>:/ICONS/FOLDER.png</normaloff>:/ICONS/FOLDER.png</iconset>
           </property>
          </widget>
         </item>
@@ -188,7 +188,7 @@
            <string>Каталога для временных файлов программы </string>
           </property>
           <property name="text">
-           <string>Каталог для временных файлов:</string>
+           <string>Директория для временных файлов:</string>
           </property>
          </widget>
         </item>
@@ -214,14 +214,14 @@
          <widget class="QPushButton" name="tempDirButton">
           <property name="minimumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="toolTip">
@@ -231,8 +231,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
+           <iconset resource="res.qrc">
+            <normaloff>:/ICONS/FOLDER.png</normaloff>:/ICONS/FOLDER.png</iconset>
           </property>
          </widget>
         </item>
@@ -266,7 +266,7 @@
            <string>Каталог, в который кладутся файлы прошедшие проверку средствами АВС и не представляющие угрозы</string>
           </property>
           <property name="text">
-           <string>Каталог для чистых файлов:</string>
+           <string>Директория для чистых файлов:</string>
           </property>
          </widget>
         </item>
@@ -292,14 +292,14 @@
          <widget class="QPushButton" name="cleanDirButton">
           <property name="minimumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="toolTip">
@@ -309,8 +309,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
+           <iconset resource="res.qrc">
+            <normaloff>:/ICONS/FOLDER.png</normaloff>:/ICONS/FOLDER.png</iconset>
           </property>
          </widget>
         </item>
@@ -344,7 +344,7 @@
            <string>Каталог для зараженых файлов </string>
           </property>
           <property name="text">
-           <string>Каталог для зараженных файлов:</string>
+           <string>Директория для зараженных файлов:</string>
           </property>
          </widget>
         </item>
@@ -370,14 +370,14 @@
          <widget class="QPushButton" name="dangerousDirButton">
           <property name="minimumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>23</width>
-            <height>23</height>
+            <width>24</width>
+            <height>24</height>
            </size>
           </property>
           <property name="toolTip">
@@ -387,83 +387,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_11">
-        <property name="leftMargin">
-         <number>4</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>2</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="logsDirLabel">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Каталог для хранения логов:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="logsDirLE">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Полный путь до каталога для логов программы</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="logsDirButton">
-          <property name="minimumSize">
-           <size>
-            <width>23</width>
-            <height>23</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>23</width>
-            <height>23</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Выбор каталога для логов программы</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
+           <iconset resource="res.qrc">
+            <normaloff>:/ICONS/FOLDER.png</normaloff>:/ICONS/FOLDER.png</iconset>
           </property>
          </widget>
         </item>
@@ -495,7 +420,7 @@
        <x>4</x>
        <y>2</y>
        <width>543</width>
-       <height>241</height>
+       <height>203</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="avsSettingsLayout">
@@ -514,7 +439,7 @@
          <number>4</number>
         </property>
         <item>
-         <widget class="QLabel" name="pathToAVLabel">
+         <widget class="QLabel" name="avsExecFileLabel">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -535,7 +460,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="avFileLE">
+         <widget class="QLineEdit" name="avsExecFileLE">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -553,7 +478,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="avFileButton">
+         <widget class="QPushButton" name="avsExecFileButton">
           <property name="minimumSize">
            <size>
             <width>23</width>
@@ -585,81 +510,6 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <property name="leftMargin">
-         <number>4</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>2</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="infectOperationLabel">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Действие, выполняемое при обнаружении зараженного файла</string>
-          </property>
-          <property name="text">
-           <string>Действие с зараженными файлами:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="infectActionCB">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Действие, выполняемое при обнаружении зараженного файла</string>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QComboBox::AdjustToContents</enum>
-          </property>
-          <item>
-           <property name="text">
-            <string>перенос в каталог</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>удаление</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_13">
         <property name="leftMargin">
          <number>4</number>
@@ -674,7 +524,7 @@
          <number>4</number>
         </property>
         <item>
-         <widget class="QLabel" name="maxQueueSizeLabel">
+         <widget class="QLabel" name="thresholdFilesLabel">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -684,7 +534,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Порог очереди файлов во входной директории</string>
+           <string>Порог отбора файлов на антивирусную проверку для одного воркера</string>
           </property>
           <property name="text">
            <string>Пороги очередей:</string>
@@ -695,7 +545,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="avMaxQueueSizeSB">
+         <widget class="QSpinBox" name="thresholdFilesNbSB">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -705,7 +555,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Порог по кол-ву файлов</string>
+           <string>Значение порога по количеству файлов</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -719,7 +569,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="avMaxQueueSizeLabel">
+         <widget class="QLabel" name="thresholdFilesNbLabel">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -734,7 +584,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="avMaxQueueVolSB">
+         <widget class="QSpinBox" name="thresholdFilesSizeSB">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -744,18 +594,21 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Порог по объему файлов</string>
+           <string>Значение порога по объему файлов</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
           <property name="maximum">
-           <double>999999.000000000000000</double>
+           <number>400</number>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="avMaxQueueVolUnitCB">
+         <widget class="QComboBox" name="thresholdFilesSizeUnitCB">
           <property name="maximumSize">
            <size>
             <width>40</width>
@@ -770,16 +623,67 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Единицы измерения порога по объему</string>
+          </property>
           <item>
            <property name="text">
-            <string>Мб</string>
+            <string>Б</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Гб</string>
+            <string>КБ</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>МБ</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ГБ</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ТБ</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="threadsNumberLabel">
+          <property name="font">
+           <font>
+            <family>Courier New</family>
+            <pointsize>10</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Потоков:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="threadsNumberSB">
+          <property name="toolTip">
+           <string>Количество воркеров, выполняющих сканирование
+(Наиболее предпочтительно указать количество воркеров
+равное количеству ядер)</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>4</number>
+          </property>
          </widget>
         </item>
         <item>
@@ -794,116 +698,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_8">
-        <property name="leftMargin">
-         <number>4</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>2</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="saveAVSReportsLabel">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Включение/отключение сохранения отчетов АВС без какого либо форматирования (as is)</string>
-          </property>
-          <property name="text">
-           <string>Сохранять отчеты АВС:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="saveAVSReportsCB">
-          <property name="toolTip">
-           <string>Флаг включения/отключения сохранения отчетов АВС без какого либо форматирования (as is)</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="reportsDirLabel">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Каталог для сохранения отчетов АВС</string>
-          </property>
-          <property name="text">
-           <string>Каталог:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="reportsDirLE">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Каталог для сохранения отчетов АВС</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="reportsDirButton">
-          <property name="minimumSize">
-           <size>
-            <width>23</width>
-            <height>23</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>23</width>
-            <height>23</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>Corbel</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Выбор каталога для сохранения отчетов АВС</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="img.qrc">
-            <normaloff>:/img/FOLDER.png</normaloff>:/img/FOLDER.png</iconset>
-          </property>
-         </widget>
         </item>
        </layout>
       </item>
@@ -1030,8 +824,8 @@
       <rect>
        <x>2</x>
        <y>4</y>
-       <width>381</width>
-       <height>151</height>
+       <width>457</width>
+       <height>137</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="reactionSettingsLayout">
@@ -1066,24 +860,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="syslogCB">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Флаг включения/отключения отсылки информационных сообщений на syslog сервер</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QLineEdit" name="syslogAddressLE">
           <property name="font">
            <font>
@@ -1094,7 +870,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Адрес и порт внешнего syslog сервера</string>
+           <string>Адрес syslog сервера, принимающего сообщения о найденных инфицированных файлах</string>
           </property>
           <property name="text">
            <string/>
@@ -1103,74 +879,6 @@
         </item>
         <item>
          <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_9">
-        <property name="leftMargin">
-         <number>4</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>2</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="syslogInformationLabel">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Уровень логов, отпарвляемых на syslog сервер</string>
-          </property>
-          <property name="text">
-           <string>Уровень информирования:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="syslogLevelCB">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <item>
-           <property name="text">
-            <string>полное логирование</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>обнаруженные вирусы</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_5">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -1207,7 +915,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Включение(отключение) локального http сервера, позволяющего отправлять накопленную статистику в виде JSON.</string>
+           <string>Локальный http сервер, позволяющий отправлять накопленную статистику в виде JSON</string>
           </property>
           <property name="text">
            <string>Локальный Http сервер:</string>
@@ -1215,7 +923,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="httpServerCB">
+         <widget class="QPushButton" name="restartHttpServerButton">
           <property name="font">
            <font>
             <family>Courier New</family>
@@ -1223,28 +931,10 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>Флаг включения/выключения http сервера</string>
+           <string>Перезапустить http сервер, транслирующий текущую статистику работы</string>
           </property>
           <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="httpServerAddressLE">
-          <property name="font">
-           <font>
-            <family>Courier New</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string>Адрес и порт, которые будет &quot;слушать&quot; http сервер</string>
-          </property>
-          <property name="text">
-           <string/>
+           <string>Перезапустить</string>
           </property>
          </widget>
         </item>
@@ -1292,7 +982,7 @@
   <tabstop>dangerousDirButton</tabstop>
  </tabstops>
  <resources>
-  <include location="img.qrc"/>
+  <include location="res.qrc"/>
  </resources>
  <connections/>
 </ui>

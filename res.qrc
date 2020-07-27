@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>../ICONS/FOLDER.png</file>
+        <file>../ICONS/START.png</file>
+        <file>../ICONS/STOP.png</file>
+        <file>../ICONS/INVESTIGATOR.ico</file>
+        <file>../ICONS/CLEAR.png</file>
+        <file>../ICONS/SETTINGS.ico</file>
+        <file>../ICONS/STATISTIC.ico</file>
+        <file>../ICONS/LOCK.ico</file>
+        <file>../ICONS/UNLOCK.ico</file>
+    </qresource>
+</RCC>

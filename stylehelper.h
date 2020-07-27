@@ -7,25 +7,25 @@ class Stylehelper {
 
 public:
 
-    static QString correctLEStylesheet() {
+    static QString LineEditCorrectStylesheet() {
         return "QLineEdit { \
                     background: #C0FFC0;\
                 };";
     }
 
-    static QString incorrectLEStylesheet() {
+    static QString LineEditIncorrectStylesheet() {
             return "QLineEdit { \
                         background: #FFC0C0;\
                     };";
         }
 
-    static QString changedLEStylesheet() {
+    static QString LineEditChangedStylesheet() {
                 return "QLineEdit { \
                             background: #FFFFE1;\
                         };";
             }
 
-    static QString defaultLEStylesheet() {
+    static QString LineEditDefaultStylesheet() {
             return "QLineEdit { \
                     };";
         }

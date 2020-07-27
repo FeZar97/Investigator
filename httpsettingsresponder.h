@@ -1,5 +1,5 @@
-#ifndef HTTPJSONRESPONDER_H
-#define HTTPJSONRESPONDER_H
+#ifndef HTTPSETTINGSRESPONDER_H
+#define HTTPSETTINGSRESPONDER_H
 
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -10,14 +10,14 @@
 
 using namespace stefanfrings;
 
-class HttpJsonResponder : public HttpRequestHandler
+class HttpSettingsResponder: public HttpRequestHandler
 {
     Q_OBJECT
     InvestigatorOrchestartor *m_investigator;
 
 public:
-    HttpJsonResponder(QObject* parent = nullptr, InvestigatorOrchestartor *investigatorPtr = nullptr);
+    HttpSettingsResponder(QObject* parent = nullptr, InvestigatorOrchestartor *investigatorPtr = nullptr);
     void service(HttpRequest& request, HttpResponse& response);
 };
 
-#endif // HTTPJSONRESPONDER_H
+#endif // HTTPSETTINGSRESPONDER_H
