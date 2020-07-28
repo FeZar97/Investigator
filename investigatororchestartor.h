@@ -17,8 +17,7 @@ const int MaxThreadNb{16}; // максимальное количество по
 const int SleepIntervalAfterScanMs = 1000;
 const int UpdatePeriodMs = 500;
 
-class InvestigatorOrchestartor : public QObject
-{
+class InvestigatorOrchestartor : public QObject {
     Q_OBJECT
 
 public:
@@ -93,10 +92,14 @@ public:
     void stopWork(); // полная остановка
     bool reconfigureWorkers(); // обновление настроек воркеров
 
-    bool isInWork() { return m_isInWork; }
+    bool isInWork() {
+        return m_isInWork;
+    }
     bool readyToNextProcess(); // флаг готовности к запуску новой обработки
 
-    bool resultOfInitialScan() { return m_successInitialScan; } // результат инициализирующего запуска
+    bool resultOfInitialScan() {
+        return m_successInitialScan;    // результат инициализирующего запуска
+    }
 
     void fileLog(QString message); // логирование процесса работы в файлы
 
@@ -107,41 +110,85 @@ public:
     void log(QString message, int logCtx);
 
 // настройки
-    QString sourceDir() { return m_sourceDir; }
-    void setSourceDir(QString sourceDir) { m_sourceDir = sourceDir; }
+    QString sourceDir() {
+        return m_sourceDir;
+    }
+    void setSourceDir(QString sourceDir) {
+        m_sourceDir = sourceDir;
+    }
 
-    QString processDir() { return m_processDir; }
-    void setProcessDir(QString processDir) { m_processDir = processDir; }
+    QString processDir() {
+        return m_processDir;
+    }
+    void setProcessDir(QString processDir) {
+        m_processDir = processDir;
+    }
 
-    QString infectedDir() { return m_infectedDir; }
-    void setInfectedDir(QString infectedDir) { m_infectedDir = infectedDir; }
+    QString infectedDir() {
+        return m_infectedDir;
+    }
+    void setInfectedDir(QString infectedDir) {
+        m_infectedDir = infectedDir;
+    }
 
-    QString cleanDir() { return m_cleanDir; }
-    void setCleanDir(QString cleanDir) { m_cleanDir = cleanDir; }
+    QString cleanDir() {
+        return m_cleanDir;
+    }
+    void setCleanDir(QString cleanDir) {
+        m_cleanDir = cleanDir;
+    }
 
-    int tempCurrentWorkersNb() { return m_tempCurrentWorkersNb; }
-    int currentWorkersNb() { return m_currentWorkersNb; }
-    void setWorkersNb(int workersNb) { m_tempCurrentWorkersNb = workersNb; }
+    int tempCurrentWorkersNb() {
+        return m_tempCurrentWorkersNb;
+    }
+    int currentWorkersNb() {
+        return m_currentWorkersNb;
+    }
+    void setWorkersNb(int workersNb) {
+        m_tempCurrentWorkersNb = workersNb;
+    }
 
-    qint64 thresholdFilesNb() { return m_thresholdFilesNb; }
-    void setThresholdFilesNb(qint64 thresholdFilesNb) { m_thresholdFilesNb = thresholdFilesNb; }
+    qint64 thresholdFilesNb() {
+        return m_thresholdFilesNb;
+    }
+    void setThresholdFilesNb(qint64 thresholdFilesNb) {
+        m_thresholdFilesNb = thresholdFilesNb;
+    }
 
-    qint64 thresholdFilesSize() { return m_thresholdFilesSize; }
-    void setThresholdFilesSize(qint64 thresholdFilesSize) { m_thresholdFilesSize = thresholdFilesSize; }
+    qint64 thresholdFilesSize() {
+        return m_thresholdFilesSize;
+    }
+    void setThresholdFilesSize(qint64 thresholdFilesSize) {
+        m_thresholdFilesSize = thresholdFilesSize;
+    }
 
-    qint64 thresholdFilesSizeUnit() { return m_thresholdFilesSizeUnit; }
-    void setThresholdFilesSizeUnit(qint64 thresholdFilesSizeUnit) { m_thresholdFilesSizeUnit = thresholdFilesSizeUnit; }
+    qint64 thresholdFilesSizeUnit() {
+        return m_thresholdFilesSizeUnit;
+    }
+    void setThresholdFilesSizeUnit(qint64 thresholdFilesSizeUnit) {
+        m_thresholdFilesSizeUnit = thresholdFilesSizeUnit;
+    }
 
-    QString avsExecFileName() { return m_avsExecFileName; }
+    QString avsExecFileName() {
+        return m_avsExecFileName;
+    }
     void setAvsExecFileName(QString avsFileName);
 
-    QString syslogAddress() { return m_syslogAddress; }
-    void setSyslogAddress(QString syslogAddress) { m_syslogAddress = syslogAddress; }
+    QString syslogAddress() {
+        return m_syslogAddress;
+    }
+    void setSyslogAddress(QString syslogAddress) {
+        m_syslogAddress = syslogAddress;
+    }
 
 // статистика
-    QString avsVersion() { return m_avVersion; }
+    QString avsVersion() {
+        return m_avVersion;
+    }
 
-    qint64 currentQueueFilesNb() { return m_totalFileList.size(); }
+    qint64 currentQueueFilesNb() {
+        return m_totalFileList.size();
+    }
 
     // количество файлов, находящихся на проверке в данный момент
     qint64 inProcessFilesNb();
@@ -153,27 +200,47 @@ public:
     void getInitialAvsScan(bool needLaterStart = false);
 
     // установка глобальных счетчиков
-    void setTotalProcessedFilesNb(quint64 totalProcessedFilesNb) { m_totalProcessedFilesNb = totalProcessedFilesNb; }
-    void setTotalProcessedFilesSize(quint64 totalProcessedFilesSize) { m_totalProcessedFilesSize = totalProcessedFilesSize; }
-    void setTotalInfectedFilesNb(quint64 totalInfectedFilesNb) { m_totalInfectedFilesNb = totalInfectedFilesNb; }
-    void setTotalPwdFilesNb(quint64 totalPwdFilesNb) { m_totalPwdFilesNb = totalPwdFilesNb; }
+    void setTotalProcessedFilesNb(quint64 totalProcessedFilesNb) {
+        m_totalProcessedFilesNb = totalProcessedFilesNb;
+    }
+    void setTotalProcessedFilesSize(quint64 totalProcessedFilesSize) {
+        m_totalProcessedFilesSize = totalProcessedFilesSize;
+    }
+    void setTotalInfectedFilesNb(quint64 totalInfectedFilesNb) {
+        m_totalInfectedFilesNb = totalInfectedFilesNb;
+    }
+    void setTotalPwdFilesNb(quint64 totalPwdFilesNb) {
+        m_totalPwdFilesNb = totalPwdFilesNb;
+    }
 
     // сброс таймера работы
-    void dumpWorkTimer() { m_workTimeV = QVector<int>(4,0); }
+    void dumpWorkTimer() {
+        m_workTimeV = QVector<int>(4, 0);
+    }
 
     // статистика по очереди
     quint64 queueFilesNb();
     quint64 queueFilesSize();
 
     // статистика общая
-    quint64 totalProcessedFilesNb() { return m_totalProcessedFilesNb; }
-    quint64 totalProcessedFilesSize() { return m_totalProcessedFilesSize; }
-    quint64 totalInfectedFilesNb() { return m_totalInfectedFilesNb; }
-    quint64 totalPwdFilesNb() { return m_totalPwdFilesNb; }
+    quint64 totalProcessedFilesNb() {
+        return m_totalProcessedFilesNb;
+    }
+    quint64 totalProcessedFilesSize() {
+        return m_totalProcessedFilesSize;
+    }
+    quint64 totalInfectedFilesNb() {
+        return m_totalInfectedFilesNb;
+    }
+    quint64 totalPwdFilesNb() {
+        return m_totalPwdFilesNb;
+    }
     quint64 getWorkTimeInSec(); // время работы в секундах
 
     quint64 currentSpeed(); // скорость работы ОБЩАЯ
-    QVector<int> getWorkTimeVector() { return m_workTimeV; } // [dd, hh, mm, ss]
+    QVector<int> getWorkTimeVector() {
+        return m_workTimeV;    // [dd, hh, mm, ss]
+    }
 
     QString workTimeToString(); // время работы в виде строки
     QString workStatisticToString(); // статистика работы в виде строки

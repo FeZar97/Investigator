@@ -35,8 +35,7 @@ public:
 };
 
 // вернуть набор (проверено, объем, скорость, запароленных, ошибок, список(зараженный, подробности))
-class InvestigatorWorker: public QObject
-{
+class InvestigatorWorker: public QObject {
     Q_OBJECT
 
     int m_id; // идентификатор
@@ -62,7 +61,8 @@ class InvestigatorWorker: public QObject
 
     // времянки
     QStringList m_reportLines;
-    QString m_baseAVSVersion, m_m52coreVersion, m_drwebCoreVersion, m_kasperCoreVersion; // версии баз
+    QString m_baseAVSVersion, m_m52coreVersion, m_drwebCoreVersion,
+            m_kasperCoreVersion; // версии баз
     QString m_avVersion; // все версии
     QStringList m_tempSplitList1, m_tempSplitList2;
     QString m_tempInfectedFileName, m_tempVirusInfo;
@@ -71,9 +71,10 @@ class InvestigatorWorker: public QObject
     quint64 m_filesToProcessSize; // объем просканированных файлов за последнюю проверку в байтах
     quint64 m_speed{0}; // скорость последнего сканирования
     quint64 m_pwdFilesNb; // кол-во запароленных файлов за последнюю проверку
-    QList<QPair<QString,QString>> m_infList; // список зараженных файлов
+    QList<QPair<QString, QString>> m_infList; // список зараженных файлов
 
-    bool canAcceptWork(int id); // проверка возможности запуска проверки
+    bool canAcceptWork(int
+                       id); // проверка возможности запуска проверки
     void checkProcessDirExists(); // проверка возможности запуска проверки
     void flushStatistic(); // сброс статистики
     void parseReport(); // парсинг отчета
@@ -95,13 +96,19 @@ class InvestigatorWorker: public QObject
 public:
     InvestigatorWorker(QObject *parent);
 
-    bool isInProcess() { return m_isInProcess; }
-    quint64 speed() { return m_speed; }
+    bool isInProcess() {
+        return m_isInProcess;
+    }
+    quint64 speed() {
+        return m_speed;
+    }
 
     void startWork();
     void stopWork();
 
-    void setAvsExecFileName(QString avsExecFileName) {m_avsExecFileName = avsExecFileName;}
+    void setAvsExecFileName(QString avsExecFileName) {
+        m_avsExecFileName = avsExecFileName;
+    }
 
     // передача воркеру внешних параметров
     void configure(int id, QStringList dirList, QString m_avsExecFileName);
@@ -113,7 +120,10 @@ public:
     WorkerStatistic getLastStatistics();
 
     // кол-во файлов в директории воркера
-    qint64 filesInProcessNb() {return QDir(m_workerProcessDir).exists() ? QDir(m_workerProcessDir).entryInfoList(usingFilters).size() : 0;};
+    qint64 filesInProcessNb() {
+        return QDir(m_workerProcessDir).exists() ? QDir(m_workerProcessDir).entryInfoList(
+                   usingFilters).size() : 0;
+    };
 
 signals:
     void finish(int id); // сигнал о готовности воркера к работе

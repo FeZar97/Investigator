@@ -24,6 +24,7 @@
 
 /* IN PROCESS
  * удаленное управление
+ * внешний обработчик
  */
 
 /* TODO
@@ -35,7 +36,9 @@
  */
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class Widget; }
+namespace Ui {
+class Widget;
+}
 QT_END_NAMESPACE
 
 static const QString MajorVersion = "2";
@@ -44,8 +47,7 @@ static const QString PatchVersion = "0";
 
 static const QString Version = QString("v%1.%2").arg(MajorVersion).arg(MinorVersion);
 
-class Widget: public QWidget
-{
+class Widget: public QWidget {
     Q_OBJECT
 
 private:

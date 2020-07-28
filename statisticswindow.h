@@ -8,7 +8,7 @@
 #include "investigatororchestartor.h"
 
 namespace Ui {
-    class StatisticsWindow;
+class StatisticsWindow;
 }
 
 class StatisticsWindow : public QDialog {
@@ -16,14 +16,15 @@ class StatisticsWindow : public QDialog {
     Q_OBJECT
 
 public:
-    explicit StatisticsWindow(QWidget *parent = nullptr, InvestigatorOrchestartor* investigator = nullptr);
+    explicit StatisticsWindow(QWidget *parent = nullptr,
+                              InvestigatorOrchestartor *investigator = nullptr);
     ~StatisticsWindow();
 
     void updateUi();
 
 private:
     Ui::StatisticsWindow *ui;
-    InvestigatorOrchestartor* m_investigator;
+    InvestigatorOrchestartor *m_investigator;
     QStandardItemModel m_model;
 
     void createUi();

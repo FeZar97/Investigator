@@ -14,11 +14,11 @@ class HttpRequestMapper: public HttpRequestHandler {
     Q_OBJECT
 
     InvestigatorOrchestartor *m_investigator;
-    void setInvestigator(InvestigatorOrchestartor* orchestartorPtr = nullptr);
+    void setInvestigator(InvestigatorOrchestartor *orchestartorPtr = nullptr);
 
 public:
-    HttpRequestMapper(QObject* parent = 0, InvestigatorOrchestartor* investigatorPtr = nullptr);
-    void service(HttpRequest& request, HttpResponse& response);
+    HttpRequestMapper(QObject *parent = 0, InvestigatorOrchestartor *investigatorPtr = nullptr);
+    void service(HttpRequest &request, HttpResponse &response);
 };
 
 #endif // HTTPREQUESTMAPPER_H

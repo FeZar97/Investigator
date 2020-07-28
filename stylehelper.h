@@ -14,21 +14,21 @@ public:
     }
 
     static QString LineEditIncorrectStylesheet() {
-            return "QLineEdit { \
+        return "QLineEdit { \
                         background: #FFC0C0;\
                     };";
-        }
+    }
 
     static QString LineEditChangedStylesheet() {
-                return "QLineEdit { \
+        return "QLineEdit { \
                             background: #FFFFE1;\
                         };";
-            }
+    }
 
     static QString LineEditDefaultStylesheet() {
-            return "QLineEdit { \
+        return "QLineEdit { \
                     };";
-        }
+    }
 };
 
 #endif // STYLEHELPER_H

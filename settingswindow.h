@@ -8,7 +8,7 @@
 #include "investigatororchestartor.h"
 
 namespace Ui {
-    class SettingsWindow;
+class SettingsWindow;
 }
 
 class SettingsWindow: public QDialog {
@@ -19,11 +19,16 @@ class SettingsWindow: public QDialog {
     bool *m_isUiLocked;
 
 public:
-    explicit SettingsWindow(QWidget *parent = nullptr, InvestigatorOrchestartor* investigator = nullptr, bool *isUiLocked = nullptr);
+    explicit SettingsWindow(QWidget *parent = nullptr, InvestigatorOrchestartor *investigator = nullptr,
+                            bool *isUiLocked = nullptr);
     ~SettingsWindow();
 
-    int currentOpenTab() { return m_currentOpenTab; }
-    void setCurrentOpenTab(int currentOpenTab) {m_currentOpenTab = currentOpenTab;}
+    int currentOpenTab() {
+        return m_currentOpenTab;
+    }
+    void setCurrentOpenTab(int currentOpenTab) {
+        m_currentOpenTab = currentOpenTab;
+    }
 
     void updateUi();
 
@@ -54,8 +59,8 @@ private slots:
 
 private:
     Ui::SettingsWindow *ui;
-    bool* m_lockUi{nullptr};
-    InvestigatorOrchestartor* m_investigator;
+    bool *m_lockUi{nullptr};
+    InvestigatorOrchestartor *m_investigator;
 
 signals:
     void restartHttpServer();

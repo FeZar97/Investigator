@@ -11,17 +11,17 @@ void Widget::createAboutWidget() {
 void Widget::createTrayIcon() {
     m_trayIcon = new QSystemTrayIcon(this);
     m_trayIcon->setIcon(QIcon(":/ICONS/INVESTIGATOR.ico"));
-    connect(m_trayIcon, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason) {
-        switch(reason) {
-            case QSystemTrayIcon::Trigger:
-            case QSystemTrayIcon::DoubleClick:
-            case QSystemTrayIcon::MiddleClick:
-                setVisible(true);
-                showNormal();
-                break;
-            default:
-                ;
-            }
+    connect(m_trayIcon, &QSystemTrayIcon::activated, [ = ](QSystemTrayIcon::ActivationReason reason) {
+        switch (reason) {
+        case QSystemTrayIcon::Trigger:
+        case QSystemTrayIcon::DoubleClick:
+        case QSystemTrayIcon::MiddleClick:
+            setVisible(true);
+            showNormal();
+            break;
+        default:
+            ;
+        }
     });
     m_trayIcon->show();
     m_trayIcon->setVisible(true);
@@ -42,7 +42,7 @@ void Widget::createSettingsWindow() {
 }
 
 void Widget::startHttpServer() {
-    if(m_httpServer) {
+    if (m_httpServer) {
         m_httpServer->close();
         delete m_httpServer;
         m_httpServer = nullptr;
@@ -62,21 +62,29 @@ void Widget::createSaveSettingsTimer() {
 void Widget::connectObjects() {
     connect(ui->aboutLabel, &ClickableLabel::clicked, this, &Widget::onAboutClicked);
 
-    connect(this, &Widget::getInitialAvsScan,       m_investigator,         &InvestigatorOrchestartor::getInitialAvsScan);
+    connect(this, &Widget::getInitialAvsScan,       m_investigator,
+            &InvestigatorOrchestartor::getInitialAvsScan);
 
-    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  m_statisticsWindow, &StatisticsWindow::updateUi);
-    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  [=](){
+    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  m_statisticsWindow,
+            &StatisticsWindow::updateUi);
+    connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  [ = ]() {
         ui->workTimeInfoLabel->setText(m_investigator->workTimeToString());
     });
 
-    connect(m_investigator,     &InvestigatorOrchestartor::uiLog,           this,               &Widget::uiLog);
-    connect(m_investigator,     &InvestigatorOrchestartor::updateUi,        this,               &Widget::updateUi);
-    connect(this,               &Widget::start,                             m_investigator,     &InvestigatorOrchestartor::startWork);
-    connect(this,               &Widget::stop,                              m_investigator,     &InvestigatorOrchestartor::stopWork);
-    connect(this,               &Widget::log,                               m_investigator,     &InvestigatorOrchestartor::log);
+    connect(m_investigator,     &InvestigatorOrchestartor::uiLog,           this,
+            &Widget::uiLog);
+    connect(m_investigator,     &InvestigatorOrchestartor::updateUi,        this,
+            &Widget::updateUi);
+    connect(this,               &Widget::start,                             m_investigator,
+            &InvestigatorOrchestartor::startWork);
+    connect(this,               &Widget::stop,                              m_investigator,
+            &InvestigatorOrchestartor::stopWork);
+    connect(this,               &Widget::log,                               m_investigator,
+            &InvestigatorOrchestartor::log);
 
     // перезапуск http сервера
-    connect(m_settingsWindow,   &SettingsWindow::restartHttpServer,         this,               &Widget::startHttpServer);
+    connect(m_settingsWindow,   &SettingsWindow::restartHttpServer,         this,
+            &Widget::startHttpServer);
 }
 
 // завершение работы программы
@@ -84,7 +92,8 @@ void Widget::closeProgram() {
 
     saveSettings();
 
-    emit log("Работа программы завершена.", Logger::UI + Logger::SYSLOG + Logger::FILE);
+    emit log("Работа программы завершена.",
+             Logger::UI + Logger::SYSLOG + Logger::FILE);
     emit log("---------------------------", Logger::FILE);
 
     m_trayIcon->hide();
@@ -95,7 +104,8 @@ void Widget::closeProgram() {
     m_investigatorThread.wait();
 }
 
-Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings("FeZar97", "TheInvestigator") {
+Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings("FeZar97",
+                                                                                     "TheInvestigator") {
     ui->setupUi(this);
 
     setWindowTitle(QString("The Investigator %1").arg(Version));
@@ -134,10 +144,10 @@ void Widget::closeEvent(QCloseEvent *event) {
 
     saveSettings();
 
-    if(QMessageBox::warning(this,
-                            QString("Подтвердите действие"),
-                            QString("Вы действительно хотите завершить работу программы?"),
-                            QString("Да"), QString("Нет")) == 0) {
+    if (QMessageBox::warning(this,
+                             QString("Подтвердите действие"),
+                             QString("Вы действительно хотите завершить работу программы?"),
+                             QString("Да"), QString("Нет")) == 0) {
         closeProgram();
         exit(0);
         event->accept();
@@ -166,11 +176,15 @@ void Widget::on_stopButton_clicked() {
 }
 
 void Widget::updateUi() {
-    ui->startButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan() && !m_investigator->isInWork());
-    ui->stopButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan() && m_investigator->isInWork());
+    ui->startButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()
+                                && !m_investigator->isInWork());
+    ui->stopButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()
+                               && m_investigator->isInWork());
     ui->clearButton->setEnabled(!m_isUiLocked);
 
     ui->lockUiButton->setIcon(QIcon(m_isUiLocked ? ":/ICONS/UNLOCK.ico" : ":/ICONS/LOCK.ico"));
+    ui->lockUiButton->setText(m_isUiLocked ? "Разблокировать интерфейс" :
+                              "Блокировать интерфейс");
 
     m_statisticsWindow->updateUi();
     m_settingsWindow->updateUi();
@@ -179,26 +193,37 @@ void Widget::updateUi() {
 // восстановление настроек
 void Widget::restoreSettings() {
     // настройки директорий
-    m_investigator->setSourceDir(m_settings.value("sourceDir",      "C:\\investigator\\input").toString());
-    m_investigator->setProcessDir(m_settings.value("processDir",    "C:\\investigator\\temp").toString());
-    m_investigator->setCleanDir(m_settings.value("cleanDir",        "C:\\investigator\\clean").toString());
-    m_investigator->setInfectedDir(m_settings.value("infectedDir",  "C:\\investigator\\danger").toString());
+    m_investigator->setSourceDir(m_settings.value("sourceDir",
+                                                  "C:\\investigator\\input").toString());
+    m_investigator->setProcessDir(m_settings.value("processDir",
+                                                   "C:\\investigator\\temp").toString());
+    m_investigator->setCleanDir(m_settings.value("cleanDir",
+                                                 "C:\\investigator\\clean").toString());
+    m_investigator->setInfectedDir(m_settings.value("infectedDir",
+                                                    "C:\\investigator\\danger").toString());
 
     // настройки воркеров
-    m_investigator->setWorkersNb(m_settings.value("threadsNb",                      QThread::idealThreadCount()).toInt());
+    m_investigator->setWorkersNb(m_settings.value("threadsNb",
+                                                  QThread::idealThreadCount()).toInt());
     m_investigator->setThresholdFilesNb(m_settings.value("thresholdFilesNb",        100).toInt());
     m_investigator->setThresholdFilesSize(m_settings.value("thresholdFilesSize",    100).toInt());
-    m_investigator->setThresholdFilesSizeUnit(m_settings.value("thresholdFilesSizeUnit", SizeConverter::MEGABYTE).toLongLong());
+    m_investigator->setThresholdFilesSizeUnit(m_settings.value("thresholdFilesSizeUnit",
+                                                               SizeConverter::MEGABYTE).toLongLong());
 
-    m_investigator->setAvsExecFileName(m_settings.value("avsPath", "C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe").toString());
+    m_investigator->setAvsExecFileName(m_settings.value("avsPath",
+                                                        "C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe").toString());
 
     m_investigator->setSyslogAddress(m_settings.value("syslogAddress", "0.0.0.0").toString());
 
     // статистика общая
-    m_investigator->setTotalProcessedFilesNb(m_settings.value("totalProcessedFilesNb",      0).toLongLong());
-    m_investigator->setTotalProcessedFilesSize(m_settings.value("totalProcessedFilesSize",  0).toLongLong());
-    m_investigator->setTotalInfectedFilesNb(m_settings.value("totalInfectedFilesNb",        0).toLongLong());
-    m_investigator->setTotalPwdFilesNb(m_settings.value("totalPwdFilesNb",                  0).toLongLong());
+    m_investigator->setTotalProcessedFilesNb(m_settings.value("totalProcessedFilesNb",
+                                                              0).toLongLong());
+    m_investigator->setTotalProcessedFilesSize(m_settings.value("totalProcessedFilesSize",
+                                                                0).toLongLong());
+    m_investigator->setTotalInfectedFilesNb(m_settings.value("totalInfectedFilesNb",
+                                                             0).toLongLong());
+    m_investigator->setTotalPwdFilesNb(m_settings.value("totalPwdFilesNb",
+                                                        0).toLongLong());
 
     // вкладка окна настроек
     m_settingsWindow->setCurrentOpenTab(m_settings.value("settingsWinCurrentTab", 0).toInt());
@@ -216,7 +241,8 @@ void Widget::restoreSettings() {
     m_isUiLocked = m_settings.value("isUiLocked", false).toBool();
 
     emit log("Программа запущена.", Logger::UI + Logger::SYSLOG + Logger::FILE);
-    emit log(QString("Настройки программы восстановлены."), Logger::FILE);
+    emit log(QString("Настройки программы восстановлены."),
+             Logger::FILE);
 }
 
 // сохранение настроек
@@ -268,12 +294,13 @@ void Widget::saveSettings() {
 // очистка
 void Widget::on_clearButton_clicked() {
 
-    int reply = QMessageBox::question(this, QString("Очистка"), QString("Выберите тип очистки:\n\t'Окно логов' - очистить окно вывода логов;\n\t'Полная очистка' - очистить логи и накопленную статистику."),
-                                          QString("Окно логов"), QString("Полная очистка"), QString("Отмена"));
+    int reply = QMessageBox::question(this, QString("Очистка"),
+                                      QString("Выберите тип очистки:\n\t'Окно логов' - очистить окно вывода логов;\n\t'Полная очистка' - очистить логи и накопленную статистику."),
+                                      QString("Окно логов"), QString("Полная очистка"), QString("Отмена"));
 
-    if(reply == -1 || reply == 2) {
+    if (reply == -1 || reply == 2) {
         return;
-    } else if(reply == 1) {
+    } else if (reply == 1) {
         m_investigator->dumpWorkTimer();
         m_investigator->setTotalProcessedFilesNb(0);
         m_investigator->setTotalProcessedFilesSize(0);

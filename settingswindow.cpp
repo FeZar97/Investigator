@@ -1,7 +1,8 @@
 #include "settingswindow.h"
 #include "ui_settingswindow.h"
 
-SettingsWindow::SettingsWindow(QWidget *parent, InvestigatorOrchestartor *investigator, bool *isUiLocked):
+SettingsWindow::SettingsWindow(QWidget *parent, InvestigatorOrchestartor *investigator,
+                               bool *isUiLocked):
     QDialog(parent),
     ui(new Ui::SettingsWindow) {
     ui->setupUi(this);
@@ -29,22 +30,28 @@ SettingsWindow::~SettingsWindow() {
 }
 
 void SettingsWindow::on_watchDirButton_clicked() {
-    m_investigator->setSourceDir(QFileDialog::getExistingDirectory(this, QString("Выбор директории для слежения"), m_investigator->sourceDir()));
+    m_investigator->setSourceDir(QFileDialog::getExistingDirectory(this,
+                                                                   QString("Выбор директории для слежения"), m_investigator->sourceDir()));
     updateUi();
 }
 
 void SettingsWindow::on_tempDirButton_clicked() {
-    m_investigator->setProcessDir(QFileDialog::getExistingDirectory(this, QString("Директория для временных файлов"), m_investigator->processDir()));
+    m_investigator->setProcessDir(QFileDialog::getExistingDirectory(this,
+                                                                    QString("Директория для временных файлов"),
+                                                                    m_investigator->processDir()));
     updateUi();
 }
 
 void SettingsWindow::on_cleanDirButton_clicked() {
-    m_investigator->setCleanDir(QFileDialog::getExistingDirectory(this, QString("Директория для чистых файлов"), m_investigator->cleanDir()));
+    m_investigator->setCleanDir(QFileDialog::getExistingDirectory(this,
+                                                                  QString("Директория для чистых файлов"), m_investigator->cleanDir()));
     updateUi();
 }
 
 void SettingsWindow::on_dangerousDirButton_clicked() {
-    m_investigator->setInfectedDir(QFileDialog::getExistingDirectory(this, QString("Директория для зараженных файлов"), m_investigator->infectedDir()));
+    m_investigator->setInfectedDir(QFileDialog::getExistingDirectory(this,
+                                                                     QString("Директория для зараженных файлов"),
+                                                                     m_investigator->infectedDir()));
     updateUi();
 }
 
@@ -76,33 +83,42 @@ void SettingsWindow::updateUi() {
 
     ui->settingsTabWidget->setCurrentIndex(m_currentOpenTab);
 
-    if(m_investigator) {
+    if (m_investigator) {
 
         // --- DIRS PAGE ---
         ui->watchDirButton->setEnabled(!*m_isUiLocked);
         ui->watchDirLE->setText(m_investigator->sourceDir());
-        ui->watchDirLE->setStyleSheet((QDir(m_investigator->sourceDir()).exists() && !m_investigator->sourceDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->watchDirLE->setStyleSheet((QDir(m_investigator->sourceDir()).exists()
+                                       && !m_investigator->sourceDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() :
+                                      Stylehelper::LineEditIncorrectStylesheet());
         ui->watchDirLE->setEnabled(!*m_isUiLocked);
 
         ui->tempDirButton->setEnabled(!*m_isUiLocked);
         ui->tempDirLE->setText(m_investigator->processDir());
-        ui->tempDirLE->setStyleSheet((QDir(m_investigator->processDir()).exists() && !m_investigator->processDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->tempDirLE->setStyleSheet((QDir(m_investigator->processDir()).exists()
+                                      && !m_investigator->processDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() :
+                                     Stylehelper::LineEditIncorrectStylesheet());
         ui->tempDirLE->setEnabled(!*m_isUiLocked);
 
         ui->cleanDirButton->setEnabled(!*m_isUiLocked);
         ui->cleanDirLE->setText(m_investigator->cleanDir());
-        ui->cleanDirLE->setStyleSheet((QDir(m_investigator->cleanDir()).exists() && !m_investigator->cleanDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->cleanDirLE->setStyleSheet((QDir(m_investigator->cleanDir()).exists()
+                                       && !m_investigator->cleanDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() :
+                                      Stylehelper::LineEditIncorrectStylesheet());
         ui->cleanDirLE->setEnabled(!*m_isUiLocked);
 
         ui->dangerousDirButton->setEnabled(!*m_isUiLocked);
         ui->dangerousDirLE->setText(m_investigator->infectedDir());
-        ui->dangerousDirLE->setStyleSheet((QDir(m_investigator->infectedDir()).exists() && !m_investigator->infectedDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->dangerousDirLE->setStyleSheet((QDir(m_investigator->infectedDir()).exists()
+                                           && !m_investigator->infectedDir().isEmpty()) ? Stylehelper::LineEditDefaultStylesheet() :
+                                          Stylehelper::LineEditIncorrectStylesheet());
         ui->dangerousDirLE->setEnabled(!*m_isUiLocked);
 
         // --- AVS PAGE ---
         ui->avsExecFileLE->setEnabled(!*m_isUiLocked && !m_investigator->isInWork());
         ui->avsExecFileLE->setText(m_investigator->avsExecFileName());
-        ui->avsExecFileLE->setStyleSheet(QFile(m_investigator->avsExecFileName()).exists() ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->avsExecFileLE->setStyleSheet(QFile(m_investigator->avsExecFileName()).exists() ?
+                                         Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
         ui->avsExecFileButton->setEnabled(!*m_isUiLocked && !m_investigator->isInWork());
 
         ui->threadsNumberSB->setEnabled(!*m_isUiLocked && !m_investigator->isInWork());
@@ -113,7 +129,8 @@ void SettingsWindow::updateUi() {
         ui->thresholdFilesSizeSB->setEnabled(!*m_isUiLocked);
         ui->thresholdFilesSizeSB->setValue(m_investigator->thresholdFilesSize());
         ui->thresholdFilesSizeUnitCB->setEnabled(!*m_isUiLocked);
-        ui->thresholdFilesSizeUnitCB->setCurrentIndex(SizeConverter::sizeUnitIdx(m_investigator->thresholdFilesSizeUnit()));
+        ui->thresholdFilesSizeUnitCB->setCurrentIndex(SizeConverter::sizeUnitIdx(
+                                                          m_investigator->thresholdFilesSizeUnit()));
 
         ui->externalHandlerFileCB->setEnabled(!*m_isUiLocked);
         // ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
@@ -124,7 +141,8 @@ void SettingsWindow::updateUi() {
         // --- EVENTS PAGE ---
         ui->syslogAddressLE->setEnabled(!*m_isUiLocked);
         ui->syslogAddressLE->setText(m_investigator->syslogAddress());
-        ui->syslogAddressLE->setStyleSheet(!QHostAddress(m_investigator->syslogAddress()).isNull() ? Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
+        ui->syslogAddressLE->setStyleSheet(!QHostAddress(m_investigator->syslogAddress()).isNull() ?
+                                           Stylehelper::LineEditDefaultStylesheet() : Stylehelper::LineEditIncorrectStylesheet());
 
         ui->restartHttpServerButton->setEnabled(!*m_isUiLocked);
     }

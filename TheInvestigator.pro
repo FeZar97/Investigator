@@ -58,4 +58,5 @@ RESOURCES += \
 
 win32: RC_ICONS = $$PWD/../ICONS/INVESTIGATOR.ico
 
-DISTFILES +=
+DISTFILES += \
+    codestyle.astylerc
