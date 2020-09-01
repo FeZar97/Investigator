@@ -23,16 +23,13 @@
  */
 
 /* IN PROCESS
- * удаленное управление
  * внешний обработчик
+ *
  */
 
 /* TODO
  * вывод информации о работе воркеров
  * визуализация процессов проверки
- * слияние с TheTransporter
- * автоматическое обновление
- * модификация интерфейса
  */
 
 QT_BEGIN_NAMESPACE
@@ -40,12 +37,6 @@ namespace Ui {
 class Widget;
 }
 QT_END_NAMESPACE
-
-static const QString MajorVersion = "2";
-static const QString MinorVersion = "4";
-static const QString PatchVersion = "0";
-
-static const QString Version = QString("v%1.%2").arg(MajorVersion).arg(MinorVersion);
 
 class Widget: public QWidget {
     Q_OBJECT

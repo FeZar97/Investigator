@@ -3,8 +3,12 @@
 
 void Widget::createAboutWidget() {
     m_aboutProgramWidget = new AboutProgramWidget(this, QString("The Investigator"),
-                                                  QString("Программа для потоковой антивирусной проверки файлов."
-                                                          "\n\nРазработчик: Федор Назаров (IP: 7721)"));
+                                                  QString("<p align=\"left\">Программа для потоковой антивирусной проверки файлов.</p>"
+                                                          "<p align=\"left\">Разработчик: Федор Назаров (IP: 7721)</p>"
+                                                          "<p align=\"center\"><b>Версия %1 от %2</b></p>").arg(Version).arg(PatchDate));
+
+    m_aboutProgramWidget->setFixedSize(450, 90);
+
     m_aboutProgramWidget->hide();
 }
 
@@ -108,7 +112,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings
                                                                                      "TheInvestigator") {
     ui->setupUi(this);
 
-    setWindowTitle(QString("The Investigator %1").arg(Version));
+    setWindowTitle(QString("The Investigator"));
     setLayout(ui->mainLayout);
     createTrayIcon();
     createAboutWidget();

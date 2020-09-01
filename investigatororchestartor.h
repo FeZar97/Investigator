@@ -13,6 +13,12 @@
 
 #include "investigatorworker.h"
 
+static const QString MajorVersion = "2";
+static const QString MinorVersion = "4";
+static const QString PatchDate = "01.09.2020";
+
+static const QString Version = QString("v%1.%2").arg(MajorVersion).arg(MinorVersion);
+
 const int MaxThreadNb{16}; // максимальное количество потоков, на которое можно разделить входную задачу
 const int SleepIntervalAfterScanMs = 1000;
 const int UpdatePeriodMs = 500;
