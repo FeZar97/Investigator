@@ -115,6 +115,8 @@ void SettingsWindow::updateUi() {
         ui->dangerousDirLE->setEnabled(!*m_isUiLocked);
 
         // --- AVS PAGE ---
+        ui->saveXmlReportsLabelCB->setChecked(m_investigator->saveXmlReports());
+
         ui->avsExecFileLE->setEnabled(!*m_isUiLocked && !m_investigator->isInWork());
         ui->avsExecFileLE->setText(m_investigator->avsExecFileName());
         ui->avsExecFileLE->setStyleSheet(QFile(m_investigator->avsExecFileName()).exists() ?
@@ -133,9 +135,9 @@ void SettingsWindow::updateUi() {
                                                           m_investigator->thresholdFilesSizeUnit()));
 
         ui->externalHandlerFileCB->setEnabled(!*m_isUiLocked);
-        // ui->externalHandlerFileCB->setChecked(m_investigator->m_useExternalHandler);
+        ui->externalHandlerFileCB->setChecked(m_investigator->useExternalHandler());
         ui->externalHandlerFileLE->setEnabled(!*m_isUiLocked);
-        // ui->externalHandlerFileLE->setText(m_investigator->m_externalHandlerPath);
+        ui->externalHandlerFileLE->setText(m_investigator->externalHandlerPath());
         ui->externalHandlerFileButton->setEnabled(!*m_isUiLocked);
 
         // --- EVENTS PAGE ---
@@ -149,23 +151,16 @@ void SettingsWindow::updateUi() {
 }
 
 void SettingsWindow::on_externalHandlerFileButton_clicked() {
-    /*
     QString filePath = QFileDialog::getOpenFileName(this,
                                                     QString("Выбор внешнего обработчика"),
-                                                    m_investigator->m_externalHandlerPath, tr("*.*"));
-
-    m_investigator->m_externalHandlerPath = filePath;
-
+                                                    m_investigator->externalHandlerPath(), tr("*.*"));
+    m_investigator->setExternalHandlerPath(filePath);
     updateUi();
-    */
 }
 
 void SettingsWindow::on_externalHandlerFileCB_clicked(bool checked) {
-    Q_UNUSED(checked)
-    /*
-    m_investigator->m_useExternalHandler = checked;
+    m_investigator->setUseExternalHandler(checked);
     updateUi();
-    */
 }
 
 // --- SYSLOG ---
@@ -181,4 +176,9 @@ void SettingsWindow::on_settingsTabWidget_currentChanged(int index) {
 // перезапуск http сервера
 void SettingsWindow::on_restartHttpServerButton_clicked() {
     emit restartHttpServer();
+}
+
+// флаг сохранения xml отчетов с сопроводиловкой
+void SettingsWindow::on_saveXmlReportsLabelCB_clicked(bool checked) {
+    m_investigator->setSaveXmlReports(checked);
 }

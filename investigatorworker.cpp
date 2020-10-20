@@ -5,8 +5,10 @@ InvestigatorWorker::InvestigatorWorker(QObject *parent): QObject{parent}, m_win1
 }
 
 // передача воркеру внешних параметров
-// id, (input, process, danger, clean, report), avsExec
-void InvestigatorWorker::configure(int id, QStringList dirList, QString avsExecFileName) {
+// id, (input, process, danger, clean, report), avsExec, useExternalHandler, externalhandlerPath
+void InvestigatorWorker::configure(int id, QStringList dirList, QString avsExecFileName,
+                                   bool useExternalHandler, QString externalHandlerPath,
+                                   bool saveXmlReports) {
     Q_ASSERT(dirList.size() == 5);
 
     m_id = id;
@@ -18,6 +20,11 @@ void InvestigatorWorker::configure(int id, QStringList dirList, QString avsExecF
     m_reportDir = dirList[4];
 
     m_avsExecFileName = avsExecFileName;
+
+    m_saveXmlReports = saveXmlReports;
+
+    m_useExternalHandler = useExternalHandler;
+    m_externalHandlerPath = externalHandlerPath;
 
     checkProcessDirExists();
 
@@ -78,7 +85,6 @@ WorkerStatistic InvestigatorWorker::getLastStatistics() {
     return WorkerStatistic(m_id, m_filesInProcess.size(), m_filesToProcessSize,
                            m_pwdFilesNb, m_infList.size(), m_speed, m_avVersion);
 }
-
 // сброс времянок
 void InvestigatorWorker::flushStatistic() {
     m_avsReport.clear();
@@ -297,12 +303,12 @@ void InvestigatorWorker::processingInfectedFiles() {
                     if (drwebDetectedVirusesList.size()) {
                         m_tempVirusInfo += "DrWeb: " + entryListToString(drwebDetectedVirusesList);
                         m_tempVirusInfo.remove(m_tempVirusInfo.size() - 1, 1);
-                        m_tempVirusInfo += "; ";
+                        m_tempVirusInfo += ";";
                     }
                     if (kasperDetectedVirusesList.size()) {
                         m_tempVirusInfo += "Kaspersky: " + entryListToString(kasperDetectedVirusesList);
                         m_tempVirusInfo.remove(m_tempVirusInfo.size() - 1, 1);
-                        m_tempVirusInfo += "; ";
+                        m_tempVirusInfo += ";";
                     }
                     m_tempVirusInfo.remove(m_tempVirusInfo.size() - 1, 1);
                     m_tempVirusInfo += ")";
@@ -324,11 +330,21 @@ void InvestigatorWorker::processingInfectedFiles() {
 
     // обработка зараженных
     foreach (auto infectedFile, m_infList) {
-        saveInfectedFileReport(infectedFile.first, infectedFile.second);
+
+        // сохранение xml файла с описание заражения/АВС/и тд
+        if (m_saveXmlReports) {
+            saveXmlFileReport(infectedFile.first, infectedFile.second);
+        }
 
         QString message = QString("%1 %2").arg(infectedFile.first).arg(infectedFile.second);
         log(QString("Зараженный файл: %1").arg(message), Logger::UI + Logger::SYSLOG);
-        moveFile(QString("%1\\%2").arg(m_workerProcessDir).arg(infectedFile.first), m_dangerDir);
+
+        if (m_useExternalHandler) {
+            QProcess::execute(m_externalHandlerPath, infectedFileInfo(infectedFile.first, infectedFile.second,
+                                                                      m_avVersion));
+        } else {
+            moveFile(QString("%1\\%2").arg(m_workerProcessDir).arg(infectedFile.first), m_dangerDir);
+        }
     }
 }
 
@@ -347,19 +363,72 @@ QString InvestigatorWorker::getInfectedReportFileName() {
 }
 
 // сохранение информации о заражении в файл с именемfileName
-void InvestigatorWorker::saveInfectedFileReport(QString fileName, QString report) {
-    if (!QDir(m_reportDir).exists()) {
-        QDir().mkdir(m_reportDir);
-    }
-
+void InvestigatorWorker::saveXmlFileReport(QString fileName, QString report) {
+    QString reportFileName;
     if (fileName.isEmpty()) {
-        fileName = getInfectedReportFileName();
+        reportFileName = getInfectedReportFileName();
     }
-    fileName = QString("%1\\%2.txt").arg(m_reportDir).arg(QFileInfo(fileName).baseName());
+    reportFileName = QString("%1\\%2.xml").arg(m_dangerDir).arg(fileName);
 
-    QFile outFile(fileName);
-    outFile.open(QIODevice::WriteOnly);
-    QTextStream ts(&outFile);
-    ts << report << endl;
-    outFile.close();
+    createVirusXml(reportFileName, fileName, report, m_avVersion);
+}
+
+void InvestigatorWorker::createVirusXml(QString xmlFileName, QString infectedFileName,
+                                        QString report, QString avVersion) {
+
+    QXmlStreamWriter xml;
+    QStringList virusInfo = infectedFileInfo(infectedFileName, report, avVersion);
+
+    QFile outputFile;
+    outputFile.setFileName(xmlFileName);
+    xml.setAutoFormatting(true);
+
+    if (outputFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+
+        xml.setDevice(&outputFile);
+
+        xml.writeStartDocument();
+        xml.writeStartElement(QStringLiteral("virusInfo"));
+
+        xml.writeAttribute("fileName",          virusInfo[0]);
+        xml.writeAttribute("virusName",         virusInfo[1]);
+        xml.writeAttribute("antivirusName",     virusInfo[2]);
+        xml.writeAttribute("antivirusVersion",  virusInfo[3]);
+        xml.writeAttribute("detectTime",        virusInfo[4]);
+
+        xml.writeEndElement();
+        xml.writeEndDocument();
+
+        outputFile.close();
+    }
+}
+
+// имя файла, название вируса, информация об антивирусе, дата обнаружения
+QStringList InvestigatorWorker::infectedFileInfo(QString infectedFileName,
+                                                 QString report, QString avVersion) {
+    QStringList info;
+    info << infectedFileName;
+
+    report = report.remove("(");
+    report = report.remove(")");
+    QStringList splittedReport;
+    if (report.contains("Kaspersky: ")) {
+        info << "Kaspersky";
+        report = report.remove("Kaspersky: ");
+        splittedReport = report.split(";");
+        if (splittedReport.size()) {
+            info << splittedReport[splittedReport.size() - 1];
+        }
+    } else if (report.contains("DrWeb: ")) {
+        info << "DrWeb";
+        report = report.remove("DrWeb: ");
+        splittedReport = report.split(";");
+        if (splittedReport.size()) {
+            info << splittedReport[0];
+        }
+    }
+    info << QDateTime::currentDateTime().toString("yyyy-MM-ddThh:mm:ss");
+    info << avVersion;
+
+    return info;
 }

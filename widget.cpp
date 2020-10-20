@@ -1,17 +1,6 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-void Widget::createAboutWidget() {
-    m_aboutProgramWidget = new AboutProgramWidget(this, QString("The Investigator"),
-                                                  QString("<p align=\"left\">Программа для потоковой антивирусной проверки файлов.</p>"
-                                                          "<p align=\"left\">Разработчик: Федор Назаров (IP: 7721)</p>"
-                                                          "<p align=\"center\"><b>Версия %1 от %2</b></p>").arg(Version).arg(PatchDate));
-
-    m_aboutProgramWidget->setFixedSize(450, 90);
-
-    m_aboutProgramWidget->hide();
-}
-
 void Widget::createTrayIcon() {
     m_trayIcon = new QSystemTrayIcon(this);
     m_trayIcon->setIcon(QIcon(":/ICONS/INVESTIGATOR.ico"));
@@ -60,11 +49,20 @@ void Widget::startHttpServer() {
 void Widget::createSaveSettingsTimer() {
     m_saveSettingsTimer = new QTimer();
     connect(m_saveSettingsTimer, &QTimer::timeout, this, &Widget::saveSettings);
-    m_saveSettingsTimer->start(60 * 1000);
+    m_saveSettingsTimer->start(60 * 60 * 1000);
 }
 
 void Widget::connectObjects() {
-    connect(ui->aboutLabel, &ClickableLabel::clicked, this, &Widget::onAboutClicked);
+
+    // о программе
+    connect(ui->aboutLabel, &ClickableLabel::clicked, [ = ]() {
+        QMessageBox::about(this, tr("О программе"),
+                           tr(QString("<center><b>The Investigator</b> (%1 от %2)</center>\n\n"
+                                      "<p>Программа для потоковой антивирусной проверки файлов.</p>\n\n"
+                                      "<p>Разработчик: Федор Назаров (IP 7721)</p>")
+                              .arg(Version).arg(PatchDate)
+                              .toUtf8()));
+    });
 
     connect(this, &Widget::getInitialAvsScan,       m_investigator,
             &InvestigatorOrchestartor::getInitialAvsScan);
@@ -115,7 +113,6 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings
     setWindowTitle(QString("The Investigator"));
     setLayout(ui->mainLayout);
     createTrayIcon();
-    createAboutWidget();
     createSaveSettingsTimer();
 
     createInvestigator();
@@ -229,6 +226,13 @@ void Widget::restoreSettings() {
     m_investigator->setTotalPwdFilesNb(m_settings.value("totalPwdFilesNb",
                                                         0).toLongLong());
 
+    // внешний обработчик
+    m_investigator->setSaveXmlReports(m_settings.value("saveXmlReports", true).toBool());
+
+    // внешний обработчик
+    m_investigator->setUseExternalHandler(m_settings.value("useExternalHandler", false).toBool());
+    m_investigator->setExternalHandlerPath(m_settings.value("externalHandlerPath", false).toString());
+
     // вкладка окна настроек
     m_settingsWindow->setCurrentOpenTab(m_settings.value("settingsWinCurrentTab", 0).toInt());
 
@@ -267,6 +271,12 @@ void Widget::saveSettings() {
     m_settings.setValue("thresholdFilesSizeUnit", m_investigator->thresholdFilesSizeUnit());
     m_settings.setValue("avsPath", m_investigator->avsExecFileName());
     m_settings.setValue("syslogAddress", m_investigator->syslogAddress());
+
+    m_settings.setValue("saveXmlReports", m_investigator->saveXmlReports());
+
+    // внешний обработчик
+    m_settings.setValue("useExternalHandler", m_investigator->useExternalHandler());
+    m_settings.setValue("externalHandlerPath", m_investigator->externalHandlerPath());
 
     // флаг работы
     m_settings.setValue("isInWork", m_investigator->isInWork());
@@ -317,11 +327,6 @@ void Widget::on_clearButton_clicked() {
     ui->logTB->clear();
 
     updateUi();
-}
-
-// о программе
-void Widget::onAboutClicked() {
-    m_aboutProgramWidget->show();
 }
 
 void Widget::on_settingsButton_clicked() {

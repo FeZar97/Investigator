@@ -238,9 +238,9 @@ bool InvestigatorOrchestartor::reconfigureWorkers() {
         // конфигурирование вокреров
         for (int i = 0; i < MaxThreadNb; i++) {
 
-            // id, (input, process, danger, clean), avsExec
+            // id, (input, process, danger, clean), avsExec, useExternalHandler, externalHandlerPath
             m_workers[i]->configure(i, QStringList{m_sourceDir, m_processDir, m_infectedDir, m_cleanDir, m_processDir + "\\reports\\"},
-                                    m_avsExecFileName);
+                                    m_avsExecFileName, m_useExternalHandler, m_externalHandlerPath, m_saveXmlReports);
 
             if (i < m_currentWorkersNb) {
                 log(QString("Запуск воркера %1.").arg(i), Logger::FILE);
@@ -254,6 +254,9 @@ bool InvestigatorOrchestartor::reconfigureWorkers() {
     }
     log(QString("В процессе конфигурирования воркеров возникли ошибки."),
         Logger::FILE);
+
+    m_isInWork = false;
+
     return false;
 }
 

@@ -5,10 +5,8 @@
 #include <QFileInfoList>
 #include <QProcess>
 #include <QDateTime>
-#include <QProcess>
 #include <QTextCodec>
-#include <QFileInfo>
-#include <QTextStream>
+#include <QXmlStreamReader>
 
 #include <../FeZarSource/FeZar97.h>
 
@@ -48,6 +46,11 @@ class InvestigatorWorker: public QObject {
     QString m_dangerDir; // директория для зараженных файлов
     QString m_cleanDir; // директория для чистых файлов
     QString m_reportDir; // директория для отчетов АВС
+
+    bool m_saveXmlReports; // флаг сохранения xml отчетов
+
+    bool m_useExternalHandler; // флаг использования внешнего обработчика
+    QString m_externalHandlerPath; // путь к внешнему обработчику
 
     QFileInfoList m_filesInProcess; // список файлов на проверке
     QString m_avsExecFileName{"C:/Program Files/Primetech/M-52/AVSFileConsoleScan.exe"}; // путь до исполняемого файла
@@ -91,7 +94,16 @@ class InvestigatorWorker: public QObject {
 
     // сохранение отчета АВС об инфицированных файлах
     QString getInfectedReportFileName(); // имя отчета
-    void saveInfectedFileReport(QString fileName = "", QString report = "");
+    void saveXmlFileReport(QString fileName = "", QString report = "");
+
+    /* fileName - имя json файла (совпадает с именем зараженного файла)
+     * report - строка (<antivirus>: <virus info>)
+     * avVersion - сводная информация об антивирусе (состав, базы, весрии, даты) */
+    void createVirusXml(QString xmlFileName, QString infectedFileName, QString report,
+                        QString avVersion);
+
+    /* параметры зараженного файла */
+    QStringList infectedFileInfo(QString infectedFileName, QString report, QString avVersion);
 
 public:
     InvestigatorWorker(QObject *parent);
@@ -111,7 +123,8 @@ public:
     }
 
     // передача воркеру внешних параметров
-    void configure(int id, QStringList dirList, QString m_avsExecFileName);
+    void configure(int id, QStringList dirList, QString m_avsExecFileName, bool useExternalHandler,
+                   QString externalhandlerPath, bool saveXmlReports);
 
     // запуск процесса проверки для воркера с id
     void tryCheckFiles(int id, QFileInfoList filesToProcess);

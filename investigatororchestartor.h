@@ -14,8 +14,8 @@
 #include "investigatorworker.h"
 
 static const QString MajorVersion = "2";
-static const QString MinorVersion = "4";
-static const QString PatchDate = "01.09.2020";
+static const QString MinorVersion = "5";
+static const QString PatchDate = "12.10.2020";
 
 static const QString Version = QString("v%1.%2").arg(MajorVersion).arg(MinorVersion);
 
@@ -58,6 +58,11 @@ private:
     quint64 m_thresholdFilesNb; // порог по кол-ву файлов
     quint64 m_thresholdFilesSize; // порог по объему файлов
     quint64 m_thresholdFilesSizeUnit; // единицы измерения порога по объему файлов
+
+    bool m_saveXmlReports; // флаг сохранения сопроводиловки в xml файлы
+
+    QString m_externalHandlerPath; // внешний обработчик для зараженных файлов
+    bool m_useExternalHandler; // флаг использования внешнего обработчика
 
     QFile m_logFile; // текущий файл логов
 
@@ -173,6 +178,32 @@ public:
     }
     void setThresholdFilesSizeUnit(qint64 thresholdFilesSizeUnit) {
         m_thresholdFilesSizeUnit = thresholdFilesSizeUnit;
+    }
+
+    bool saveXmlReports() {
+        return m_saveXmlReports;
+    }
+    void setSaveXmlReports(bool state) {
+        m_saveXmlReports = state;
+        reconfigureWorkers();
+    }
+
+    QString externalHandlerPath() {
+        return m_externalHandlerPath;
+    }
+    void setExternalHandlerPath(QString path) {
+        if (QFile(path).exists() && !path.isEmpty()) {
+            m_externalHandlerPath = path;
+            reconfigureWorkers();
+        }
+    }
+
+    bool useExternalHandler() {
+        return m_useExternalHandler;
+    }
+    void setUseExternalHandler(bool usage) {
+        m_useExternalHandler = usage;
+        reconfigureWorkers();
     }
 
     QString avsExecFileName() {

@@ -57,6 +57,8 @@ private slots:
     // перезапуск http сервера
     void on_restartHttpServerButton_clicked();
 
+    void on_saveXmlReportsLabelCB_clicked(bool checked);
+
 private:
     Ui::SettingsWindow *ui;
     bool *m_lockUi{nullptr};

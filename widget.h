@@ -8,6 +8,7 @@
 #include <QProgressBar>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
+#include <QCloseEvent>
 
 #include "httplistener.h"
 #include "httprequestmapper.h"
@@ -19,17 +20,8 @@
 
 #include "../FeZarSource/aboutprogramwidget.h"
 
-/* CHANGELOG 2.4
- */
-
-/* IN PROCESS
- * внешний обработчик
+/* CHANGELOG 2.5
  *
- */
-
-/* TODO
- * вывод информации о работе воркеров
- * визуализация процессов проверки
  */
 
 QT_BEGIN_NAMESPACE
@@ -47,10 +39,6 @@ private:
     QSettings m_settings;
 
     bool m_isUiLocked{false}; // флаг блокировки интерфейса
-
-    // окно "о программе"
-    AboutProgramWidget *m_aboutProgramWidget;
-    void createAboutWidget();
 
     // трей
     QSystemTrayIcon *m_trayIcon;
@@ -103,7 +91,6 @@ private slots:
     void saveSettings();
 
     void on_clearButton_clicked();
-    void onAboutClicked();
 
     void on_settingsButton_clicked();
     void on_statisticsButton_clicked();
