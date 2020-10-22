@@ -46,6 +46,10 @@ void Widget::startHttpServer() {
     m_httpServer = new HttpListener(80, "0.0.0.0", hrm, nullptr);
 }
 
+void Widget::clearLog() {
+    ui->logTB->clear();
+}
+
 void Widget::createSaveSettingsTimer() {
     m_saveSettingsTimer = new QTimer();
     connect(m_saveSettingsTimer, &QTimer::timeout, this, &Widget::saveSettings);
@@ -59,7 +63,7 @@ void Widget::connectObjects() {
         QMessageBox::about(this, tr("О программе"),
                            tr(QString("<center><b>The Investigator</b> (%1 от %2)</center>\n\n"
                                       "<p>Программа для потоковой антивирусной проверки файлов.</p>\n\n"
-                                      "<p>Разработчик: Федор Назаров (IP 7721)</p>")
+                                      "<p>Разработчик: Федор Назаров</p>")
                               .arg(Version).arg(PatchDate)
                               .toUtf8()));
     });
@@ -77,6 +81,8 @@ void Widget::connectObjects() {
             &Widget::uiLog);
     connect(m_investigator,     &InvestigatorOrchestartor::updateUi,        this,
             &Widget::updateUi);
+    connect(m_investigator,     &InvestigatorOrchestartor::clearLog,        this,
+            &Widget::clearLog);
     connect(this,               &Widget::start,                             m_investigator,
             &InvestigatorOrchestartor::startWork);
     connect(this,               &Widget::stop,                              m_investigator,
@@ -96,7 +102,6 @@ void Widget::closeProgram() {
 
     emit log("Работа программы завершена.",
              Logger::UI + Logger::SYSLOG + Logger::FILE);
-    emit log("---------------------------", Logger::FILE);
 
     m_trayIcon->hide();
 
@@ -227,7 +232,7 @@ void Widget::restoreSettings() {
                                                         0).toLongLong());
 
     // внешний обработчик
-    m_investigator->setSaveXmlReports(m_settings.value("saveXmlReports", true).toBool());
+    m_investigator->setSaveXmlReports(m_settings.value("saveXmlReports", false).toBool());
 
     // внешний обработчик
     m_investigator->setUseExternalHandler(m_settings.value("useExternalHandler", false).toBool());
@@ -315,16 +320,10 @@ void Widget::on_clearButton_clicked() {
     if (reply == -1 || reply == 2) {
         return;
     } else if (reply == 1) {
-        m_investigator->dumpWorkTimer();
-        m_investigator->setTotalProcessedFilesNb(0);
-        m_investigator->setTotalProcessedFilesSize(0);
-        m_investigator->setTotalInfectedFilesNb(0);
-        m_investigator->setTotalPwdFilesNb(0);
-
-        emit log(QString("Выполнен сброс статистики."), Logger::FILE);
+        m_investigator->flushGlobalStatistic();
     }
 
-    ui->logTB->clear();
+    clearLog();
 
     updateUi();
 }

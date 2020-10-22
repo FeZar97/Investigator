@@ -21,7 +21,6 @@
 #include "../FeZarSource/aboutprogramwidget.h"
 
 /* CHANGELOG 2.5
- *
  */
 
 QT_BEGIN_NAMESPACE
@@ -81,6 +80,8 @@ public:
     QThread m_investigatorThread;
 
     void startHttpServer();
+
+    void clearLog();
 
 private slots:
     void on_startButton_clicked();

@@ -15,6 +15,9 @@ void HttpRequestMapper::service(HttpRequest &request, HttpResponse &response) {
     if (path == "/stat" || path == "/statistics" || path == "/stat.json") {
         HttpJsonResponder(this, m_investigator).service(request, response);
     }
+    if (path == "/flushGlobalStatistic") {
+        m_investigator->flushGlobalStatistic();
+    }
     if (path == "/getSettings") {
         HttpSettingsResponder(this, m_investigator).service(request, response);
     }

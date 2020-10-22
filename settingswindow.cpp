@@ -134,6 +134,9 @@ void SettingsWindow::updateUi() {
         ui->thresholdFilesSizeUnitCB->setCurrentIndex(SizeConverter::sizeUnitIdx(
                                                           m_investigator->thresholdFilesSizeUnit()));
 
+        ui->saveXmlReportsLabelCB->setChecked(m_investigator->saveXmlReports());
+        ui->saveXmlReportsLabelCB->setEnabled(!*m_isUiLocked);
+
         ui->externalHandlerFileCB->setEnabled(!*m_isUiLocked);
         ui->externalHandlerFileCB->setChecked(m_investigator->useExternalHandler());
         ui->externalHandlerFileLE->setEnabled(!*m_isUiLocked);

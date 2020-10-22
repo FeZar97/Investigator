@@ -15,11 +15,12 @@
 
 static const QString MajorVersion = "2";
 static const QString MinorVersion = "5";
-static const QString PatchDate = "12.10.2020";
+static const QString PatchDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
 
 static const QString Version = QString("v%1.%2").arg(MajorVersion).arg(MinorVersion);
 
-const int MaxThreadNb{16}; // максимальное количество потоков, на которое можно разделить входную задачу
+// максимальное количество потоков, на которое можно разделить входную задачу
+const int MaxThreadNb{QThread::idealThreadCount()};
 const int SleepIntervalAfterScanMs = 1000;
 const int UpdatePeriodMs = 500;
 
@@ -255,6 +256,22 @@ public:
         m_workTimeV = QVector<int>(4, 0);
     }
 
+    // сохранение текущей статистики в отдельный файл
+    void saveCurrentStatistic();
+
+    // сброс статистики
+    void flushGlobalStatistic() {
+        saveCurrentStatistic();
+        emit clearLog();
+        dumpWorkTimer();
+        m_totalFileList.clear();
+        setTotalProcessedFilesNb(0);
+        setTotalProcessedFilesSize(0);
+        setTotalInfectedFilesNb(0);
+        setTotalPwdFilesNb(0);
+        log(QString("Выполнен сброс статистики."), Logger::FILE);
+    }
+
     // статистика по очереди
     quint64 queueFilesNb();
     quint64 queueFilesSize();
@@ -289,6 +306,7 @@ signals:
     void updateProgress(); // сигнал готовности состояния процесса
     void updateUi(); // обновление интерфейса
     void uiLog(QString msg); // вывод сообщения в главное окно
+    void clearLog(); // очитска окна вывода логов
 };
 
 #endif // CHECKORCHESTARTOR_H

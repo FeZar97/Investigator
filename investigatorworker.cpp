@@ -183,7 +183,7 @@ void InvestigatorWorker::extractAVSVersions() {
             QString("Версия баз: %1\nЯдро M-52: %2\nЯдро Dr.Web: %3\nЯдро Kaspersky: %4")
             .arg(m_baseAVSVersion)
             .arg(m_m52coreVersion)
-            .arg(m_m52coreVersion)
+            .arg(m_drwebCoreVersion)
             .arg(m_kasperCoreVersion);
     }
 }
@@ -337,7 +337,8 @@ void InvestigatorWorker::processingInfectedFiles() {
         }
 
         QString message = QString("%1 %2").arg(infectedFile.first).arg(infectedFile.second);
-        log(QString("Зараженный файл: %1").arg(message), Logger::UI + Logger::SYSLOG);
+        log(QString("Зараженный файл: %1").arg(message),
+            Logger::UI + Logger::SYSLOG + Logger::FILE);
 
         if (m_useExternalHandler) {
             QProcess::execute(m_externalHandlerPath, infectedFileInfo(infectedFile.first, infectedFile.second,

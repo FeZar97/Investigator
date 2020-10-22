@@ -335,8 +335,8 @@ bool InvestigatorOrchestartor::updateTotalFileList() {
         return true;
     } else {
         m_totalFileList = QDir(m_sourceDir).entryInfoList(usingFilters, usingFlags);
-        log(QString("Список файлов на проверку обновлен. В очереди %1 файлов.").arg(
-                m_totalFileList.size()), Logger::FILE);
+        // log(QString("Список файлов на проверку обновлен. В очереди %1 файлов.")
+        //     .arg(m_totalFileList.size()), Logger::FILE);
     }
     return m_totalFileList.size() != 0;
 }
@@ -349,8 +349,8 @@ void InvestigatorOrchestartor::tryCheckFiles() {
             if (!m_workers[i]->isInProcess()) { // если воркер не занят
                 if (updateTotalFileList()) { // если есть файлы для проверки
                     QFileInfoList filesToCheck = getFilesToCheckList();
-                    log(QString("Воркеру %1 назначено %2 файлов на проверку.").arg(
-                            i).arg(filesToCheck.size()), Logger::FILE);
+                    //log(QString("Воркеру %1 назначено %2 файлов на проверку.")
+                    //    .arg(i).arg(filesToCheck.size()), Logger::FILE);
                     tryWorkerCheckFiles(i, filesToCheck);
                 }
             }
@@ -368,13 +368,13 @@ void InvestigatorOrchestartor::onWorkerFinished(int workerId) {
         m_totalPwdFilesNb += workerStatistic.pwdFilesNb;
         m_totalInfectedFilesNb += workerStatistic.infFilesNb;
 
-        log(QString("Воркер %1 завершил проверку: всего %2(%3), запароленых %4, инфицированных %5.")
-            .arg(workerId)
-            .arg(workerStatistic.processedFilesNb)
-            .arg(SizeConverter::sizeToString(workerStatistic.processedFilesSize))
-            .arg(workerStatistic.pwdFilesNb)
-            .arg(workerStatistic.infFilesNb),
-            Logger::FILE);
+        // log(QString("Воркер %1 завершил проверку: всего %2(%3), запароленых %4, инфицированных %5.")
+        //     .arg(workerId)
+        //     .arg(workerStatistic.processedFilesNb)
+        //     .arg(SizeConverter::sizeToString(workerStatistic.processedFilesSize))
+        //     .arg(workerStatistic.pwdFilesNb)
+        //     .arg(workerStatistic.infFilesNb),
+        //     Logger::FILE);
 
         // проверка обновления версии АВС
         if (m_avVersion != workerStatistic.avsVersion && // если версия другая
@@ -382,8 +382,9 @@ void InvestigatorOrchestartor::onWorkerFinished(int workerId) {
             QString avsVersion = workerStatistic.avsVersion;
             avsVersion.replace("Версия баз: ", "");
             avsVersion.replace(avsVersion.indexOf("Ядро M-52") - 1,
-                               avsVersion.indexOf(" (от") - avsVersion.indexOf("Ядро M-52"),
+                               avsVersion.indexOf("(от") - (avsVersion.indexOf("Ядро M-52") - 1),
                                "");
+            avsVersion.truncate(avsVersion.indexOf("Ядро Kaspersky") - 1);
 
             log(QString("Найдена новая версия баз АВС: %1.").arg(avsVersion),
                 Logger::FILE + Logger::UI);
@@ -395,7 +396,7 @@ void InvestigatorOrchestartor::onWorkerFinished(int workerId) {
     }
 }
 
-// получение списк ана проверку для воркера
+// получение списка на проверку для воркера
 QFileInfoList InvestigatorOrchestartor::getFilesToCheckList() {
 
     QFileInfoList resultList; // результирующий список файлов
@@ -405,8 +406,8 @@ QFileInfoList InvestigatorOrchestartor::getFilesToCheckList() {
     while (m_totalFileList.size() && // пока есть файлы в m_totalFileList
             resultListSize < (m_thresholdFilesSize * m_thresholdFilesSizeUnit)
             && // и пока не превышен порог по объему
-            quint64(resultList.size()) <
-            m_thresholdFilesNb ) { // и пока не превышен порог по кол-ву файлов
+            quint64(resultList.size()) < m_thresholdFilesNb
+          ) { // и пока не превышен порог по кол-ву файлов
 
         currentFileInfo = m_totalFileList.takeFirst();
         resultList.append(currentFileInfo);
@@ -487,28 +488,34 @@ void InvestigatorOrchestartor::getInitialAvsScan(bool needLaterStart) {
     emit updateUi();
 }
 
+void InvestigatorOrchestartor::saveCurrentStatistic() {
+    QString fileName = QString("%1\\%2.txt")
+                       .arg(m_processDir)
+                       .arg(QDateTime::currentDateTime().toString("dd-MM-yyyy hh-mm"));
+    QFile statisticSaveFile(fileName);
+
+    if (statisticSaveFile.open(QIODevice::WriteOnly)) {
+        QTextStream outStream(&statisticSaveFile);
+        outStream << workStatisticToString();
+        statisticSaveFile.close();
+    } else {
+        log(QString("Не удалось записать файл %1").arg(fileName), Logger::FILE);
+    }
+}
+
 // кол-во файлов в очереди
 quint64 InvestigatorOrchestartor::queueFilesNb() {
-
-    if (!m_sourceDir.isEmpty() && QDir(m_sourceDir).exists()) {
-        return QDir(m_sourceDir).entryList(usingFilters).size();
-    } else {
-        return 0;
-    }
+    return m_totalFileList.size();
 }
 
 // объем файлов в очереди
 quint64 InvestigatorOrchestartor::queueFilesSize() {
     return [ = ]() {
-        if (!m_sourceDir.isEmpty() && QDir(m_sourceDir).exists()) {
-            quint64 listSize = 0;
-            foreach (QFileInfo info, QDir(m_sourceDir).entryInfoList(usingFilters)) {
-                listSize += info.size();
-            }
-            return listSize;
-        } else {
-            return quint64(0);
+        quint64 listSize = 0;
+        foreach (QFileInfo info, m_totalFileList) {
+            listSize += info.size();
         }
+        return listSize;
     }
     ();
 }

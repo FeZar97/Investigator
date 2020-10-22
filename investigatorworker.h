@@ -134,8 +134,13 @@ public:
 
     // кол-во файлов в директории воркера
     qint64 filesInProcessNb() {
-        return QDir(m_workerProcessDir).exists() ? QDir(m_workerProcessDir).entryInfoList(
-                   usingFilters).size() : 0;
+
+        if (QDir(m_workerProcessDir).exists()) {
+            return QDir(m_workerProcessDir).entryInfoList(usingFilters).size();
+        } else {
+            m_speed = 0;
+            return 0;
+        }
     };
 
 signals:
