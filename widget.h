@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QCloseEvent>
+#include <QLabel>
 
 #include "httplistener.h"
 #include "httprequestmapper.h"
@@ -38,6 +39,11 @@ private:
     QSettings m_settings;
 
     bool m_isUiLocked{false}; // флаг блокировки интерфейса
+
+    // индикаторы работы
+    QVector<QLabel *> m_workerIndicators;
+    QVector<QPixmap> m_circles;
+    void createIndicators();
 
     // трей
     QSystemTrayIcon *m_trayIcon;
@@ -82,6 +88,8 @@ public:
     void startHttpServer();
 
     void clearLog();
+
+    void updateIndicators();
 
 private slots:
     void on_startButton_clicked();

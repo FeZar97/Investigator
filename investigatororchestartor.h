@@ -72,6 +72,7 @@ private:
 
     QThread *m_workThreads; // потоки для воркеров
     InvestigatorWorker **m_workers; // воркеры
+    QVector<bool> m_workersBusyVector;
     void createWorkers(); // создание воркеров, помещение их в собственные потоки и запуск воркеров
 
     QFileInfoList m_totalFileList; // список файлов на обработку
@@ -296,6 +297,8 @@ public:
         return m_workTimeV;    // [dd, hh, mm, ss]
     }
 
+    QVector<bool> getWorkersBusyVector();
+
     QString workTimeToString(); // время работы в виде строки
     QString workStatisticToString(); // статистика работы в виде строки
 
@@ -307,6 +310,7 @@ signals:
     void updateUi(); // обновление интерфейса
     void uiLog(QString msg); // вывод сообщения в главное окно
     void clearLog(); // очитска окна вывода логов
+    void updateIndicators();
 };
 
 #endif // CHECKORCHESTARTOR_H

@@ -1,6 +1,30 @@
 #include "widget.h"
 #include "ui_widget.h"
 
+void Widget::updateIndicators() {
+    QVector<bool> busyVector = m_investigator->getWorkersBusyVector();
+    int workersNb = m_investigator->currentWorkersNb();
+    for (int i = 0; i < busyVector.size(); i++) {
+        if (i < workersNb) {
+            m_workerIndicators[i]->setVisible(true);
+            m_workerIndicators[i]->setPixmap(busyVector[i] ? m_circles[0] : m_circles[1]);
+        } else {
+            m_workerIndicators[i]->setVisible(false);
+            m_workerIndicators[i]->setPixmap(m_circles[1]);
+        }
+    }
+}
+
+void Widget::createIndicators() {
+    m_circles.push_back(QPixmap(":/ICONS/LIGHTGREEN_CIRCLE.png").scaled(24, 24));
+    m_circles.push_back(QPixmap(":/ICONS/DARKGREEN_CIRCLE.png").scaled(24, 24));
+
+    for (int i = 0; i < QThread::idealThreadCount(); i++) {
+        m_workerIndicators.push_back(new QLabel());
+        ui->indicatorLayout->addWidget(m_workerIndicators[i]);
+    }
+}
+
 void Widget::createTrayIcon() {
     m_trayIcon = new QSystemTrayIcon(this);
     m_trayIcon->setIcon(QIcon(":/ICONS/INVESTIGATOR.ico"));
@@ -76,6 +100,8 @@ void Widget::connectObjects() {
     connect(m_investigator,     &InvestigatorOrchestartor::updateProgress,  [ = ]() {
         ui->workTimeInfoLabel->setText(m_investigator->workTimeToString());
     });
+    connect(m_investigator,     &InvestigatorOrchestartor::updateIndicators, this,
+            &Widget::updateIndicators);
 
     connect(m_investigator,     &InvestigatorOrchestartor::uiLog,           this,
             &Widget::uiLog);
@@ -118,6 +144,7 @@ Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings
     setWindowTitle(QString("The Investigator"));
     setLayout(ui->mainLayout);
     createTrayIcon();
+    createIndicators();
     createSaveSettingsTimer();
 
     createInvestigator();
@@ -182,6 +209,8 @@ void Widget::on_stopButton_clicked() {
 }
 
 void Widget::updateUi() {
+    updateIndicators();
+
     ui->startButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()
                                 && !m_investigator->isInWork());
     ui->stopButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()

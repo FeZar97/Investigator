@@ -9,5 +9,7 @@
         <file>../ICONS/STATISTIC.ico</file>
         <file>../ICONS/LOCK.ico</file>
         <file>../ICONS/UNLOCK.ico</file>
+        <file>../ICONS/DARKGREEN_CIRCLE.png</file>
+        <file>../ICONS/LIGHTGREEN_CIRCLE.png</file>
     </qresource>
 </RCC>

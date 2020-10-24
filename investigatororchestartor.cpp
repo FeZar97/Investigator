@@ -9,6 +9,8 @@ InvestigatorOrchestartor::InvestigatorOrchestartor(QObject *parent):
 
     m_udpSocket = new QUdpSocket();
 
+    m_workersBusyVector.resize(QThread::idealThreadCount());
+
     // создание потоков
     m_workThreads = new QThread[MaxThreadNb];
 
@@ -235,6 +237,8 @@ bool InvestigatorOrchestartor::reconfigureWorkers() {
         // обновление текущего кол-ва тредов
         m_currentWorkersNb = m_tempCurrentWorkersNb;
 
+        emit updateIndicators();
+
         // конфигурирование вокреров
         for (int i = 0; i < MaxThreadNb; i++) {
 
@@ -349,9 +353,9 @@ void InvestigatorOrchestartor::tryCheckFiles() {
             if (!m_workers[i]->isInProcess()) { // если воркер не занят
                 if (updateTotalFileList()) { // если есть файлы для проверки
                     QFileInfoList filesToCheck = getFilesToCheckList();
-                    //log(QString("Воркеру %1 назначено %2 файлов на проверку.")
-                    //    .arg(i).arg(filesToCheck.size()), Logger::FILE);
+                    m_workersBusyVector[i] = true;
                     tryWorkerCheckFiles(i, filesToCheck);
+                    emit updateIndicators();
                 }
             }
         }
@@ -367,6 +371,8 @@ void InvestigatorOrchestartor::onWorkerFinished(int workerId) {
         m_totalProcessedFilesSize += workerStatistic.processedFilesSize;
         m_totalPwdFilesNb += workerStatistic.pwdFilesNb;
         m_totalInfectedFilesNb += workerStatistic.infFilesNb;
+        m_workersBusyVector[workerId] = false;
+        emit updateIndicators();
 
         // log(QString("Воркер %1 завершил проверку: всего %2(%3), запароленых %4, инфицированных %5.")
         //     .arg(workerId)
@@ -531,6 +537,10 @@ quint64 InvestigatorOrchestartor::currentSpeed() {
         summarySpeed += m_workers[i]->speed();
     }
     return summarySpeed;
+}
+
+QVector<bool> InvestigatorOrchestartor::getWorkersBusyVector() {
+    return m_workersBusyVector;
 }
 
 // время работы в виде строки
