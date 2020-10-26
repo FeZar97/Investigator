@@ -1,27 +1,18 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-void Widget::updateIndicators() {
-    QVector<bool> busyVector = m_investigator->getWorkersBusyVector();
-    int workersNb = m_investigator->currentWorkersNb();
-    for (int i = 0; i < busyVector.size(); i++) {
-        if (i < workersNb) {
-            m_workerIndicators[i]->setVisible(true);
-            m_workerIndicators[i]->setPixmap(busyVector[i] ? m_circles[0] : m_circles[1]);
-        } else {
-            m_workerIndicators[i]->setVisible(false);
-            m_workerIndicators[i]->setPixmap(m_circles[1]);
-        }
-    }
+void Widget::updateIndicators(int workerId, bool state) {
+    m_workerIndicators[workerId]->setPixmap(state ? m_circles[0] : m_circles[1]);
 }
 
 void Widget::createIndicators() {
     m_circles.push_back(QPixmap(":/ICONS/LIGHTGREEN_CIRCLE.png").scaled(24, 24));
     m_circles.push_back(QPixmap(":/ICONS/DARKGREEN_CIRCLE.png").scaled(24, 24));
 
-    for (int i = 0; i < QThread::idealThreadCount(); i++) {
+    for (int i = 0; i < MaxThreadNb; i++) {
         m_workerIndicators.push_back(new QLabel());
         ui->indicatorLayout->addWidget(m_workerIndicators[i]);
+        m_workerIndicators[i]->setPixmap(m_circles[1]);
     }
 }
 
@@ -107,6 +98,10 @@ void Widget::connectObjects() {
             &Widget::uiLog);
     connect(m_investigator,     &InvestigatorOrchestartor::updateUi,        this,
             &Widget::updateUi);
+    connect(this,               &Widget::updateSettingsWindow,        m_settingsWindow,
+            &SettingsWindow::updateUi);
+    connect(this,               &Widget::updateStatisticWindow,       m_statisticsWindow,
+            &StatisticsWindow::updateUi);
     connect(m_investigator,     &InvestigatorOrchestartor::clearLog,        this,
             &Widget::clearLog);
     connect(this,               &Widget::start,                             m_investigator,
@@ -139,6 +134,7 @@ void Widget::closeProgram() {
 
 Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget), m_settings("FeZar97",
                                                                                      "TheInvestigator") {
+
     ui->setupUi(this);
 
     setWindowTitle(QString("The Investigator"));
@@ -209,8 +205,6 @@ void Widget::on_stopButton_clicked() {
 }
 
 void Widget::updateUi() {
-    updateIndicators();
-
     ui->startButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()
                                 && !m_investigator->isInWork());
     ui->stopButton->setEnabled(!m_isUiLocked && m_investigator->resultOfInitialScan()
@@ -221,8 +215,8 @@ void Widget::updateUi() {
     ui->lockUiButton->setText(m_isUiLocked ? "Разблокировать интерфейс" :
                               "Блокировать интерфейс");
 
-    m_statisticsWindow->updateUi();
-    m_settingsWindow->updateUi();
+    emit updateSettingsWindow();
+    emit updateStatisticWindow();
 }
 
 // восстановление настроек
@@ -238,8 +232,7 @@ void Widget::restoreSettings() {
                                                     "C:\\investigator\\danger").toString());
 
     // настройки воркеров
-    m_investigator->setWorkersNb(m_settings.value("threadsNb",
-                                                  QThread::idealThreadCount()).toInt());
+    m_investigator->setWorkersNb(m_settings.value("threadsNb", MaxThreadNb).toInt());
     m_investigator->setThresholdFilesNb(m_settings.value("thresholdFilesNb",        100).toInt());
     m_investigator->setThresholdFilesSize(m_settings.value("thresholdFilesSize",    100).toInt());
     m_investigator->setThresholdFilesSizeUnit(m_settings.value("thresholdFilesSizeUnit",

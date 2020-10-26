@@ -73,6 +73,7 @@ private:
     QThread *m_workThreads; // потоки для воркеров
     InvestigatorWorker **m_workers; // воркеры
     QVector<bool> m_workersBusyVector;
+    void setWorkerBusy(int workerId, bool state);
     void createWorkers(); // создание воркеров, помещение их в собственные потоки и запуск воркеров
 
     QFileInfoList m_totalFileList; // список файлов на обработку
@@ -310,7 +311,7 @@ signals:
     void updateUi(); // обновление интерфейса
     void uiLog(QString msg); // вывод сообщения в главное окно
     void clearLog(); // очитска окна вывода логов
-    void updateIndicators();
+    void updateIndicators(int workerId, bool state);
 };
 
 #endif // CHECKORCHESTARTOR_H

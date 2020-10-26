@@ -9,11 +9,6 @@ InvestigatorOrchestartor::InvestigatorOrchestartor(QObject *parent):
 
     m_udpSocket = new QUdpSocket();
 
-    m_workersBusyVector.resize(QThread::idealThreadCount());
-
-    // создание потоков
-    m_workThreads = new QThread[MaxThreadNb];
-
     // создание воркеров, помещение их в собственные потоки и запуск воркеров
     createWorkers();
 
@@ -108,9 +103,17 @@ void InvestigatorOrchestartor::createInitialAvsProcess(bool needLaterStart) {
            );
 }
 
+void InvestigatorOrchestartor::setWorkerBusy(int workerId, bool state) {
+    m_workersBusyVector[workerId] = state;
+    emit updateIndicators(workerId, state);
+}
+
 // создание воркеров, помещение их в собственные потоки и запуск воркеров
 void InvestigatorOrchestartor::createWorkers() {
+    m_workThreads = new QThread[MaxThreadNb];
     m_workers = new InvestigatorWorker*[MaxThreadNb];
+    m_workersBusyVector.resize(MaxThreadNb);
+
     for (int i = 0; i < MaxThreadNb; i++) {
         m_workers[i] = new InvestigatorWorker(nullptr);
         m_workers[i]->moveToThread(&m_workThreads[i]);
@@ -121,6 +124,8 @@ void InvestigatorOrchestartor::createWorkers() {
                 &InvestigatorOrchestartor::onWorkerFinished);
         connect(m_workers[i],   &InvestigatorWorker::log,                           this,
                 &InvestigatorOrchestartor::log);
+
+        setWorkerBusy(i, false);
 
         m_workThreads[i].start();
     }
@@ -169,6 +174,7 @@ void InvestigatorOrchestartor::createProcessTimer() {
 void InvestigatorOrchestartor::stopWorkers() {
     for (int i = 0; i < m_currentWorkersNb; i++) {
         m_workers[i]->stopWork();
+        emit updateIndicators(i, false);
     }
 }
 
@@ -236,8 +242,6 @@ bool InvestigatorOrchestartor::reconfigureWorkers() {
 
         // обновление текущего кол-ва тредов
         m_currentWorkersNb = m_tempCurrentWorkersNb;
-
-        emit updateIndicators();
 
         // конфигурирование вокреров
         for (int i = 0; i < MaxThreadNb; i++) {
@@ -353,9 +357,8 @@ void InvestigatorOrchestartor::tryCheckFiles() {
             if (!m_workers[i]->isInProcess()) { // если воркер не занят
                 if (updateTotalFileList()) { // если есть файлы для проверки
                     QFileInfoList filesToCheck = getFilesToCheckList();
-                    m_workersBusyVector[i] = true;
+                    setWorkerBusy(i, true);
                     tryWorkerCheckFiles(i, filesToCheck);
-                    emit updateIndicators();
                 }
             }
         }
@@ -371,8 +374,7 @@ void InvestigatorOrchestartor::onWorkerFinished(int workerId) {
         m_totalProcessedFilesSize += workerStatistic.processedFilesSize;
         m_totalPwdFilesNb += workerStatistic.pwdFilesNb;
         m_totalInfectedFilesNb += workerStatistic.infFilesNb;
-        m_workersBusyVector[workerId] = false;
-        emit updateIndicators();
+        setWorkerBusy(workerId, false);
 
         // log(QString("Воркер %1 завершил проверку: всего %2(%3), запароленых %4, инфицированных %5.")
         //     .arg(workerId)

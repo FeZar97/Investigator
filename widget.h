@@ -89,7 +89,7 @@ public:
 
     void clearLog();
 
-    void updateIndicators();
+    void updateIndicators(int workerId, bool state);
 
 private slots:
     void on_startButton_clicked();
@@ -111,5 +111,7 @@ signals:
     void start();
     void stop();
     void log(QString message, int logCtx);
+    void updateSettingsWindow();
+    void updateStatisticWindow();
 };
 #endif // WIDGET_H
